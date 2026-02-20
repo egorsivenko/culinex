@@ -23,8 +23,7 @@ type IngredientItem struct {
 }
 
 const (
-	thinkingLevel     = "medium"
-	modelName         = "gemini-3-flash-preview"
+	model             = "gemini-3-flash-preview"
 	prompt            = "What food products are displayed in the image?"
 	systemInstruction = `You are a helpful culinary assistant.
 Your job is to identify food products and cooking ingredients from user-provided photos so recipes can be generated based on what's available.
@@ -91,16 +90,16 @@ func main() {
 		Required: []string{"items"},
 	}
 
-	cfg := &genai.GenerateContentConfig{
+	config := &genai.GenerateContentConfig{
 		SystemInstruction: genai.NewContentFromText(systemInstruction, genai.RoleUser),
 		ThinkingConfig: &genai.ThinkingConfig{
-			ThinkingLevel: thinkingLevel,
+			ThinkingLevel: genai.ThinkingLevelMedium,
 		},
 		ResponseMIMEType: "application/json",
 		ResponseSchema:   responseSchema,
 	}
 
-	result, err := client.Models.GenerateContent(ctx, modelName, contents, cfg)
+	result, err := client.Models.GenerateContent(ctx, model, contents, config)
 	if err != nil {
 		log.Fatal(err)
 	}
