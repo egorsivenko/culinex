@@ -3,8 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"io"
+	"mime"
 	"net/http"
-	"strings"
 
 	"github.com/egorsivenko/culinex/internal/ai"
 )
@@ -13,6 +13,14 @@ const (
 	maxImageSize = 18 << 20 // 18 MiB
 	maxMemory    = 8 << 20  // 8 MiB
 )
+
+var supportedImageFormats = map[string]struct{}{
+	"image/png":  {},
+	"image/jpeg": {},
+	"image/webp": {},
+	"image/heic": {},
+	"image/heif": {},
+}
 
 func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
@@ -27,9 +35,14 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	mimeType := header.Header.Get("Content-Type")
-	if !strings.HasPrefix(mimeType, "image/") {
+	mimeType, _, err := mime.ParseMediaType(header.Header.Get("Content-Type"))
+	if err != nil {
 		http.Error(w, "Invalid Content-Type header", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	if _, ok := supportedImageFormats[mimeType]; !ok {
+		http.Error(w, "Unsupported image format", http.StatusUnsupportedMediaType)
 		return
 	}
 
