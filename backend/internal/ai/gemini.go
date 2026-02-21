@@ -1,16 +1,24 @@
-package main
+package ai
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
-	"fmt"
 	"log"
-	"os"
 
-	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/genai"
 )
+
+type GeminiClient *genai.Client
+
+var Client GeminiClient
+
+func InitGeminiClient(ctx context.Context) {
+	var err error
+	Client, err = genai.NewClient(ctx, nil)
+	if err != nil {
+		log.Fatalf("Failed to create Gemini client: %v", err)
+	}
+}
 
 type IngredientsResponse struct {
 	Items []IngredientItem `json:"items"`
@@ -35,24 +43,9 @@ Rules:
 * Prefer generic ingredient names over brands.`
 )
 
-func main() {
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	imagePath := flag.String("image", "images/products-1.jpeg", "Path to the input image")
-	flag.Parse()
-
-	bytes, err := os.ReadFile(*imagePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Image to be processed:", *imagePath)
-
+func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (IngredientsResponse, error) {
 	parts := []*genai.Part{
-		genai.NewPartFromBytes(bytes, "image/jpeg"),
+		genai.NewPartFromBytes(data, mimeType),
 		genai.NewPartFromText(prompt),
 	}
 
@@ -99,19 +92,14 @@ func main() {
 		ResponseSchema:   responseSchema,
 	}
 
-	result, err := client.Models.GenerateContent(ctx, model, contents, config)
+	result, err := Client.Models.GenerateContent(ctx, model, contents, config)
 	if err != nil {
-		log.Fatal(err)
+		return IngredientsResponse{}, err
 	}
 
 	var resp IngredientsResponse
 	if err := json.Unmarshal([]byte(result.Text()), &resp); err != nil {
-		log.Fatalf("Invalid JSON from model: %v\nRaw: %s", err, result.Text())
+		return IngredientsResponse{}, err
 	}
-
-	jsonBytes, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		log.Fatalf("Failed to marshal JSON: %v", err)
-	}
-	fmt.Printf("%s\n", string(jsonBytes))
+	return resp, nil
 }
