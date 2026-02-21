@@ -8,13 +8,11 @@ import (
 	"google.golang.org/genai"
 )
 
-type GeminiClient *genai.Client
-
-var Client GeminiClient
+var client *genai.Client
 
 func InitGeminiClient(ctx context.Context) {
 	var err error
-	Client, err = genai.NewClient(ctx, nil)
+	client, err = genai.NewClient(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to create Gemini client: %v", err)
 	}
@@ -92,7 +90,7 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 		ResponseSchema:   responseSchema,
 	}
 
-	result, err := Client.Models.GenerateContent(ctx, model, contents, config)
+	result, err := client.Models.GenerateContent(ctx, model, contents, config)
 	if err != nil {
 		return IngredientsResponse{}, err
 	}
