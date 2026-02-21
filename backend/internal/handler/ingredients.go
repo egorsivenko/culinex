@@ -9,8 +9,13 @@ import (
 	"github.com/egorsivenko/culinex/internal/ai"
 )
 
+const (
+	maxImageSize = 18 << 20 // 18 MiB
+	maxMemory    = 8 << 20  // 8 MiB
+)
+
 func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
+	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		http.Error(w, "Error parsing request body", http.StatusBadRequest)
 		return
 	}
@@ -28,13 +33,19 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, "Failed to read uploaded file", http.StatusBadRequest)
+	fileSize := header.Size
+	if fileSize == 0 {
+		http.Error(w, "Uploaded file is empty", http.StatusBadRequest)
 		return
 	}
-	if len(data) == 0 {
-		http.Error(w, "Uploaded file is empty", http.StatusBadRequest)
+	if fileSize >= maxImageSize {
+		http.Error(w, "Uploaded file is too large", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "Failed to read uploaded file", http.StatusInternalServerError)
 		return
 	}
 
