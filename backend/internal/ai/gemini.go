@@ -19,13 +19,13 @@ func InitGeminiClient(ctx context.Context) {
 }
 
 type IngredientsResponse struct {
-	Items []IngredientItem `json:"items"`
+	Ingredients []IngredientItem `json:"ingredients"`
 }
 
 type IngredientItem struct {
 	Name       string `json:"name"`
+	Quantity   string `json:"quantity"`
 	Confidence string `json:"confidence"`
-	Details    string `json:"details"`
 }
 
 const (
@@ -38,6 +38,7 @@ Rules:
 * Only include items that are actually visible in the image. Do NOT invent ingredients that are not clearly present.
 * If an item is ambiguous, you may include it, but mark it with lower confidence.
 * Ignore non-food objects (plates, utensils, table surface). Mention packaging only if it clearly identifies a food product.
+* The "quantity" field must always include a unit or descriptor. For count-based items where the unit is unknown, default to "pieces".
 * Prefer generic ingredient names over brands.`
 )
 
@@ -58,27 +59,28 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 				Type:        genai.TypeString,
 				Description: "Ingredient name.",
 			},
-			"confidence": {
-				Type: genai.TypeString,
-				Enum: []string{"high", "medium", "low"},
-			},
-			"details": {
+			"quantity": {
 				Type:        genai.TypeString,
-				Description: "Quantity or description.",
+				Description: "Ingredient quantity.",
+			},
+			"confidence": {
+				Type:        genai.TypeString,
+				Description: "Confidence level of the identified ingredient.",
+				Enum:        []string{"high", "medium", "low"},
 			},
 		},
-		Required: []string{"name", "confidence", "details"},
+		Required: []string{"name", "quantity", "confidence"},
 	}
 
 	responseSchema := &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
-			"items": {
+			"ingredients": {
 				Type:  genai.TypeArray,
 				Items: ingredientItemSchema,
 			},
 		},
-		Required: []string{"items"},
+		Required: []string{"ingredients"},
 	}
 
 	config := &genai.GenerateContentConfig{
