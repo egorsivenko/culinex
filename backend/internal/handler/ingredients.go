@@ -22,6 +22,10 @@ var supportedImageFormats = map[string]struct{}{
 	"image/heif": {},
 }
 
+type generateRecipeRequest struct {
+	Ingredients []ai.RecipeIngredient `json:"ingredients"`
+}
+
 func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		http.Error(w, "Error parsing request body", http.StatusBadRequest)
@@ -65,6 +69,32 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType)
 	if err != nil {
 		http.Error(w, "Failed to extract ingredients", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
+	var req generateRecipeRequest
+	dec := json.NewDecoder(r.Body)
+
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+	if len(req.Ingredients) == 0 {
+		http.Error(w, "Ingredients list is empty", http.StatusBadRequest)
+		return
+	}
+
+	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients)
+	if err != nil {
+		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
 		return
 	}
 

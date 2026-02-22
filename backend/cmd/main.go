@@ -32,6 +32,7 @@ func main() {
 	})
 
 	r.Post("/ingredients", handler.ExtractIngredients)
+	r.Post("/generate-recipe", handler.GenerateRecipe)
 
 	fmt.Println("HTTP server listening on :8080")
 	http.ListenAndServe(":8080", r)
