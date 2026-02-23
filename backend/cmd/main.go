@@ -27,12 +27,10 @@ func main() {
 	r.Use(middleware.Compress(5))
 	r.Use(middleware.Heartbeat("/ping"))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/ingredients", handler.ExtractIngredients)
+		r.Post("/generate-recipe", handler.GenerateRecipe)
 	})
-
-	r.Post("/ingredients", handler.ExtractIngredients)
-	r.Post("/generate-recipe", handler.GenerateRecipe)
 
 	fmt.Println("HTTP server listening on :8080")
 	http.ListenAndServe(":8080", r)
