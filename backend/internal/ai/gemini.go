@@ -53,9 +53,11 @@ type Macros struct {
 }
 
 const (
-	model             = "gemini-3-flash-preview"
-	prompt            = "What food products are displayed in the image?"
-	systemInstruction = `You are a helpful culinary assistant.
+	model            = "gemini-3-flash-preview"
+	prompt           = "What food products are displayed in the image?"
+	responseMIMEType = "application/json"
+
+	ingredientSystemInstruction = `You are a helpful culinary assistant.
 Your job is to identify food products and cooking ingredients from user-provided photos so recipes can be generated based on what's available.
 
 Rules:
@@ -126,11 +128,11 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 	}
 
 	config := &genai.GenerateContentConfig{
-		SystemInstruction: genai.NewContentFromText(systemInstruction, genai.RoleUser),
+		SystemInstruction: genai.NewContentFromText(ingredientSystemInstruction, genai.RoleUser),
 		ThinkingConfig: &genai.ThinkingConfig{
 			ThinkingLevel: genai.ThinkingLevelMedium,
 		},
-		ResponseMIMEType: "application/json",
+		ResponseMIMEType: responseMIMEType,
 		ResponseSchema:   responseSchema,
 	}
 
@@ -236,7 +238,7 @@ func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient) (Recipe
 		ThinkingConfig: &genai.ThinkingConfig{
 			ThinkingLevel: genai.ThinkingLevelMedium,
 		},
-		ResponseMIMEType: "application/json",
+		ResponseMIMEType: responseMIMEType,
 		ResponseSchema:   recipeSchema,
 	}
 
