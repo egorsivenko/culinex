@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -28,10 +28,10 @@ func main() {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/ingredients", handler.ExtractIngredients)
+		r.Post("/extract-ingredients", handler.ExtractIngredients)
 		r.Post("/generate-recipe", handler.GenerateRecipe)
 	})
 
-	fmt.Println("HTTP server listening on :8080")
+	log.Println("HTTP server listening on :8080")
 	http.ListenAndServe(":8080", r)
 }

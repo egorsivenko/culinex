@@ -13,9 +13,7 @@ type generateRecipeRequest struct {
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	var req generateRecipeRequest
-	dec := json.NewDecoder(r.Body)
-
-	if err := dec.Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
