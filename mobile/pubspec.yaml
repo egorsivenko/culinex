@@ -1,5 +1,5 @@
 name: culinex
-description: "A new Flutter project."
+description: "Culinex mobile client."
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -7,8 +7,14 @@ environment:
   sdk: ^3.11.1
 
 dependencies:
+  camera: ^0.11.2+1
   flutter:
     sdk: flutter
+  http: ^1.5.0
+  http_parser: ^4.1.2
+  image_picker: ^1.2.0
+  mime: ^2.0.0
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

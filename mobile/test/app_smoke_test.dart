@@ -1,0 +1,48 @@
+import 'package:culinex/app/app.dart';
+import 'package:culinex/core/network/culinex_repository.dart';
+import 'package:culinex/features/home/welcome_screen.dart';
+import 'package:culinex/features/session/culinex_models.dart';
+import 'package:culinex/features/session/cook_session_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('app opens on the welcome screen', (tester) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+
+    await tester.pumpWidget(CulinexApp(controller: controller));
+
+    expect(find.text('Culinex'), findsOneWidget);
+    expect(find.text('Take one photo'), findsOneWidget);
+    expect(find.text('Take a photo of ingredients'), findsOneWidget);
+    expect(find.text('Scan ingredients'), findsNothing);
+    expect(find.text('Understand what you have'), findsNothing);
+    expect(find.text('Create one smart recipe'), findsNothing);
+    expect(find.text('How it works'), findsNothing);
+    expect(find.text('Smart cooking from what you already have'), findsNothing);
+    expect(
+      culinexWelcomePhrases.any(
+        (String phrase) => find.text(phrase).evaluate().isNotEmpty,
+      ),
+      isTrue,
+    );
+
+    controller.dispose();
+  });
+}
+
+class _NoopRepository implements CulinexRepository {
+  @override
+  void close() {}
+
+  @override
+  Future<List<ExtractedIngredient>> extractIngredients(imageFile) async {
+    return const [];
+  }
+
+  @override
+  Future<GeneratedRecipe> generateRecipe(List<RecipeIngredient> ingredients) {
+    throw UnimplementedError();
+  }
+}
