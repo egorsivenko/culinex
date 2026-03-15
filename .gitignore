@@ -14,7 +14,7 @@ coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
+# Dependency directories
 vendor/
 
 # Go workspace file
@@ -27,3 +27,6 @@ go.work.sum
 # Editor/IDE
 .idea/
 .vscode/
+
+# macOS
+.DS_Store
