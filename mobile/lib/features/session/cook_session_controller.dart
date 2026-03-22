@@ -182,7 +182,25 @@ class CookSessionController extends ChangeNotifier {
   }
 
   Future<void> generateRecipe() async {
-    if (_ingredients.isEmpty) {
+    if (_ingredients.length < minRecipeIngredientCount) {
+      _setError(
+        const CulinexSessionException(
+          'Add at least 2 ingredients before generating a recipe.',
+        ),
+        fallbackMessage:
+            'Add at least 2 ingredients before generating a recipe.',
+      );
+      return;
+    }
+
+    if (_ingredients.length > maxRecipeIngredientCount) {
+      _setError(
+        CulinexSessionException(
+          'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+        ),
+        fallbackMessage:
+            'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+      );
       return;
     }
 
@@ -213,6 +231,55 @@ class CookSessionController extends ChangeNotifier {
         fallbackMessage: 'Recipe generation failed. Please try again.',
       );
     }
+  }
+
+  Future<void> generateRecipeFromIngredients(
+    List<ExtractedIngredient> ingredients,
+  ) async {
+    try {
+      _ingredients = _prepareIngredients(ingredients);
+      _recipe = null;
+      await generateRecipe();
+    } catch (error) {
+      if (_isDisposed) {
+        return;
+      }
+
+      _setError(
+        error,
+        fallbackMessage: 'Recipe generation failed. Please try again.',
+      );
+    }
+  }
+
+  List<ExtractedIngredient> _prepareIngredients(
+    List<ExtractedIngredient> ingredients,
+  ) {
+    final List<ExtractedIngredient> sanitized = ingredients
+        .map(
+          (item) => ExtractedIngredient(
+            name: item.name.trim(),
+            quantity: item.quantity.trim(),
+            confidence: item.confidence,
+            isEdited: item.isEdited,
+          ),
+        )
+        .where((item) => item.name.isNotEmpty && item.quantity.isNotEmpty)
+        .toList(growable: false);
+
+    if (sanitized.length < minRecipeIngredientCount) {
+      throw const CulinexSessionException(
+        'Add at least 2 ingredients before generating a recipe.',
+      );
+    }
+
+    if (sanitized.length > maxRecipeIngredientCount) {
+      throw CulinexSessionException(
+        'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+      );
+    }
+
+    return List<ExtractedIngredient>.unmodifiable(sanitized);
   }
 
   void _setError(Object error, {required String fallbackMessage}) {

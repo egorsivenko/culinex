@@ -87,7 +87,7 @@ class CulinexFlowShell extends StatelessWidget {
                 imagePath: controller.capturedImagePath,
                 ingredients: controller.ingredients,
                 onBack: controller.retakePhoto,
-                onProceed: controller.generateRecipe,
+                onProceed: controller.generateRecipeFromIngredients,
                 onOpenRecipe: controller.recipe != null
                     ? controller.showRecipe
                     : null,

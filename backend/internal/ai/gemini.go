@@ -72,6 +72,9 @@ Your job is to generate a practical recipe based on the provided ingredients.
 
 Rules:
 * Use the provided ingredients as the primary ones.
+* Ignore entries that are clearly irrelevant, non-food, duplicated, contradictory, or unusable for a practical recipe.
+* If an entry looks nonsensical, too vague to cook with, or obviously not edible, filter it out silently.
+* If the list contains near-duplicates or repeated items, consolidate them internally and use the clearest useful version.
 * You may assume basic staples are available: salt, pepper, sugar, water, cooking oil, etc., but list them explicitly in ingredients.
 * Macros numbers must be reasonable approximations based on the listed ingredients and their quantities, expressed as decimal values.
 * If some ingredient quantities are missing, make conservative assumptions and keep the estimate plausible.

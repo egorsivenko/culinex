@@ -44,6 +44,11 @@ void main() {
           quantity: '2 pieces',
           confidence: IngredientConfidence.high,
         ),
+        ExtractedIngredient(
+          name: 'Butter',
+          quantity: '10 g',
+          confidence: IngredientConfidence.high,
+        ),
       ],
       generatedRecipe: GeneratedRecipe(
         dishName: 'Soft Egg Scramble',
@@ -76,7 +81,71 @@ void main() {
 
     expect(controller.stage, SessionStage.recipe);
     expect(controller.recipe?.dishName, 'Soft Egg Scramble');
-    expect(repository.lastRecipeIngredients, hasLength(1));
+    expect(repository.lastRecipeIngredients, hasLength(2));
+
+    controller.dispose();
+  });
+
+  test(
+    'generateRecipeFromIngredients uses the edited ingredient list',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        generatedRecipe: GeneratedRecipe(
+          dishName: 'Tomato Toast',
+          dishDescription: 'A quick toast topped with tomatoes.',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 8,
+          ingredients: const [
+            RecipeIngredient(name: 'Tomatoes', quantity: '150 g'),
+            RecipeIngredient(name: 'Bread', quantity: '2 slices'),
+          ],
+          steps: const ['Toast the bread.', 'Top it with tomatoes.'],
+          macros: const NutritionMacros(
+            caloriesKcal: 220,
+            proteinG: 6,
+            carbsG: 30,
+            fatG: 8,
+          ),
+        ),
+      );
+
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.generateRecipeFromIngredients(const [
+        ExtractedIngredient(name: 'Tomatoes', quantity: '150 g'),
+        ExtractedIngredient(name: 'Bread', quantity: '2 slices'),
+        ExtractedIngredient(name: 'Basil', quantity: '4 leaves'),
+      ]);
+
+      expect(controller.stage, SessionStage.recipe);
+      expect(controller.ingredients, hasLength(3));
+      expect(repository.lastRecipeIngredients, hasLength(3));
+      expect(repository.lastRecipeIngredients?.first.name, 'Tomatoes');
+      expect(repository.lastRecipeIngredients?.last.quantity, '4 leaves');
+
+      controller.dispose();
+    },
+  );
+
+  test('generateRecipeFromIngredients rejects too few ingredients', () async {
+    final FakeRepository repository = FakeRepository();
+
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.generateRecipeFromIngredients(const [
+      ExtractedIngredient(name: 'Eggs', quantity: '2 pieces'),
+    ]);
+
+    expect(controller.stage, SessionStage.error);
+    expect(
+      controller.errorMessage,
+      'Add at least 2 ingredients before generating a recipe.',
+    );
+    expect(repository.lastRecipeIngredients, isNull);
 
     controller.dispose();
   });
@@ -89,6 +158,11 @@ void main() {
           ExtractedIngredient(
             name: 'Eggs',
             quantity: '2 pieces',
+            confidence: IngredientConfidence.high,
+          ),
+          ExtractedIngredient(
+            name: 'Butter',
+            quantity: '10 g',
             confidence: IngredientConfidence.high,
           ),
         ],
@@ -119,7 +193,7 @@ void main() {
       controller.showIngredients();
 
       expect(controller.stage, SessionStage.ingredients);
-      expect(controller.ingredients, hasLength(1));
+      expect(controller.ingredients, hasLength(2));
       expect(controller.recipe?.dishName, 'Soft Egg Scramble');
 
       controller.dispose();
@@ -132,6 +206,11 @@ void main() {
         ExtractedIngredient(
           name: 'Eggs',
           quantity: '2 pieces',
+          confidence: IngredientConfidence.high,
+        ),
+        ExtractedIngredient(
+          name: 'Butter',
+          quantity: '10 g',
           confidence: IngredientConfidence.high,
         ),
       ],

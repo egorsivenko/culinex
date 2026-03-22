@@ -1,3 +1,6 @@
+const int minRecipeIngredientCount = 2;
+const int maxRecipeIngredientCount = 20;
+
 enum IngredientConfidence {
   high,
   medium,
@@ -22,20 +25,40 @@ class ExtractedIngredient {
   const ExtractedIngredient({
     required this.name,
     required this.quantity,
-    required this.confidence,
+    this.confidence,
+    this.isEdited = false,
   });
 
   final String name;
   final String quantity;
-  final IngredientConfidence confidence;
+  final IngredientConfidence? confidence;
+  final bool isEdited;
 
   factory ExtractedIngredient.fromJson(Map<String, dynamic> json) {
+    final Object? confidenceValue = json['confidence'];
+
     return ExtractedIngredient(
       name: json['name'] as String? ?? '',
       quantity: json['quantity'] as String? ?? '',
-      confidence: IngredientConfidence.fromJson(
-        json['confidence'] as String? ?? 'medium',
-      ),
+      confidence: confidenceValue is String
+          ? IngredientConfidence.fromJson(confidenceValue)
+          : null,
+      isEdited: false,
+    );
+  }
+
+  ExtractedIngredient copyWith({
+    String? name,
+    String? quantity,
+    IngredientConfidence? confidence,
+    bool? isEdited,
+    bool clearConfidence = false,
+  }) {
+    return ExtractedIngredient(
+      name: name ?? this.name,
+      quantity: quantity ?? this.quantity,
+      confidence: clearConfidence ? null : confidence ?? this.confidence,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
