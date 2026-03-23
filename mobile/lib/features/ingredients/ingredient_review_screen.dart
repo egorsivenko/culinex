@@ -11,6 +11,8 @@ import '../session/culinex_models.dart';
 
 const int ingredientNameMaxLength = 50;
 const int ingredientQuantityMaxLength = 30;
+const String basicStaplesTooltipMessage =
+    'Water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.';
 
 class IngredientReviewScreen extends StatefulWidget {
   const IngredientReviewScreen({
@@ -40,11 +42,17 @@ class IngredientReviewScreen extends StatefulWidget {
 
 class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   static const Duration _deleteAnimationDuration = Duration(milliseconds: 240);
+  static const double _basicStaplesTooltipGap = 5;
 
   bool _isPreviewVisible = false;
   bool _isSubmitting = false;
+  bool _isBasicStaplesInfoVisible = false;
+  bool _showBasicStaplesTooltipBelow = false;
   bool _assumeBasicStaples = true;
   int _nextIngredientIdSeed = 0;
+  BuildContext? _basicStaplesSectionContext;
+  final LayerLink _basicStaplesSectionLink = LayerLink();
+  final Object _basicStaplesTapRegionId = Object();
   List<ExtractedIngredient> _ingredients = <ExtractedIngredient>[];
   List<String> _ingredientIds = <String>[];
   final Set<String> _removingIngredientIds = <String>{};
@@ -85,6 +93,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   Widget build(BuildContext context) {
     _repairIngredientState();
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final RenderBox? basicStaplesSectionBox =
+        _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
+    final double? basicStaplesSectionWidth = basicStaplesSectionBox?.size.width;
 
     return Scaffold(
       bottomNavigationBar: _isPreviewVisible
@@ -198,26 +209,54 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        GlassPanel(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          child: SwitchListTile.adaptive(
-                            contentPadding: EdgeInsets.zero,
-                            value: _assumeBasicStaples,
-                            onChanged: _isSubmitting
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _assumeBasicStaples = value;
-                                    });
-                                  },
-                            title: Text(
-                              'Assume basic staples are available',
-                              style: textTheme.titleMedium,
-                            ),
+                        TapRegion(
+                          groupId: _basicStaplesTapRegionId,
+                          onTapOutside: (_) => _hideBasicStaplesInfo(),
+                          child: Builder(
+                            builder: (sectionContext) {
+                              _basicStaplesSectionContext = sectionContext;
+                              return CompositedTransformTarget(
+                                link: _basicStaplesSectionLink,
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'basic-staples-section-panel',
+                                  ),
+                                  child: GlassPanel(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: SwitchListTile.adaptive(
+                                      contentPadding: EdgeInsets.zero,
+                                      value: _assumeBasicStaples,
+                                      onChanged: _isSubmitting
+                                          ? null
+                                          : (value) {
+                                              setState(() {
+                                                _assumeBasicStaples = value;
+                                              });
+                                            },
+                                      title: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Assume basic staples are available',
+                                              style: textTheme.titleMedium,
+                                            ),
+                                          ),
+                                          _BasicStaplesInfoToggleButton(
+                                            isVisible:
+                                                _isBasicStaplesInfoVisible,
+                                            onPressed: _toggleBasicStaplesInfo,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -403,6 +442,30 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
               ),
             ),
           ),
+          if (_isBasicStaplesInfoVisible && basicStaplesSectionWidth != null)
+            TapRegion(
+              groupId: _basicStaplesTapRegionId,
+              child: CompositedTransformFollower(
+                link: _basicStaplesSectionLink,
+                showWhenUnlinked: false,
+                targetAnchor: _showBasicStaplesTooltipBelow
+                    ? Alignment.bottomLeft
+                    : Alignment.topLeft,
+                followerAnchor: _showBasicStaplesTooltipBelow
+                    ? Alignment.topLeft
+                    : Alignment.bottomLeft,
+                offset: Offset(
+                  0,
+                  _showBasicStaplesTooltipBelow
+                      ? _basicStaplesTooltipGap
+                      : -_basicStaplesTooltipGap,
+                ),
+                child: SizedBox(
+                  width: basicStaplesSectionWidth,
+                  child: const _BasicStaplesTooltipPanel(),
+                ),
+              ),
+            ),
           if (_isPreviewVisible && widget.imagePath != null)
             _ImagePreviewOverlay(
               imagePath: widget.imagePath!,
@@ -575,6 +638,30 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     });
   }
 
+  void _toggleBasicStaplesInfo() {
+    if (_isBasicStaplesInfoVisible) {
+      _hideBasicStaplesInfo();
+      return;
+    }
+
+    setState(() {
+      _showBasicStaplesTooltipBelow = _shouldShowBasicStaplesTooltipBelow(
+        context,
+      );
+      _isBasicStaplesInfoVisible = true;
+    });
+  }
+
+  void _hideBasicStaplesInfo() {
+    if (!_isBasicStaplesInfoVisible) {
+      return;
+    }
+
+    setState(() {
+      _isBasicStaplesInfoVisible = false;
+    });
+  }
+
   void _hidePreview() {
     setState(() {
       _isPreviewVisible = false;
@@ -620,6 +707,53 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       IngredientConfidence.medium => CulinexColors.confidenceMedium,
       IngredientConfidence.low => CulinexColors.confidenceLow,
     };
+  }
+
+  bool _shouldShowBasicStaplesTooltipBelow(BuildContext context) {
+    final RenderBox? renderBox =
+        _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      return false;
+    }
+
+    final Offset topLeft = renderBox.localToGlobal(Offset.zero);
+    final double safeTopInset = MediaQuery.paddingOf(context).top;
+    final double availableSpaceAbove = topLeft.dy - safeTopInset;
+    final double estimatedTooltipHeight = _estimateBasicStaplesTooltipHeight(
+      context,
+      renderBox.size.width,
+    );
+
+    return availableSpaceAbove <
+        estimatedTooltipHeight + _basicStaplesTooltipGap;
+  }
+
+  double _estimateBasicStaplesTooltipHeight(
+    BuildContext context,
+    double tooltipWidth,
+  ) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final TextStyle bodyStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFFF1F1F1),
+          height: 1.42,
+        ) ??
+        const TextStyle(fontSize: 14, height: 1.42);
+
+    final double contentWidth = (tooltipWidth - 32)
+        .clamp(0, double.infinity)
+        .toDouble();
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: basicStaplesTooltipMessage, style: bodyStyle),
+      textDirection: Directionality.of(context),
+      maxLines: null,
+    )..layout(maxWidth: contentWidth);
+
+    const double verticalPadding = 14 + 16;
+    const double headerHeight = 16;
+    const double headerTextGap = 10;
+
+    return verticalPadding + headerHeight + headerTextGap + textPainter.height;
   }
 
   Color _cardBorderColor(IngredientConfidence? confidence) {
@@ -1156,6 +1290,94 @@ class _DetailChip extends StatelessWidget {
               ).textTheme.labelMedium?.copyWith(color: foregroundColor),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BasicStaplesInfoToggleButton extends StatelessWidget {
+  const _BasicStaplesInfoToggleButton({
+    required this.isVisible,
+    required this.onPressed,
+  });
+
+  final bool isVisible;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      key: const ValueKey<String>('basic-staples-info-button'),
+      visualDensity: VisualDensity.compact,
+      splashRadius: 18,
+      tooltip: 'Basic staples info',
+      onPressed: onPressed,
+      icon: Icon(
+        Icons.help_outline_rounded,
+        size: 18,
+        color: isVisible ? CulinexColors.ink : CulinexColors.mutedInk,
+      ),
+    );
+  }
+}
+
+class _BasicStaplesTooltipPanel extends StatelessWidget {
+  const _BasicStaplesTooltipPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return IgnorePointer(
+      child: DecoratedBox(
+        key: const ValueKey<String>('basic-staples-tooltip-panel'),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF2D2D2D)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x29000000),
+              blurRadius: 28,
+              offset: Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Assumed staples',
+                    style: textTheme.labelLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                basicStaplesTooltipMessage,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFFF1F1F1),
+                  height: 1.42,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

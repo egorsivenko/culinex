@@ -148,6 +148,132 @@ void main() {
     },
   );
 
+  testWidgets('ingredient review screen shows the basic staples tooltip', (
+    tester,
+  ) async {
+    _setTallSurface(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IngredientReviewScreen(
+          imagePath: null,
+          ingredients: const [
+            ExtractedIngredient(
+              name: 'eggs',
+              quantity: '2 pieces',
+              confidence: IngredientConfidence.high,
+            ),
+            ExtractedIngredient(
+              name: 'milk',
+              quantity: '100 ml',
+              confidence: IngredientConfidence.medium,
+            ),
+          ],
+          assumeBasicStaples: true,
+          onBack: () {},
+          onProceed: (_, _) async {},
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('basic-staples-info-button')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('basic-staples-info-button')),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder sectionFinder = find.byKey(
+      const ValueKey<String>('basic-staples-section-panel'),
+    );
+    final Finder tooltipFinder = find.byKey(
+      const ValueKey<String>('basic-staples-tooltip-panel'),
+    );
+    final Size staplesSectionSize = tester.getSize(sectionFinder);
+    final Size tooltipSize = tester.getSize(tooltipFinder);
+
+    expect(find.text(basicStaplesTooltipMessage), findsOneWidget);
+    expect(tooltipSize.width, staplesSectionSize.width);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('basic-staples-info-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(basicStaplesTooltipMessage), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('basic-staples-info-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(basicStaplesTooltipMessage), findsOneWidget);
+
+    await tester.tap(find.text('Review and adjust the list'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(basicStaplesTooltipMessage), findsNothing);
+  });
+
+  testWidgets(
+    'ingredient review screen shows the basic staples tooltip below when the section is at the top',
+    (tester) async {
+      _setSurface(tester, const Size(390, 844));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: null,
+            ingredients: const [
+              ExtractedIngredient(
+                name: 'eggs',
+                quantity: '2 pieces',
+                confidence: IngredientConfidence.high,
+              ),
+              ExtractedIngredient(
+                name: 'milk',
+                quantity: '100 ml',
+                confidence: IngredientConfidence.medium,
+              ),
+            ],
+            assumeBasicStaples: true,
+            onBack: () {},
+            onProceed: (_, _) async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+      await tester.pumpAndSettle();
+
+      final Finder sectionFinder = find.byKey(
+        const ValueKey<String>('basic-staples-section-panel'),
+      );
+      final Finder tooltipButtonFinder = find.byKey(
+        const ValueKey<String>('basic-staples-info-button'),
+      );
+
+      final Rect sectionRect = tester.getRect(sectionFinder);
+      expect(sectionRect.top, lessThanOrEqualTo(32));
+
+      await tester.tap(tooltipButtonFinder);
+      await tester.pumpAndSettle();
+
+      final Rect tooltipRect = tester.getRect(
+        find.byKey(const ValueKey<String>('basic-staples-tooltip-panel')),
+      );
+      expect(tooltipRect.left, sectionRect.left);
+      expect(tooltipRect.top, greaterThan(sectionRect.bottom));
+    },
+  );
+
   testWidgets('ingredient review screen highlights lower confidence items', (
     tester,
   ) async {
