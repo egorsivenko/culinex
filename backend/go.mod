@@ -3,6 +3,7 @@ module github.com/egorsivenko/culinex
 go 1.25.7
 
 require (
+	github.com/dustin/go-humanize v1.0.1
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/genai v1.46.0

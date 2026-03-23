@@ -3,10 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 
+	"github.com/dustin/go-humanize"
 	"github.com/egorsivenko/culinex/internal/ai"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -61,6 +64,14 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read uploaded file", http.StatusInternalServerError)
 		return
 	}
+
+	requestID := middleware.GetReqID(r.Context())
+	log.Printf("[%s] Extracting ingredients from image: file_name=%q mime_type=%q file_size=%s",
+		requestID,
+		header.Filename,
+		mimeType,
+		humanize.Bytes(uint64(fileSize)),
+	)
 
 	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType)
 	if err != nil {

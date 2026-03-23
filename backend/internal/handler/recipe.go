@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/egorsivenko/culinex/internal/ai"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type generateRecipeRequest struct {
@@ -20,6 +22,15 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	if len(req.Ingredients) == 0 {
 		http.Error(w, "Ingredients list is empty", http.StatusBadRequest)
 		return
+	}
+
+	requestID := middleware.GetReqID(r.Context())
+	if b, err := json.Marshal(req.Ingredients); err == nil {
+		log.Printf("[%s] Generating recipe from %d ingredients: %s",
+			requestID,
+			len(req.Ingredients),
+			string(b),
+		)
 	}
 
 	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients)
