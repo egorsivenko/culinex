@@ -11,6 +11,7 @@ void main() {
     (tester) async {
       _setTallSurface(tester);
       List<ExtractedIngredient>? submittedIngredients;
+      bool? submittedAssumeBasicStaples;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -28,9 +29,11 @@ void main() {
                 confidence: IngredientConfidence.medium,
               ),
             ],
+            assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (ingredients) async {
+            onProceed: (ingredients, assumeBasicStaples) async {
               submittedIngredients = ingredients;
+              submittedAssumeBasicStaples = assumeBasicStaples;
             },
           ),
         ),
@@ -43,6 +46,10 @@ void main() {
       expect(find.text('3 pieces'), findsOneWidget);
       expect(find.text('High confidence'), findsOneWidget);
       expect(find.byType(Image), findsNothing);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue,
+      );
 
       await tester.tap(find.text('View original photo'));
       await tester.pumpAndSettle();
@@ -118,10 +125,19 @@ void main() {
 
       expect(find.text('Garlic'), findsNothing);
 
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+      );
+
       await tester.tap(find.widgetWithText(FilledButton, 'Proceed'));
       await tester.pumpAndSettle();
 
       expect(submittedIngredients, isNotNull);
+      expect(submittedAssumeBasicStaples, isFalse);
       expect(submittedIngredients, hasLength(2));
       expect(submittedIngredients!.first.name, 'Cherry tomatoes');
       expect(submittedIngredients!.first.quantity, '200 g');
@@ -150,8 +166,9 @@ void main() {
               confidence: IngredientConfidence.low,
             ),
           ],
+          assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_) async {},
+          onProceed: (_, _) async {},
         ),
       ),
     );
@@ -178,11 +195,11 @@ void main() {
     expect(mediumConfidenceText.style?.color, CulinexColors.confidenceMedium);
     expect(lowConfidenceText.style?.color, CulinexColors.confidenceLow);
     expect(
-      panels[0].borderColor,
+      panels[1].borderColor,
       CulinexColors.confidenceMedium.withValues(alpha: 0.55),
     );
     expect(
-      panels[1].borderColor,
+      panels[2].borderColor,
       CulinexColors.confidenceLow.withValues(alpha: 0.60),
     );
   });
@@ -208,15 +225,16 @@ void main() {
               confidence: IngredientConfidence.medium,
             ),
           ],
+          assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_) async {},
+          onProceed: (_, _) async {},
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    await tester.drag(find.text('Tomatoes'), const Offset(-600, 0));
+    await tester.drag(find.byType(GlassPanel).at(1), const Offset(-600, 0));
     await tester.pumpAndSettle();
 
     final Finder deleteButton = find.widgetWithIcon(
@@ -227,17 +245,36 @@ void main() {
 
     final Size initialDeleteButtonSize = tester.getSize(deleteButton);
 
-    await tester.tap(find.byTooltip('Edit Tomatoes'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Ingredient name'),
-      'very ripe cherry tomatoes',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IngredientReviewScreen(
+          imagePath: null,
+          ingredients: const [
+            ExtractedIngredient(
+              name: 'very ripe cherry tomatoes',
+              quantity: '3 pieces',
+              confidence: IngredientConfidence.high,
+              isEdited: true,
+            ),
+            ExtractedIngredient(
+              name: 'basil',
+              quantity: '1 bunch',
+              confidence: IngredientConfidence.medium,
+            ),
+          ],
+          assumeBasicStaples: true,
+          onBack: () {},
+          onProceed: (_, _) async {},
+        ),
+      ),
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
     await tester.pumpAndSettle();
 
     expect(find.text('Very ripe cherry tomatoes'), findsOneWidget);
     expect(find.text('Edited'), findsOneWidget);
+
+    await tester.drag(find.byType(GlassPanel).at(1), const Offset(-600, 0));
+    await tester.pumpAndSettle();
 
     final Size updatedDeleteButtonSize = tester.getSize(deleteButton);
     expect(updatedDeleteButtonSize.height, initialDeleteButtonSize.height);
@@ -265,8 +302,9 @@ void main() {
               confidence: IngredientConfidence.medium,
             ),
           ],
+          assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_) async {},
+          onProceed: (_, _) async {},
         ),
       ),
     );
@@ -328,8 +366,9 @@ void main() {
                 confidence: IngredientConfidence.high,
               ),
             ],
+            assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_) async {},
+            onProceed: (_, _) async {},
           ),
         ),
       );
@@ -372,8 +411,9 @@ void main() {
                 confidence: IngredientConfidence.medium,
               ),
             ],
+            assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_) async {},
+            onProceed: (_, _) async {},
             onOpenRecipe: () {
               openedRecipe = true;
             },
@@ -404,6 +444,52 @@ void main() {
       );
 
       expect(openedRecipe, isFalse);
+    },
+  );
+
+  testWidgets(
+    'ingredient review screen hides stale recipe shortcut after staples toggle changes',
+    (tester) async {
+      _setTallSurface(tester);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: null,
+            ingredients: const [
+              ExtractedIngredient(
+                name: 'eggs',
+                quantity: '2 pieces',
+                confidence: IngredientConfidence.high,
+              ),
+              ExtractedIngredient(
+                name: 'milk',
+                quantity: '100 ml',
+                confidence: IngredientConfidence.medium,
+              ),
+            ],
+            assumeBasicStaples: true,
+            onBack: () {},
+            onProceed: (_, _) async {},
+            onOpenRecipe: () {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Return to recipe'), findsOneWidget);
+
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Return to recipe'), findsNothing);
+      expect(
+        find.text(
+          'Generate again to refresh the recipe after editing this list.',
+        ),
+        findsOneWidget,
+      );
     },
   );
 }

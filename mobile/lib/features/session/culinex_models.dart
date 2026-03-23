@@ -85,6 +85,23 @@ class RecipeIngredient {
   }
 }
 
+class RecipeGenerationRequest {
+  const RecipeGenerationRequest({
+    required this.ingredients,
+    required this.assumeBasicStaples,
+  });
+
+  final List<RecipeIngredient> ingredients;
+  final bool assumeBasicStaples;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ingredients': ingredients.map((item) => item.toJson()).toList(),
+      'assume_basic_staples': assumeBasicStaples,
+    };
+  }
+}
+
 enum RecipeDifficulty {
   easy,
   medium,

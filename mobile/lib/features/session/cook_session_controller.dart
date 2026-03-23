@@ -28,6 +28,7 @@ class CookSessionController extends ChangeNotifier {
   SessionOperation _lastOperation = SessionOperation.none;
   String? _capturedImagePath;
   List<ExtractedIngredient> _ingredients = const [];
+  bool _assumeBasicStaples = true;
   GeneratedRecipe? _recipe;
   String? _errorMessage;
   bool _isDisposed = false;
@@ -35,6 +36,7 @@ class CookSessionController extends ChangeNotifier {
   SessionStage get stage => _stage;
   String? get capturedImagePath => _capturedImagePath;
   List<ExtractedIngredient> get ingredients => _ingredients;
+  bool get assumeBasicStaples => _assumeBasicStaples;
   GeneratedRecipe? get recipe => _recipe;
   String get errorMessage =>
       _errorMessage ?? 'Something went wrong. Please try again.';
@@ -94,6 +96,7 @@ class CookSessionController extends ChangeNotifier {
   void resetSession() {
     _capturedImagePath = null;
     _ingredients = const [];
+    _assumeBasicStaples = true;
     _recipe = null;
     _errorMessage = null;
     _lastOperation = SessionOperation.none;
@@ -103,6 +106,7 @@ class CookSessionController extends ChangeNotifier {
 
   void retakePhoto() {
     _ingredients = const [];
+    _assumeBasicStaples = true;
     _recipe = null;
     _errorMessage = null;
     _stage = SessionStage.camera;
@@ -143,6 +147,7 @@ class CookSessionController extends ChangeNotifier {
   Future<void> extractIngredientsFromPhoto(String imagePath) async {
     _capturedImagePath = imagePath;
     _ingredients = const [];
+    _assumeBasicStaples = true;
     _recipe = null;
     _errorMessage = null;
     _lastOperation = SessionOperation.extractIngredients;
@@ -211,7 +216,12 @@ class CookSessionController extends ChangeNotifier {
 
     try {
       final GeneratedRecipe nextRecipe = await _repository.generateRecipe(
-        _ingredients.map((item) => item.toRecipeIngredient()).toList(),
+        RecipeGenerationRequest(
+          ingredients: _ingredients
+              .map((item) => item.toRecipeIngredient())
+              .toList(),
+          assumeBasicStaples: _assumeBasicStaples,
+        ),
       );
 
       if (_isDisposed) {
@@ -235,9 +245,11 @@ class CookSessionController extends ChangeNotifier {
 
   Future<void> generateRecipeFromIngredients(
     List<ExtractedIngredient> ingredients,
+    bool assumeBasicStaples,
   ) async {
     try {
       _ingredients = _prepareIngredients(ingredients);
+      _assumeBasicStaples = assumeBasicStaples;
       _recipe = null;
       await generateRecipe();
     } catch (error) {

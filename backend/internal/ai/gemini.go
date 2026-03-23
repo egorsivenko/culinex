@@ -75,7 +75,6 @@ Rules:
 * Ignore entries that are clearly irrelevant, non-food, duplicated, contradictory, or unusable for a practical recipe.
 * If an entry looks nonsensical, too vague to cook with, or obviously not edible, filter it out silently.
 * If the list contains near-duplicates or repeated items, consolidate them internally and use the clearest useful version.
-* You may assume basic staples are available: salt, pepper, sugar, water, cooking oil, etc., but list them explicitly in ingredients.
 * Macros numbers must be reasonable approximations based on the listed ingredients and their quantities, expressed as decimal values.
 * If some ingredient quantities are missing, make conservative assumptions and keep the estimate plausible.
 * Output must be suitable for home cooking and written clearly.
@@ -84,9 +83,11 @@ Rules:
 * Do NOT assume you must use all available ingredients. Use a reasonable subset to make one meal.
 * The recipe should be sized for a normal home cooking portion.
 * For each ingredient in the output, specify the amount actually USED (g, ml, pieces, or other precise units).
-* If the input "quantity" look like package availability (e.g., "1 bag", "1 box"), do NOT use the whole package by default — use a typical partial amount unless the recipe realistically needs all of it.
+* If the input "quantity" look like package availability (e.g., "1 bag", "1 box"), do NOT use the whole package by default - use a typical partial amount unless the recipe realistically needs all of it.
 * Calculate macros based ONLY on the amounts used in the recipe, not on everything available.
 * Sanity check: calories_kcal ≈ protein_g*4 + carbs_g*4 + fat_g*9 (within ~10%).`
+
+	assumeBasicStaplesPrompt = "Assume basic staples are available - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil - but still list them explicitly in the ingredients."
 )
 
 func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (IngredientsResponse, error) {
@@ -151,13 +152,17 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 	return resp, nil
 }
 
-func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient) (RecipeResponse, error) {
+func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeBasicStaples bool) (RecipeResponse, error) {
 	var b strings.Builder
 	b.WriteString("Generate a dish recipe using the provided ingredients:")
 	for _, it := range ingredients {
 		name := strings.TrimSpace(it.Name)
 		quantity := strings.TrimSpace(it.Quantity)
 		fmt.Fprintf(&b, "\n- %s (%s)", name, quantity)
+	}
+	if assumeBasicStaples {
+		b.WriteString("\n\n")
+		b.WriteString(assumeBasicStaplesPrompt)
 	}
 
 	contents := []*genai.Content{

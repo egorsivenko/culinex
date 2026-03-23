@@ -16,6 +16,7 @@ class IngredientReviewScreen extends StatefulWidget {
   const IngredientReviewScreen({
     required this.imagePath,
     required this.ingredients,
+    required this.assumeBasicStaples,
     required this.onBack,
     required this.onProceed,
     this.onOpenRecipe,
@@ -24,8 +25,13 @@ class IngredientReviewScreen extends StatefulWidget {
 
   final String? imagePath;
   final List<ExtractedIngredient> ingredients;
+  final bool assumeBasicStaples;
   final VoidCallback onBack;
-  final Future<void> Function(List<ExtractedIngredient> ingredients) onProceed;
+  final Future<void> Function(
+    List<ExtractedIngredient> ingredients,
+    bool assumeBasicStaples,
+  )
+  onProceed;
   final VoidCallback? onOpenRecipe;
 
   @override
@@ -37,13 +43,15 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
 
   bool _isPreviewVisible = false;
   bool _isSubmitting = false;
+  bool _assumeBasicStaples = true;
   int _nextIngredientIdSeed = 0;
   List<ExtractedIngredient> _ingredients = <ExtractedIngredient>[];
   List<String> _ingredientIds = <String>[];
   final Set<String> _removingIngredientIds = <String>{};
 
   bool get _hasUnsavedChanges =>
-      !_ingredientsMatch(_ingredients, widget.ingredients);
+      !_ingredientsMatch(_ingredients, widget.ingredients) ||
+      _assumeBasicStaples != widget.assumeBasicStaples;
 
   bool get _canProceed =>
       !_isSubmitting &&
@@ -54,6 +62,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   @override
   void initState() {
     super.initState();
+    _assumeBasicStaples = widget.assumeBasicStaples;
     _resetIngredients(widget.ingredients);
   }
 
@@ -65,6 +74,10 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       setState(() {
         _resetIngredients(widget.ingredients);
       });
+    }
+
+    if (oldWidget.assumeBasicStaples != widget.assumeBasicStaples) {
+      _assumeBasicStaples = widget.assumeBasicStaples;
     }
   }
 
@@ -182,6 +195,29 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 16),
+                        GlassPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          child: SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            value: _assumeBasicStaples,
+                            onChanged: _isSubmitting
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _assumeBasicStaples = value;
+                                    });
+                                  },
+                            title: Text(
+                              'Assume basic staples are available',
+                              style: textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 20),
                         Wrap(
                           spacing: 12,
@@ -400,6 +436,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     try {
       await widget.onProceed(
         List<ExtractedIngredient>.unmodifiable(_ingredients),
+        _assumeBasicStaples,
       );
     } finally {
       if (mounted) {

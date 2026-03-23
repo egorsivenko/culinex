@@ -10,7 +10,8 @@ import (
 )
 
 type generateRecipeRequest struct {
-	Ingredients []ai.RecipeIngredient `json:"ingredients"`
+	Ingredients        []ai.RecipeIngredient `json:"ingredients"`
+	AssumeBasicStaples bool                  `json:"assume_basic_staples"`
 }
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
@@ -26,14 +27,15 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	requestID := middleware.GetReqID(r.Context())
 	if b, err := json.Marshal(req.Ingredients); err == nil {
-		log.Printf("[%s] Generating recipe from %d ingredients: %s",
+		log.Printf("[%s] Generating recipe from %d ingredients (assume_basic_staples=%t): %s",
 			requestID,
 			len(req.Ingredients),
+			req.AssumeBasicStaples,
 			string(b),
 		)
 	}
 
-	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients)
+	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples)
 	if err != nil {
 		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
 		return

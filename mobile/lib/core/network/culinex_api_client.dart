@@ -59,7 +59,7 @@ class CulinexApiClient implements CulinexRepository {
 
   @override
   Future<GeneratedRecipe> generateRecipe(
-    List<RecipeIngredient> ingredients,
+    RecipeGenerationRequest request,
   ) async {
     final Uri uri = _apiBaseUri.resolve('generate-recipe');
     final http.Response response;
@@ -69,9 +69,7 @@ class CulinexApiClient implements CulinexRepository {
           .post(
             uri,
             headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'ingredients': ingredients.map((item) => item.toJson()).toList(),
-            }),
+            body: jsonEncode(request.toJson()),
           )
           .timeout(_requestTimeout);
     } on TimeoutException {

@@ -82,6 +82,7 @@ void main() {
     expect(controller.stage, SessionStage.recipe);
     expect(controller.recipe?.dishName, 'Soft Egg Scramble');
     expect(repository.lastRecipeIngredients, hasLength(2));
+    expect(repository.lastAssumeBasicStaples, isTrue);
 
     controller.dispose();
   });
@@ -117,11 +118,12 @@ void main() {
         ExtractedIngredient(name: 'Tomatoes', quantity: '150 g'),
         ExtractedIngredient(name: 'Bread', quantity: '2 slices'),
         ExtractedIngredient(name: 'Basil', quantity: '4 leaves'),
-      ]);
+      ], false);
 
       expect(controller.stage, SessionStage.recipe);
       expect(controller.ingredients, hasLength(3));
       expect(repository.lastRecipeIngredients, hasLength(3));
+      expect(repository.lastAssumeBasicStaples, isFalse);
       expect(repository.lastRecipeIngredients?.first.name, 'Tomatoes');
       expect(repository.lastRecipeIngredients?.last.quantity, '4 leaves');
 
@@ -138,7 +140,7 @@ void main() {
 
     await controller.generateRecipeFromIngredients(const [
       ExtractedIngredient(name: 'Eggs', quantity: '2 pieces'),
-    ]);
+    ], true);
 
     expect(controller.stage, SessionStage.error);
     expect(
@@ -276,6 +278,7 @@ class FakeRepository implements CulinexRepository {
 
   File? lastExtractedFile;
   List<RecipeIngredient>? lastRecipeIngredients;
+  bool? lastAssumeBasicStaples;
 
   @override
   Future<List<ExtractedIngredient>> extractIngredients(File imageFile) async {
@@ -285,9 +288,10 @@ class FakeRepository implements CulinexRepository {
 
   @override
   Future<GeneratedRecipe> generateRecipe(
-    List<RecipeIngredient> ingredients,
+    RecipeGenerationRequest request,
   ) async {
-    lastRecipeIngredients = ingredients;
+    lastRecipeIngredients = request.ingredients;
+    lastAssumeBasicStaples = request.assumeBasicStaples;
     return _generatedRecipe;
   }
 

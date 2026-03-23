@@ -42,7 +42,7 @@ class _NoopRepository implements CulinexRepository {
   }
 
   @override
-  Future<GeneratedRecipe> generateRecipe(List<RecipeIngredient> ingredients) {
+  Future<GeneratedRecipe> generateRecipe(RecipeGenerationRequest request) {
     throw UnimplementedError();
   }
 }
