@@ -54,9 +54,11 @@ void main() {
       await tester.tap(find.text('View original photo'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Close preview'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Proceed'), findsNothing);
 
       await tester.tap(find.byTooltip('Close preview'));
       await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Proceed'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
       await tester.pumpAndSettle();

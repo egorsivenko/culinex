@@ -87,32 +87,34 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PrimaryActionButton(
-                label: 'Proceed',
-                icon: Icons.auto_awesome_rounded,
-                onPressed: _canProceed ? _handleProceed : null,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _footerMessage,
-                style: textTheme.bodySmall?.copyWith(
-                  color: _canProceed
-                      ? CulinexColors.mutedInk
-                      : CulinexColors.confidenceLow,
+      bottomNavigationBar: _isPreviewVisible
+          ? null
+          : SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PrimaryActionButton(
+                      label: 'Proceed',
+                      icon: Icons.auto_awesome_rounded,
+                      onPressed: _canProceed ? _handleProceed : null,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _footerMessage,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: _canProceed
+                            ? CulinexColors.mutedInk
+                            : CulinexColors.confidenceLow,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
       body: Stack(
         children: [
           SafeArea(
