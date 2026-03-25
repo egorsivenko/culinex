@@ -14,8 +14,9 @@ void main() {
     await tester.pumpWidget(CulinexApp(controller: controller));
 
     expect(find.text('Culinex'), findsOneWidget);
-    expect(find.text('Take one photo'), findsOneWidget);
+    expect(find.text('Take a photo or type ingredients'), findsOneWidget);
     expect(find.text('Take a photo of ingredients'), findsOneWidget);
+    expect(find.text('Enter ingredients manually'), findsOneWidget);
     expect(find.text('Scan ingredients'), findsNothing);
     expect(find.text('Understand what you have'), findsNothing);
     expect(find.text('Create one smart recipe'), findsNothing);
@@ -27,6 +28,27 @@ void main() {
       ),
       isTrue,
     );
+
+    controller.dispose();
+  });
+
+  testWidgets('manual entry button opens the ingredient screen', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+
+    await tester.pumpWidget(CulinexApp(controller: controller));
+    await tester.ensureVisible(find.text('Enter ingredients manually'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Enter ingredients manually'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Manual entry'), findsOneWidget);
+    expect(find.text('Add your ingredients'), findsOneWidget);
+    expect(find.text('No ingredients added yet'), findsOneWidget);
+    expect(find.text('View original photo'), findsNothing);
 
     controller.dispose();
   });

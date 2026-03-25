@@ -14,6 +14,27 @@ const int ingredientQuantityMaxLength = 30;
 const String basicStaplesTooltipMessage =
     'Water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.';
 
+enum IngredientReviewEntryMode { scanned, manual }
+
+extension IngredientReviewEntryModeCopy on IngredientReviewEntryMode {
+  String get statusLabel => switch (this) {
+    IngredientReviewEntryMode.scanned => 'Scan complete',
+    IngredientReviewEntryMode.manual => 'Manual entry',
+  };
+
+  String get title => switch (this) {
+    IngredientReviewEntryMode.scanned => 'Review and adjust the list',
+    IngredientReviewEntryMode.manual => 'Add your ingredients',
+  };
+
+  String get description => switch (this) {
+    IngredientReviewEntryMode.scanned =>
+      'Add missing ingredients, edit names or quantities, or swipe left to remove anything irrelevant before recipe generation.',
+    IngredientReviewEntryMode.manual =>
+      'Start from scratch, add clear ingredient names and practical quantities, then generate a recipe when the list looks right.',
+  };
+}
+
 class IngredientReviewScreen extends StatefulWidget {
   const IngredientReviewScreen({
     required this.imagePath,
@@ -22,12 +43,14 @@ class IngredientReviewScreen extends StatefulWidget {
     required this.onBack,
     required this.onProceed,
     this.onOpenRecipe,
+    this.entryMode = IngredientReviewEntryMode.scanned,
     super.key,
   });
 
   final String? imagePath;
   final List<ExtractedIngredient> ingredients;
   final bool assumeBasicStaples;
+  final IngredientReviewEntryMode entryMode;
   final VoidCallback onBack;
   final Future<void> Function(
     List<ExtractedIngredient> ingredients,
@@ -154,24 +177,24 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(color: CulinexColors.border),
                               ),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 8,
                                 ),
-                                child: Text('Scan complete'),
+                                child: Text(widget.entryMode.statusLabel),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Review and adjust the list',
+                          widget.entryMode.title,
                           style: textTheme.headlineLarge,
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Add missing ingredients, edit names or quantities, or swipe left to remove anything irrelevant before recipe generation.',
+                          widget.entryMode.description,
                           style: textTheme.bodyLarge?.copyWith(
                             color: CulinexColors.mutedInk,
                           ),
@@ -314,127 +337,140 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                       ],
                     ),
                   ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final ExtractedIngredient ingredient =
-                            _ingredients[index];
-                        final String ingredientId = _ingredientIds[index];
-                        final bool isRemoving = _removingIngredientIds.contains(
-                          ingredientId,
-                        );
+                  if (_ingredients.isEmpty &&
+                      widget.entryMode == IngredientReviewEntryMode.manual)
+                    SliverToBoxAdapter(
+                      child: const _ManualIngredientEmptyState(),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final ExtractedIngredient ingredient =
+                              _ingredients[index];
+                          final String ingredientId = _ingredientIds[index];
+                          final bool isRemoving = _removingIngredientIds
+                              .contains(ingredientId);
 
-                        return KeyedSubtree(
-                          key: ValueKey<String>(ingredientId),
-                          child: AnimatedSize(
-                            duration: _deleteAnimationDuration,
-                            curve: Curves.easeInOutCubic,
-                            child: ClipRect(
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                heightFactor: isRemoving ? 0 : 1,
-                                child: AnimatedOpacity(
-                                  duration: _deleteAnimationDuration,
-                                  curve: Curves.easeOutCubic,
-                                  opacity: isRemoving ? 0 : 1,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: index == _ingredients.length - 1
-                                          ? 0
-                                          : 12,
-                                    ),
-                                    child: _SwipeRevealDeleteAction(
-                                      deleteTooltip:
-                                          'Delete ${_formatIngredientName(ingredient.name)}',
-                                      enabled: !_isSubmitting && !isRemoving,
-                                      onDeletePressed: () async =>
-                                          _handleDeletePressed(ingredientId),
-                                      child: GlassPanel(
-                                        padding: const EdgeInsets.all(18),
-                                        borderRadius: BorderRadius.circular(26),
-                                        borderColor: _cardBorderColor(
-                                          ingredient.confidence,
-                                        ),
-                                        borderWidth: _cardBorderWidth(
-                                          ingredient.confidence,
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    _formatIngredientName(
-                                                      ingredient.name,
+                          return KeyedSubtree(
+                            key: ValueKey<String>(ingredientId),
+                            child: AnimatedSize(
+                              duration: _deleteAnimationDuration,
+                              curve: Curves.easeInOutCubic,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  heightFactor: isRemoving ? 0 : 1,
+                                  child: AnimatedOpacity(
+                                    duration: _deleteAnimationDuration,
+                                    curve: Curves.easeOutCubic,
+                                    opacity: isRemoving ? 0 : 1,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: index == _ingredients.length - 1
+                                            ? 0
+                                            : 12,
+                                      ),
+                                      child: _SwipeRevealDeleteAction(
+                                        deleteTooltip:
+                                            'Delete ${_formatIngredientName(ingredient.name)}',
+                                        enabled: !_isSubmitting && !isRemoving,
+                                        onDeletePressed: () async =>
+                                            _handleDeletePressed(ingredientId),
+                                        child: GlassPanel(
+                                          padding: const EdgeInsets.all(18),
+                                          borderRadius: BorderRadius.circular(
+                                            26,
+                                          ),
+                                          borderColor: _cardBorderColor(
+                                            ingredient.confidence,
+                                          ),
+                                          borderWidth: _cardBorderWidth(
+                                            ingredient.confidence,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      _formatIngredientName(
+                                                        ingredient.name,
+                                                      ),
+                                                      style:
+                                                          textTheme.titleLarge,
                                                     ),
-                                                    style: textTheme.titleLarge,
                                                   ),
-                                                ),
-                                                IconButton(
-                                                  tooltip:
-                                                      'Edit ${_formatIngredientName(ingredient.name)}',
-                                                  onPressed:
-                                                      _isSubmitting ||
-                                                          isRemoving
-                                                      ? null
-                                                      : () =>
-                                                            _handleEditIngredient(
-                                                              index,
-                                                            ),
-                                                  icon: const Icon(
-                                                    Icons.edit_outlined,
+                                                  IconButton(
+                                                    tooltip:
+                                                        'Edit ${_formatIngredientName(ingredient.name)}',
+                                                    onPressed:
+                                                        _isSubmitting ||
+                                                            isRemoving
+                                                        ? null
+                                                        : () =>
+                                                              _handleEditIngredient(
+                                                                index,
+                                                              ),
+                                                    icon: const Icon(
+                                                      Icons.edit_outlined,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: [
-                                                _DetailChip(
-                                                  icon: Icons
-                                                      .inventory_2_outlined,
-                                                  label: ingredient.quantity,
-                                                  foregroundColor: CulinexColors
-                                                      .quantityBlue,
-                                                  backgroundColor: CulinexColors
-                                                      .quantityBlue
-                                                      .withValues(alpha: 0.10),
-                                                ),
-                                                if (ingredient.confidence !=
-                                                    null)
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
                                                   _DetailChip(
                                                     icon: Icons
-                                                        .auto_awesome_rounded,
-                                                    label: ingredient
-                                                        .confidence!
-                                                        .label,
+                                                        .inventory_2_outlined,
+                                                    label: ingredient.quantity,
                                                     foregroundColor:
-                                                        _confidenceColor(
-                                                          ingredient
-                                                              .confidence!,
-                                                        ),
+                                                        CulinexColors
+                                                            .quantityBlue,
                                                     backgroundColor:
-                                                        _confidenceColor(
-                                                          ingredient
-                                                              .confidence!,
-                                                        ).withValues(
-                                                          alpha: 0.10,
-                                                        ),
+                                                        CulinexColors
+                                                            .quantityBlue
+                                                            .withValues(
+                                                              alpha: 0.10,
+                                                            ),
                                                   ),
-                                                if (ingredient.isEdited)
-                                                  const _DetailChip(
-                                                    icon: Icons.edit_rounded,
-                                                    label: 'Edited',
-                                                  ),
-                                              ],
-                                            ),
-                                          ],
+                                                  if (ingredient.confidence !=
+                                                      null)
+                                                    _DetailChip(
+                                                      icon: Icons
+                                                          .auto_awesome_rounded,
+                                                      label: ingredient
+                                                          .confidence!
+                                                          .label,
+                                                      foregroundColor:
+                                                          _confidenceColor(
+                                                            ingredient
+                                                                .confidence!,
+                                                          ),
+                                                      backgroundColor:
+                                                          _confidenceColor(
+                                                            ingredient
+                                                                .confidence!,
+                                                          ).withValues(
+                                                            alpha: 0.10,
+                                                          ),
+                                                    ),
+                                                  if (ingredient.isEdited)
+                                                    const _DetailChip(
+                                                      icon: Icons.edit_rounded,
+                                                      label: 'Edited',
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -442,13 +478,12 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                      childCount: _ingredients.length,
-                      findChildIndexCallback: _findIngredientIndexByKey,
+                          );
+                        },
+                        childCount: _ingredients.length,
+                        findChildIndexCallback: _findIngredientIndexByKey,
+                      ),
                     ),
-                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 140)),
                 ],
               ),
@@ -489,6 +524,11 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   String? get _footerMessage {
+    if (_ingredients.isEmpty &&
+        widget.entryMode == IngredientReviewEntryMode.manual) {
+      return null;
+    }
+
     if (_ingredients.length < minRecipeIngredientCount) {
       return 'Add at least $minRecipeIngredientCount ingredients to continue.';
     }
@@ -829,6 +869,33 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       (_) => _newIngredientId(),
     );
     _removingIngredientIds.clear();
+  }
+}
+
+class _ManualIngredientEmptyState extends StatelessWidget {
+  const _ManualIngredientEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(22),
+      borderRadius: BorderRadius.circular(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('No ingredients added yet', style: textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            'Add at least $minRecipeIngredientCount ingredients to continue.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: CulinexColors.mutedInk,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

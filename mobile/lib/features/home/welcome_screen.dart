@@ -23,9 +23,14 @@ const List<String> culinexWelcomePhrases = <String>[
 ];
 
 class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({required this.onStart, super.key});
+  const WelcomeScreen({
+    required this.onStart,
+    required this.onStartManualEntry,
+    super.key,
+  });
 
   final VoidCallback onStart;
+  final VoidCallback onStartManualEntry;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -54,7 +59,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Show what is in front of you and let Culinex turn it into one clear recipe you can cook right now.',
+                'Show what is in front of you or type what you have, and let Culinex turn it into one clear recipe you can cook right now.',
                 style: textTheme.bodyLarge?.copyWith(
                   color: CulinexColors.mutedInk,
                 ),
@@ -69,18 +74,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   children: [
                     const _HowItWorksStep(
                       number: '1',
-                      title: 'Take one photo',
+                      title: 'Take a photo or type ingredients',
                       description:
-                          'Capture the ingredients you already have in a single frame.',
+                          'Capture the ingredients you already have in a single frame, or skip the camera and enter them yourself.',
                     ),
                     const SizedBox(height: 14),
                     const Divider(height: 1),
                     const SizedBox(height: 14),
                     const _HowItWorksStep(
                       number: '2',
-                      title: 'Review the scan',
+                      title: 'Review the ingredient list',
                       description:
-                          'Culinex detects the products and shows you the ingredient list.',
+                          'Culinex detects the products from your photo or lets you build the list from scratch.',
                     ),
                     const SizedBox(height: 14),
                     const Divider(height: 1),
@@ -101,8 +106,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 onPressed: widget.onStart,
               ),
               const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onStartManualEntry,
+                  icon: const Icon(Icons.edit_note_rounded),
+                  label: const Text('Enter ingredients manually'),
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
-                'Best results: use good light and keep every ingredient visible in the frame.',
+                'Best results: use good light and keep every ingredient visible in the frame, or skip the photo and type the ingredients yourself.',
                 style: textTheme.bodySmall?.copyWith(
                   color: CulinexColors.mutedInk,
                 ),

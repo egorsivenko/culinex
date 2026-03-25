@@ -18,6 +18,8 @@ enum SessionStage {
 
 enum SessionOperation { none, extractIngredients, generateRecipe }
 
+enum IngredientEntryMethod { photo, manual }
+
 class CookSessionController extends ChangeNotifier {
   CookSessionController({required CulinexRepository repository})
     : _repository = repository;
@@ -26,6 +28,7 @@ class CookSessionController extends ChangeNotifier {
 
   SessionStage _stage = SessionStage.welcome;
   SessionOperation _lastOperation = SessionOperation.none;
+  IngredientEntryMethod _ingredientEntryMethod = IngredientEntryMethod.photo;
   String? _capturedImagePath;
   List<ExtractedIngredient> _ingredients = const [];
   bool _assumeBasicStaples = true;
@@ -37,6 +40,8 @@ class CookSessionController extends ChangeNotifier {
   String? get capturedImagePath => _capturedImagePath;
   List<ExtractedIngredient> get ingredients => _ingredients;
   bool get assumeBasicStaples => _assumeBasicStaples;
+  bool get isManualIngredientEntry =>
+      _ingredientEntryMethod == IngredientEntryMethod.manual;
   GeneratedRecipe? get recipe => _recipe;
   String get errorMessage =>
       _errorMessage ?? 'Something went wrong. Please try again.';
@@ -66,13 +71,26 @@ class CookSessionController extends ChangeNotifier {
   }
 
   void openCamera() {
+    _ingredientEntryMethod = IngredientEntryMethod.photo;
     _stage = SessionStage.camera;
     _errorMessage = null;
     _notifySafely();
   }
 
+  void startManualIngredientEntry() {
+    _ingredientEntryMethod = IngredientEntryMethod.manual;
+    _capturedImagePath = null;
+    _ingredients = const [];
+    _assumeBasicStaples = true;
+    _recipe = null;
+    _errorMessage = null;
+    _lastOperation = SessionOperation.none;
+    _stage = SessionStage.ingredients;
+    _notifySafely();
+  }
+
   void showIngredients() {
-    if (_ingredients.isEmpty) {
+    if (_ingredients.isEmpty && !isManualIngredientEntry) {
       openCamera();
       return;
     }
@@ -94,6 +112,7 @@ class CookSessionController extends ChangeNotifier {
   }
 
   void resetSession() {
+    _ingredientEntryMethod = IngredientEntryMethod.photo;
     _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
@@ -105,12 +124,23 @@ class CookSessionController extends ChangeNotifier {
   }
 
   void retakePhoto() {
+    _ingredientEntryMethod = IngredientEntryMethod.photo;
+    _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
     _errorMessage = null;
     _stage = SessionStage.camera;
     _notifySafely();
+  }
+
+  void leaveIngredientEntry() {
+    if (isManualIngredientEntry) {
+      resetSession();
+      return;
+    }
+
+    retakePhoto();
   }
 
   void performErrorSecondaryAction() {
@@ -142,6 +172,7 @@ class CookSessionController extends ChangeNotifier {
   }
 
   Future<void> extractIngredientsFromPhoto(String imagePath) async {
+    _ingredientEntryMethod = IngredientEntryMethod.photo;
     _capturedImagePath = imagePath;
     _ingredients = const [];
     _assumeBasicStaples = true;
@@ -244,6 +275,8 @@ class CookSessionController extends ChangeNotifier {
     List<ExtractedIngredient> ingredients,
     bool assumeBasicStaples,
   ) async {
+    _lastOperation = SessionOperation.generateRecipe;
+
     try {
       _ingredients = _prepareIngredients(ingredients);
       _assumeBasicStaples = assumeBasicStaples;

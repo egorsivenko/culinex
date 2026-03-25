@@ -148,6 +148,95 @@ void main() {
     },
   );
 
+  testWidgets(
+    'manual ingredient review mode starts empty and submits through the same form',
+    (tester) async {
+      _setTallSurface(tester);
+      List<ExtractedIngredient>? submittedIngredients;
+      bool? submittedAssumeBasicStaples;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: null,
+            ingredients: const [],
+            assumeBasicStaples: true,
+            entryMode: IngredientReviewEntryMode.manual,
+            onBack: () {},
+            onProceed: (ingredients, assumeBasicStaples) async {
+              submittedIngredients = ingredients;
+              submittedAssumeBasicStaples = assumeBasicStaples;
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Manual entry'), findsOneWidget);
+      expect(find.text('Add your ingredients'), findsOneWidget);
+      expect(find.text('No ingredients added yet'), findsOneWidget);
+      expect(
+        find.text('Add at least 2 ingredients to continue.'),
+        findsOneWidget,
+      );
+      expect(find.text('View original photo'), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Proceed'))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ingredient name'),
+        'eggs',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '2 pieces',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Eggs'), findsOneWidget);
+      expect(find.text('No ingredients added yet'), findsNothing);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ingredient name'),
+        'milk',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '100 ml',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Proceed'))
+            .onPressed,
+        isNotNull,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Proceed'));
+      await tester.pumpAndSettle();
+
+      expect(submittedIngredients, isNotNull);
+      expect(submittedIngredients, hasLength(2));
+      expect(submittedIngredients!.first.name, 'Eggs');
+      expect(submittedIngredients!.last.name, 'Milk');
+      expect(submittedAssumeBasicStaples, isTrue);
+    },
+  );
+
   testWidgets('ingredient review screen shows the basic staples tooltip', (
     tester,
   ) async {

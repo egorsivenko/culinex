@@ -6,6 +6,22 @@ import 'package:culinex/features/session/cook_session_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('startManualIngredientEntry opens an empty manual ingredient list', () {
+    final FakeRepository repository = FakeRepository();
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    controller.startManualIngredientEntry();
+
+    expect(controller.stage, SessionStage.ingredients);
+    expect(controller.isManualIngredientEntry, isTrue);
+    expect(controller.capturedImagePath, isNull);
+    expect(controller.ingredients, isEmpty);
+
+    controller.dispose();
+  });
+
   test('extractIngredientsFromPhoto stores extracted ingredients', () async {
     final FakeRepository repository = FakeRepository(
       extractedIngredients: const [
@@ -182,6 +198,31 @@ void main() {
 
     controller.dispose();
   });
+
+  test(
+    'manual ingredient entry returns home instead of opening the camera',
+    () {
+      final FakeRepository repository = FakeRepository();
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      controller.startManualIngredientEntry();
+      controller.showWelcome();
+      controller.showIngredients();
+
+      expect(controller.stage, SessionStage.ingredients);
+      expect(controller.isManualIngredientEntry, isTrue);
+
+      controller.leaveIngredientEntry();
+
+      expect(controller.stage, SessionStage.welcome);
+      expect(controller.isManualIngredientEntry, isFalse);
+      expect(controller.ingredients, isEmpty);
+
+      controller.dispose();
+    },
+  );
 
   test(
     'showIngredients returns from recipe to the ingredient review',

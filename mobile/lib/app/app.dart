@@ -75,6 +75,7 @@ class CulinexFlowShell extends StatelessWidget {
             child: switch (controller.stage) {
               SessionStage.welcome => WelcomeScreen(
                 onStart: controller.openCamera,
+                onStartManualEntry: controller.startManualIngredientEntry,
               ),
               SessionStage.camera => CameraCaptureScreen(
                 onBack: controller.showWelcome,
@@ -87,7 +88,10 @@ class CulinexFlowShell extends StatelessWidget {
                 imagePath: controller.capturedImagePath,
                 ingredients: controller.ingredients,
                 assumeBasicStaples: controller.assumeBasicStaples,
-                onBack: controller.retakePhoto,
+                entryMode: controller.isManualIngredientEntry
+                    ? IngredientReviewEntryMode.manual
+                    : IngredientReviewEntryMode.scanned,
+                onBack: controller.leaveIngredientEntry,
                 onProceed: controller.generateRecipeFromIngredients,
                 onOpenRecipe: controller.recipe != null
                     ? controller.showRecipe
