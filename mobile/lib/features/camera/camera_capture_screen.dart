@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,14 +22,21 @@ class CameraCaptureScreen extends StatefulWidget {
 
 class _CameraCaptureScreenState extends State<CameraCaptureScreen>
     with WidgetsBindingObserver {
+  static const Duration _infoPopupVisibilityDuration = Duration(seconds: 3);
+  static const Duration _infoPopupFadeDuration = Duration(milliseconds: 300);
+
   CameraController? _cameraController;
   CameraDescription? _selectedCamera;
   List<CameraDescription> _availableCameras = const [];
   FlashMode _flashMode = FlashMode.off;
   final ImagePicker _imagePicker = ImagePicker();
+  Timer? _infoPopupFadeTimer;
+  Timer? _infoPopupHideTimer;
   bool _isInitializing = true;
   bool _isCapturing = false;
   bool _isPickingImage = false;
+  bool _isInfoPopupMounted = false;
+  bool _isInfoPopupVisible = false;
   String? _errorMessage;
 
   @override
@@ -35,11 +44,20 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showInfoPopup();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _infoPopupFadeTimer?.cancel();
+    _infoPopupHideTimer?.cancel();
     _disposeController();
     super.dispose();
   }
@@ -243,6 +261,38 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
     };
   }
 
+  void _showInfoPopup() {
+    _infoPopupFadeTimer?.cancel();
+    _infoPopupHideTimer?.cancel();
+
+    if (!_isInfoPopupMounted || !_isInfoPopupVisible) {
+      setState(() {
+        _isInfoPopupMounted = true;
+        _isInfoPopupVisible = true;
+      });
+    }
+
+    _infoPopupFadeTimer = Timer(_infoPopupVisibilityDuration, () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isInfoPopupVisible = false;
+      });
+
+      _infoPopupHideTimer = Timer(_infoPopupFadeDuration, () {
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _isInfoPopupMounted = false;
+        });
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -260,95 +310,51 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
               child: Column(
                 children: [
-                  Row(
+                  Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      _OverlayIconButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onPressed: widget.onBack,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.48),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 16,
-                      ),
-                      child: Column(
+                      Row(
                         children: [
-                          Text(
-                            'Place the ingredients in the frame',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(color: Colors.white),
+                          _OverlayIconButton(
+                            icon: Icons.arrow_back_ios_new_rounded,
+                            onPressed: widget.onBack,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Keep the products separated and well lit for the cleanest scan.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.78),
-                                ),
+                          const Spacer(),
+                          _OverlayIconButton(
+                            icon: Icons.info_outline_rounded,
+                            tooltip: 'Show frame hint',
+                            onPressed: _showInfoPopup,
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const Spacer(),
-                  IgnorePointer(
-                    child: Container(
-                      height: 280,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(36),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.28),
-                        ),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          width: 120,
-                          height: 6,
-                          margin: const EdgeInsets.only(top: 18),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.36),
-                            borderRadius: BorderRadius.circular(999),
+                      if (_isInfoPopupMounted)
+                        Positioned(
+                          top: 0,
+                          left: 64,
+                          right: 64,
+                          child: IgnorePointer(
+                            child: AnimatedOpacity(
+                              opacity: _isInfoPopupVisible ? 1 : 0,
+                              duration: _infoPopupFadeDuration,
+                              curve: Curves.easeOutCubic,
+                              child: const _CameraInfoPopup(),
+                            ),
                           ),
                         ),
+                    ],
+                  ),
+                  Expanded(
+                    child: IgnorePointer(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: const _ViewportCornerGuides(),
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.42),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: _buildStatusLine(context),
-                      ),
-                    ),
+                  _CameraControlStatusSlot(
+                    isInitializing: _isInitializing,
+                    errorMessage: _errorMessage,
                   ),
-                  const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -377,32 +383,6 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       ),
     );
   }
-
-  Widget _buildStatusLine(BuildContext context) {
-    if (_errorMessage != null) {
-      return Text(
-        _errorMessage!,
-        key: const ValueKey('camera-error'),
-        textAlign: TextAlign.center,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: Colors.white),
-      );
-    }
-
-    if (_isInitializing) {
-      return const PulseDotsIndicator(key: ValueKey('camera-loading'));
-    }
-
-    return Text(
-      'Tap the shutter when the whole ingredient spread is visible.',
-      key: const ValueKey('camera-ready'),
-      textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Colors.white.withValues(alpha: 0.76),
-      ),
-    );
-  }
 }
 
 class _CameraPreviewSurface extends StatelessWidget {
@@ -425,11 +405,213 @@ class _CameraPreviewSurface extends StatelessWidget {
   }
 }
 
+class _ViewportCornerGuides extends StatelessWidget {
+  const _ViewportCornerGuides();
+
+  static const double _cornerLength = 62;
+  static const double _cornerRadius = 26;
+  static const double _strokeWidth = 4;
+  static const double _guideInset = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(_guideInset),
+      child: CustomPaint(
+        painter: _CornerGuidePainter(),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+}
+
+class _CornerGuidePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint glowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _ViewportCornerGuides._strokeWidth + 3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Paint strokePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.84)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _ViewportCornerGuides._strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final List<Path> cornerPaths = <Path>[
+      _topLeftPath(size),
+      _topRightPath(size),
+      _bottomLeftPath(size),
+      _bottomRightPath(size),
+    ];
+
+    for (final Path path in cornerPaths) {
+      canvas.drawPath(path, glowPaint);
+      canvas.drawPath(path, strokePaint);
+    }
+  }
+
+  Path _topLeftPath(Size size) {
+    return Path()
+      ..moveTo(0, _ViewportCornerGuides._cornerLength)
+      ..lineTo(0, _ViewportCornerGuides._cornerRadius)
+      ..quadraticBezierTo(0, 0, _ViewportCornerGuides._cornerRadius, 0)
+      ..lineTo(_ViewportCornerGuides._cornerLength, 0);
+  }
+
+  Path _topRightPath(Size size) {
+    return Path()
+      ..moveTo(size.width - _ViewportCornerGuides._cornerLength, 0)
+      ..lineTo(size.width - _ViewportCornerGuides._cornerRadius, 0)
+      ..quadraticBezierTo(
+        size.width,
+        0,
+        size.width,
+        _ViewportCornerGuides._cornerRadius,
+      )
+      ..lineTo(size.width, _ViewportCornerGuides._cornerLength);
+  }
+
+  Path _bottomLeftPath(Size size) {
+    return Path()
+      ..moveTo(0, size.height - _ViewportCornerGuides._cornerLength)
+      ..lineTo(0, size.height - _ViewportCornerGuides._cornerRadius)
+      ..quadraticBezierTo(
+        0,
+        size.height,
+        _ViewportCornerGuides._cornerRadius,
+        size.height,
+      )
+      ..lineTo(_ViewportCornerGuides._cornerLength, size.height);
+  }
+
+  Path _bottomRightPath(Size size) {
+    return Path()
+      ..moveTo(size.width - _ViewportCornerGuides._cornerLength, size.height)
+      ..lineTo(size.width - _ViewportCornerGuides._cornerRadius, size.height)
+      ..quadraticBezierTo(
+        size.width,
+        size.height,
+        size.width,
+        size.height - _ViewportCornerGuides._cornerRadius,
+      )
+      ..lineTo(size.width, size.height - _ViewportCornerGuides._cornerLength);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CornerGuidePainter oldDelegate) {
+    return false;
+  }
+}
+
+class _CameraLoadingIndicator extends StatelessWidget {
+  const _CameraLoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const PulseDotsIndicator(key: ValueKey('camera-loading'));
+  }
+}
+
+class _CameraControlStatus extends StatelessWidget {
+  const _CameraControlStatus({
+    required this.isInitializing,
+    required this.errorMessage,
+  });
+
+  final bool isInitializing;
+  final String? errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (errorMessage != null) {
+      return Text(
+        errorMessage!,
+        key: const ValueKey('camera-error'),
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: Colors.white),
+      );
+    }
+
+    if (!isInitializing) {
+      return const SizedBox.shrink();
+    }
+
+    return const _CameraLoadingIndicator();
+  }
+}
+
+class _CameraControlStatusSlot extends StatelessWidget {
+  const _CameraControlStatusSlot({
+    required this.isInitializing,
+    required this.errorMessage,
+  });
+
+  final bool isInitializing;
+  final String? errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isInitializing && errorMessage == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Center(
+        child: _CameraControlStatus(
+          isInitializing: isInitializing,
+          errorMessage: errorMessage,
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraInfoPopup extends StatelessWidget {
+  const _CameraInfoPopup();
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 240),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.62),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(
+            'Place the ingredients in the frame',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.92),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _OverlayIconButton extends StatelessWidget {
-  const _OverlayIconButton({required this.icon, required this.onPressed});
+  const _OverlayIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
 
   final IconData icon;
   final VoidCallback onPressed;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -442,6 +624,7 @@ class _OverlayIconButton extends StatelessWidget {
       child: IconButton(
         onPressed: onPressed,
         color: Colors.white,
+        tooltip: tooltip,
         icon: Icon(icon),
       ),
     );
