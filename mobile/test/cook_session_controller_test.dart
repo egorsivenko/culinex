@@ -88,6 +88,37 @@ void main() {
   });
 
   test(
+    'ingredient scan errors offer retake photo and home actions without reusing the same image',
+    () async {
+      final FakeRepository repository = FakeRepository();
+
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.extractIngredientsFromPhoto('/tmp/test-photo.jpg');
+
+      expect(controller.stage, SessionStage.error);
+      expect(controller.errorTitle, 'Ingredient scan failed');
+      expect(controller.primaryErrorActionLabel, 'Retake photo');
+      expect(controller.secondaryErrorActionLabel, 'Return home');
+      expect(repository.extractCallCount, 1);
+
+      await controller.performErrorPrimaryAction();
+
+      expect(controller.stage, SessionStage.camera);
+      expect(repository.extractCallCount, 1);
+
+      controller.performErrorSecondaryAction();
+
+      expect(controller.stage, SessionStage.welcome);
+      expect(controller.capturedImagePath, isNull);
+
+      controller.dispose();
+    },
+  );
+
+  test(
     'generateRecipeFromIngredients uses the edited ingredient list',
     () async {
       final FakeRepository repository = FakeRepository(
@@ -276,12 +307,14 @@ class FakeRepository implements CulinexRepository {
   final List<ExtractedIngredient> extractedIngredients;
   final GeneratedRecipe _generatedRecipe;
 
+  int extractCallCount = 0;
   File? lastExtractedFile;
   List<RecipeIngredient>? lastRecipeIngredients;
   bool? lastAssumeBasicStaples;
 
   @override
   Future<List<ExtractedIngredient>> extractIngredients(File imageFile) async {
+    extractCallCount += 1;
     lastExtractedFile = imageFile;
     return extractedIngredients;
   }

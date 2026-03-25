@@ -49,12 +49,12 @@ class CookSessionController extends ChangeNotifier {
 
   String get primaryErrorActionLabel => switch (_lastOperation) {
     SessionOperation.none => 'Start over',
-    SessionOperation.extractIngredients => 'Try scan again',
+    SessionOperation.extractIngredients => 'Retake photo',
     SessionOperation.generateRecipe => 'Try generating again',
   };
 
   String get secondaryErrorActionLabel => switch (_lastOperation) {
-    SessionOperation.extractIngredients => 'Retake photo',
+    SessionOperation.extractIngredients => 'Return home',
     SessionOperation.generateRecipe => 'Back to ingredients',
     SessionOperation.none => 'Home',
   };
@@ -116,7 +116,7 @@ class CookSessionController extends ChangeNotifier {
   void performErrorSecondaryAction() {
     switch (_lastOperation) {
       case SessionOperation.extractIngredients:
-        retakePhoto();
+        resetSession();
         return;
       case SessionOperation.generateRecipe:
         showIngredients();
@@ -127,13 +127,10 @@ class CookSessionController extends ChangeNotifier {
     }
   }
 
-  Future<void> retryLastAction() async {
+  Future<void> performErrorPrimaryAction() async {
     switch (_lastOperation) {
       case SessionOperation.extractIngredients:
-        final String? imagePath = _capturedImagePath;
-        if (imagePath != null) {
-          await extractIngredientsFromPhoto(imagePath);
-        }
+        retakePhoto();
         return;
       case SessionOperation.generateRecipe:
         await generateRecipe();

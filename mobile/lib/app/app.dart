@@ -106,7 +106,7 @@ class CulinexFlowShell extends StatelessWidget {
                 message: controller.errorMessage,
                 primaryActionLabel: controller.primaryErrorActionLabel,
                 secondaryActionLabel: controller.secondaryErrorActionLabel,
-                onPrimaryAction: controller.retryLastAction,
+                onPrimaryAction: controller.performErrorPrimaryAction,
                 onSecondaryAction: controller.performErrorSecondaryAction,
               ),
             },
