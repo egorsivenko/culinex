@@ -518,6 +518,55 @@ void main() {
   );
 
   testWidgets(
+    'ingredient review screen places recipe shortcut above original photo',
+    (tester) async {
+      _setTallSurface(tester);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: '/tmp/fake-image.jpg',
+            ingredients: const [
+              ExtractedIngredient(
+                name: 'eggs',
+                quantity: '2 pieces',
+                confidence: IngredientConfidence.high,
+              ),
+              ExtractedIngredient(
+                name: 'milk',
+                quantity: '100 ml',
+                confidence: IngredientConfidence.medium,
+              ),
+            ],
+            assumeBasicStaples: true,
+            onBack: () {},
+            onProceed: (_, _) async {},
+            onOpenRecipe: () {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final Finder recipeButton = find.widgetWithText(
+        OutlinedButton,
+        'Return to recipe',
+      );
+      final Finder photoButton = find.widgetWithText(
+        OutlinedButton,
+        'View original photo',
+      );
+
+      expect(recipeButton, findsOneWidget);
+      expect(photoButton, findsOneWidget);
+      expect(
+        tester.getTopLeft(recipeButton).dy,
+        lessThan(tester.getTopLeft(photoButton).dy),
+      );
+    },
+  );
+
+  testWidgets(
     'ingredient review screen hides stale recipe shortcut after edits',
     (tester) async {
       _setTallSurface(tester);

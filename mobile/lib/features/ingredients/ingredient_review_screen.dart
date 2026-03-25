@@ -93,6 +93,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   Widget build(BuildContext context) {
     _repairIngredientState();
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final String? footerMessage = _footerMessage;
     final RenderBox? basicStaplesSectionBox =
         _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
     final double? basicStaplesSectionWidth = basicStaplesSectionBox?.size.width;
@@ -113,15 +114,15 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                       icon: Icons.auto_awesome_rounded,
                       onPressed: _canProceed ? _handleProceed : null,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _footerMessage,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: _canProceed
-                            ? CulinexColors.mutedInk
-                            : CulinexColors.confidenceLow,
+                    if (footerMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        footerMessage,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: CulinexColors.confidenceLow,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -175,26 +176,38 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             color: CulinexColors.mutedInk,
                           ),
                         ),
-                        if (widget.imagePath != null) ...[
+                        if (widget.onOpenRecipe != null &&
+                            !_hasUnsavedChanges) ...[
                           const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: widget.onOpenRecipe,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: CulinexColors.quantityBlue,
+                                  width: 1.4,
+                                ),
+                              ),
+                              icon: const Icon(Icons.restaurant_menu_rounded),
+                              label: const Text('Return to recipe'),
+                            ),
+                          ),
+                        ],
+                        if (widget.imagePath != null) ...[
+                          SizedBox(
+                            height:
+                                widget.onOpenRecipe != null &&
+                                    !_hasUnsavedChanges
+                                ? 12
+                                : 20,
+                          ),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: _showPreview,
                               icon: const Icon(Icons.photo_outlined),
                               label: const Text('View original photo'),
-                            ),
-                          ),
-                        ],
-                        if (widget.onOpenRecipe != null &&
-                            !_hasUnsavedChanges) ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: widget.onOpenRecipe,
-                              icon: const Icon(Icons.restaurant_menu_rounded),
-                              label: const Text('Return to recipe'),
                             ),
                           ),
                         ],
@@ -291,14 +304,13 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Keep between $minRecipeIngredientCount and $maxRecipeIngredientCount ingredients. Swipe any card left to reveal the delete action.',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: CulinexColors.mutedInk,
-                          ),
+                        const SizedBox(height: 20),
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: CulinexColors.border.withValues(alpha: 0.7),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -476,7 +488,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     );
   }
 
-  String get _footerMessage {
+  String? get _footerMessage {
     if (_ingredients.length < minRecipeIngredientCount) {
       return 'Add at least $minRecipeIngredientCount ingredients to continue.';
     }
@@ -485,12 +497,15 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return 'Use no more than $maxRecipeIngredientCount ingredients.';
     }
 
-    return 'You can fine-tune the list now, and the recipe will use the edited version.';
+    return null;
   }
 
   Future<void> _handleProceed() async {
     if (!_canProceed) {
-      _showSnack(_footerMessage);
+      _showSnack(
+        _footerMessage ??
+            'Complete all ingredient names and quantities before continuing.',
+      );
       return;
     }
 
