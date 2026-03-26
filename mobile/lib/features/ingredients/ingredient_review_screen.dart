@@ -76,19 +76,22 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   BuildContext? _basicStaplesSectionContext;
   final LayerLink _basicStaplesSectionLink = LayerLink();
   final Object _basicStaplesTapRegionId = Object();
-  List<ExtractedIngredient> _ingredients = <ExtractedIngredient>[];
-  List<String> _ingredientIds = <String>[];
+  List<_IngredientRowState> _ingredientRows = <_IngredientRowState>[];
   final Set<String> _removingIngredientIds = <String>{};
 
   bool get _hasUnsavedChanges =>
-      !_ingredientsMatch(_ingredients, widget.ingredients) ||
+      !_ingredientsMatch(_currentIngredients, widget.ingredients) ||
       _assumeBasicStaples != widget.assumeBasicStaples;
 
   bool get _canProceed =>
       !_isSubmitting &&
-      _ingredients.length >= minRecipeIngredientCount &&
-      _ingredients.length <= maxRecipeIngredientCount &&
-      _ingredients.every(_isComplete);
+      _ingredientRows.length >= minRecipeIngredientCount &&
+      _ingredientRows.length <= maxRecipeIngredientCount &&
+      _ingredientRows.every((row) => _isComplete(row.ingredient));
+
+  bool get _shouldTrackEditedIngredients =>
+      widget.entryMode == IngredientReviewEntryMode.scanned ||
+      widget.onOpenRecipe != null;
 
   @override
   void initState() {
@@ -313,7 +316,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                   vertical: 8,
                                 ),
                                 child: Text(
-                                  '${_ingredients.length} / $maxRecipeIngredientCount ingredients',
+                                  '${_ingredientRows.length} / $maxRecipeIngredientCount ingredients',
                                   style: textTheme.labelMedium,
                                 ),
                               ),
@@ -337,7 +340,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                       ],
                     ),
                   ),
-                  if (_ingredients.isEmpty &&
+                  if (_ingredientRows.isEmpty &&
                       widget.entryMode == IngredientReviewEntryMode.manual)
                     SliverToBoxAdapter(
                       child: const _ManualIngredientEmptyState(),
@@ -346,9 +349,11 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
+                          final _IngredientRowState ingredientRow =
+                              _ingredientRows[index];
                           final ExtractedIngredient ingredient =
-                              _ingredients[index];
-                          final String ingredientId = _ingredientIds[index];
+                              ingredientRow.ingredient;
+                          final String ingredientId = ingredientRow.id;
                           final bool isRemoving = _removingIngredientIds
                               .contains(ingredientId);
 
@@ -367,7 +372,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                     opacity: isRemoving ? 0 : 1,
                                     child: Padding(
                                       padding: EdgeInsets.only(
-                                        bottom: index == _ingredients.length - 1
+                                        bottom:
+                                            index == _ingredientRows.length - 1
                                             ? 0
                                             : 12,
                                       ),
@@ -462,7 +468,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                                             alpha: 0.10,
                                                           ),
                                                     ),
-                                                  if (ingredient.isEdited)
+                                                  if (_shouldShowEditedBadge(
+                                                    ingredient,
+                                                  ))
                                                     const _DetailChip(
                                                       icon: Icons.edit_rounded,
                                                       label: 'Edited',
@@ -480,7 +488,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             ),
                           );
                         },
-                        childCount: _ingredients.length,
+                        childCount: _ingredientRows.length,
                         findChildIndexCallback: _findIngredientIndexByKey,
                       ),
                     ),
@@ -524,16 +532,16 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   String? get _footerMessage {
-    if (_ingredients.isEmpty &&
+    if (_ingredientRows.isEmpty &&
         widget.entryMode == IngredientReviewEntryMode.manual) {
       return null;
     }
 
-    if (_ingredients.length < minRecipeIngredientCount) {
+    if (_ingredientRows.length < minRecipeIngredientCount) {
       return 'Add at least $minRecipeIngredientCount ingredients to continue.';
     }
 
-    if (_ingredients.length > maxRecipeIngredientCount) {
+    if (_ingredientRows.length > maxRecipeIngredientCount) {
       return 'Use no more than $maxRecipeIngredientCount ingredients.';
     }
 
@@ -554,10 +562,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     });
 
     try {
-      await widget.onProceed(
-        List<ExtractedIngredient>.unmodifiable(_ingredients),
-        _assumeBasicStaples,
-      );
+      await widget.onProceed(_currentIngredients, _assumeBasicStaples);
     } finally {
       if (mounted) {
         setState(() {
@@ -568,7 +573,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Future<void> _handleAddIngredient() async {
-    if (_ingredients.length >= maxRecipeIngredientCount) {
+    if (_ingredientRows.length >= maxRecipeIngredientCount) {
       _showSnack('You can add up to $maxRecipeIngredientCount ingredients.');
       return;
     }
@@ -579,19 +584,20 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     }
 
     setState(() {
-      _ingredients = <ExtractedIngredient>[
-        ..._ingredients,
-        ExtractedIngredient(
-          name: _normalizeIngredientName(draft.name),
-          quantity: draft.quantity,
-        ),
+      final ExtractedIngredient ingredient = ExtractedIngredient(
+        name: _normalizeIngredientName(draft.name),
+        quantity: draft.quantity,
+      );
+      _ingredientRows = <_IngredientRowState>[
+        ..._ingredientRows,
+        _createIngredientRow(ingredient),
       ];
-      _ingredientIds = <String>[..._ingredientIds, _newIngredientId()];
     });
   }
 
   Future<void> _handleEditIngredient(int index) async {
-    final ExtractedIngredient current = _ingredients[index];
+    final _IngredientRowState ingredientRow = _ingredientRows[index];
+    final ExtractedIngredient current = ingredientRow.ingredient;
     final _IngredientDraft? draft = await _showIngredientEditor(
       initialIngredient: current,
     );
@@ -601,26 +607,33 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
 
     final String nextName = _normalizeIngredientName(draft.name);
     final String nextQuantity = draft.quantity.trim();
+    final String currentName = _normalizeIngredientName(current.name);
+    final String currentQuantity = current.quantity.trim();
+    final ExtractedIngredient updatedIngredient = ExtractedIngredient(
+      name: nextName,
+      quantity: nextQuantity,
+      confidence: current.confidence,
+    );
     final bool changed =
-        current.name.trim() != nextName ||
-        current.quantity.trim() != nextQuantity;
+        currentName != nextName || currentQuantity != nextQuantity;
 
     if (!changed) {
       return;
     }
 
     setState(() {
-      _ingredients[index] = ExtractedIngredient(
-        name: nextName,
-        quantity: nextQuantity,
-        confidence: current.confidence,
-        isEdited: true,
+      _ingredientRows[index] = ingredientRow.copyWith(
+        ingredient: updatedIngredient.copyWith(
+          isEdited:
+              _shouldTrackEditedIngredients &&
+              _differsFromBaseline(ingredientRow, updatedIngredient),
+        ),
       );
     });
   }
 
   Future<bool> _handleDeletePressed(String ingredientId) async {
-    if (_ingredients.length <= minRecipeIngredientCount) {
+    if (_ingredientRows.length <= minRecipeIngredientCount) {
       _showSnack(
         'Keep at least $minRecipeIngredientCount ingredients before generating a recipe.',
       );
@@ -636,7 +649,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return true;
     }
 
-    final int index = _ingredientIds.indexOf(ingredientId);
+    final int index = _findIngredientIndexById(ingredientId);
     if (index == -1) {
       if (mounted) {
         setState(() {
@@ -651,15 +664,16 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _deleteIngredient(int index, String ingredientId) {
-    if (index < 0 || index >= _ingredients.length) {
+    if (index < 0 || index >= _ingredientRows.length) {
       return;
     }
 
-    final String removedName = _formatIngredientName(_ingredients[index].name);
+    final String removedName = _formatIngredientName(
+      _ingredientRows[index].ingredient.name,
+    );
 
     setState(() {
-      _ingredients.removeAt(index);
-      _ingredientIds.removeAt(index);
+      _ingredientRows.removeAt(index);
       _removingIngredientIds.remove(ingredientId);
     });
 
@@ -732,6 +746,24 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   bool _isComplete(ExtractedIngredient ingredient) {
     return ingredient.name.trim().isNotEmpty &&
         ingredient.quantity.trim().isNotEmpty;
+  }
+
+  List<ExtractedIngredient> get _currentIngredients =>
+      List<ExtractedIngredient>.unmodifiable(
+        _ingredientRows.map((row) => row.ingredient),
+      );
+
+  bool _differsFromBaseline(
+    _IngredientRowState ingredientRow,
+    ExtractedIngredient ingredient,
+  ) {
+    return _normalizeIngredientName(ingredientRow.baseline.name) !=
+            _normalizeIngredientName(ingredient.name) ||
+        ingredientRow.baseline.quantity.trim() != ingredient.quantity.trim();
+  }
+
+  bool _shouldShowEditedBadge(ExtractedIngredient ingredient) {
+    return ingredient.isEdited && _shouldTrackEditedIngredients;
   }
 
   bool _ingredientsMatch(
@@ -834,12 +866,18 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _resetIngredients(List<ExtractedIngredient> ingredients) {
-    _ingredients = List<ExtractedIngredient>.of(ingredients);
-    _ingredientIds = List<String>.generate(
-      _ingredients.length,
-      (_) => _newIngredientId(),
-    );
+    _ingredientRows = ingredients
+        .map(_createIngredientRow)
+        .toList(growable: true);
     _removingIngredientIds.clear();
+  }
+
+  _IngredientRowState _createIngredientRow(ExtractedIngredient ingredient) {
+    return _IngredientRowState(
+      id: _newIngredientId(),
+      baseline: ingredient,
+      ingredient: ingredient,
+    );
   }
 
   String _newIngredientId() => 'ingredient-${_nextIngredientIdSeed++}';
@@ -851,24 +889,43 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return null;
     }
 
-    final int index = _ingredientIds.indexOf(key.value);
+    final int index = _findIngredientIndexById(key.value);
     return index == -1 ? null : index;
   }
 
+  int _findIngredientIndexById(String ingredientId) {
+    return _ingredientRows.indexWhere((row) => row.id == ingredientId);
+  }
+
   void _repairIngredientState() {
-    if (_ingredientIds.length == _ingredients.length) {
+    if (_ingredientRows.isNotEmpty || widget.ingredients.isEmpty) {
       return;
     }
 
-    if (_ingredients.isEmpty && widget.ingredients.isNotEmpty) {
-      _ingredients = List<ExtractedIngredient>.of(widget.ingredients);
-    }
+    _resetIngredients(widget.ingredients);
+  }
+}
 
-    _ingredientIds = List<String>.generate(
-      _ingredients.length,
-      (_) => _newIngredientId(),
+class _IngredientRowState {
+  const _IngredientRowState({
+    required this.id,
+    required this.baseline,
+    required this.ingredient,
+  });
+
+  final String id;
+  final ExtractedIngredient baseline;
+  final ExtractedIngredient ingredient;
+
+  _IngredientRowState copyWith({
+    ExtractedIngredient? baseline,
+    ExtractedIngredient? ingredient,
+  }) {
+    return _IngredientRowState(
+      id: id,
+      baseline: baseline ?? this.baseline,
+      ingredient: ingredient ?? this.ingredient,
     );
-    _removingIngredientIds.clear();
   }
 }
 

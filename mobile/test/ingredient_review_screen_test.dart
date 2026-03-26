@@ -97,6 +97,15 @@ void main() {
       await tester.tap(find.byTooltip('Edit Tomatoes'));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edited'), findsNothing);
+
+      await tester.ensureVisible(find.byTooltip('Edit Tomatoes'));
+      await tester.tap(find.byTooltip('Edit Tomatoes'));
+      await tester.pumpAndSettle();
+
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Ingredient name'),
         'cherry tomatoes',
@@ -204,6 +213,20 @@ void main() {
 
       expect(find.text('Eggs'), findsOneWidget);
       expect(find.text('No ingredients added yet'), findsNothing);
+      expect(find.text('Edited'), findsNothing);
+
+      await tester.ensureVisible(find.byTooltip('Edit Eggs'));
+      await tester.tap(find.byTooltip('Edit Eggs'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '3 pieces',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 pieces'), findsOneWidget);
+      expect(find.text('Edited'), findsNothing);
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
       await tester.pumpAndSettle();
@@ -232,8 +255,125 @@ void main() {
       expect(submittedIngredients, isNotNull);
       expect(submittedIngredients, hasLength(2));
       expect(submittedIngredients!.first.name, 'Eggs');
+      expect(submittedIngredients!.first.quantity, '3 pieces');
+      expect(submittedIngredients!.first.isEdited, isFalse);
       expect(submittedIngredients!.last.name, 'Milk');
       expect(submittedAssumeBasicStaples, isTrue);
+    },
+  );
+
+  testWidgets(
+    'edited badge disappears when a scanned ingredient is restored to its original value',
+    (tester) async {
+      _setTallSurface(tester);
+      List<ExtractedIngredient>? submittedIngredients;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: null,
+            ingredients: const [
+              ExtractedIngredient(
+                name: 'eggs',
+                quantity: '5 pieces',
+                confidence: IngredientConfidence.high,
+              ),
+              ExtractedIngredient(
+                name: 'milk',
+                quantity: '100 ml',
+                confidence: IngredientConfidence.medium,
+              ),
+            ],
+            assumeBasicStaples: true,
+            onBack: () {},
+            onProceed: (ingredients, _) async {
+              submittedIngredients = ingredients;
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byTooltip('Edit Eggs'));
+      await tester.tap(find.byTooltip('Edit Eggs'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ingredient name'),
+        'eggss',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '6 pieces',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edited'), findsOneWidget);
+
+      await tester.ensureVisible(find.byTooltip('Edit Eggss'));
+      await tester.tap(find.byTooltip('Edit Eggss'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ingredient name'),
+        '  eggs  ',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        ' 5 pieces ',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Eggs'), findsOneWidget);
+      expect(find.text('5 pieces'), findsOneWidget);
+      expect(find.text('Edited'), findsNothing);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Proceed'));
+      await tester.pumpAndSettle();
+
+      expect(submittedIngredients, isNotNull);
+      expect(submittedIngredients!.first.name, 'Eggs');
+      expect(submittedIngredients!.first.quantity, '5 pieces');
+      expect(submittedIngredients!.first.isEdited, isFalse);
+    },
+  );
+
+  testWidgets(
+    'manual ingredient review shows edited badge after a recipe already exists',
+    (tester) async {
+      _setTallSurface(tester);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: IngredientReviewScreen(
+            imagePath: null,
+            ingredients: const [
+              ExtractedIngredient(name: 'eggs', quantity: '2 pieces'),
+              ExtractedIngredient(name: 'milk', quantity: '100 ml'),
+            ],
+            assumeBasicStaples: true,
+            entryMode: IngredientReviewEntryMode.manual,
+            onBack: () {},
+            onProceed: (_, _) async {},
+            onOpenRecipe: () {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byTooltip('Edit Eggs'));
+      await tester.tap(find.byTooltip('Edit Eggs'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '3 pieces',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edited'), findsOneWidget);
     },
   );
 
