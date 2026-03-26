@@ -202,31 +202,34 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             color: CulinexColors.mutedInk,
                           ),
                         ),
-                        if (widget.onOpenRecipe != null &&
-                            !_hasUnsavedChanges) ...[
+                        if (widget.onOpenRecipe != null) ...[
                           const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: widget.onOpenRecipe,
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: CulinexColors.quantityBlue,
-                                  width: 1.4,
+                          if (!_hasUnsavedChanges)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: widget.onOpenRecipe,
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: CulinexColors.quantityBlue,
+                                    width: 1.4,
+                                  ),
                                 ),
+                                icon: const Icon(Icons.restaurant_menu_rounded),
+                                label: const Text('Return to recipe'),
                               ),
-                              icon: const Icon(Icons.restaurant_menu_rounded),
-                              label: const Text('Return to recipe'),
+                            )
+                          else
+                            Text(
+                              'Generate again to refresh the recipe after editing this list.',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: CulinexColors.mutedInk,
+                              ),
                             ),
-                          ),
                         ],
                         if (widget.imagePath != null) ...[
                           SizedBox(
-                            height:
-                                widget.onOpenRecipe != null &&
-                                    !_hasUnsavedChanges
-                                ? 12
-                                : 20,
+                            height: widget.onOpenRecipe != null ? 12 : 20,
                           ),
                           SizedBox(
                             width: double.infinity,
@@ -234,16 +237,6 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                               onPressed: _showPreview,
                               icon: const Icon(Icons.photo_outlined),
                               label: const Text('View original photo'),
-                            ),
-                          ),
-                        ],
-                        if (widget.onOpenRecipe != null &&
-                            _hasUnsavedChanges) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Generate again to refresh the recipe after editing this list.',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: CulinexColors.mutedInk,
                             ),
                           ),
                         ],

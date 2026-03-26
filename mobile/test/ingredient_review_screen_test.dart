@@ -804,7 +804,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: IngredientReviewScreen(
-            imagePath: null,
+            imagePath: '/tmp/fake-image.jpg',
             ingredients: const [
               ExtractedIngredient(
                 name: 'eggs',
@@ -842,11 +842,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Return to recipe'), findsNothing);
+      final Finder staleRecipeMessage = find.text(
+        'Generate again to refresh the recipe after editing this list.',
+      );
+      final Finder photoButton = find.widgetWithText(
+        OutlinedButton,
+        'View original photo',
+      );
+      expect(staleRecipeMessage, findsOneWidget);
+      expect(photoButton, findsOneWidget);
       expect(
-        find.text(
-          'Generate again to refresh the recipe after editing this list.',
-        ),
-        findsOneWidget,
+        tester.getTopLeft(staleRecipeMessage).dy,
+        lessThan(tester.getTopLeft(photoButton).dy),
       );
 
       expect(openedRecipe, isFalse);
