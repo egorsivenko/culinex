@@ -37,6 +37,7 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples)
 	if err != nil {
+		log.Printf("[%s] Error generating recipe: %v", requestID, err)
 		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
 		return
 	}

@@ -75,6 +75,7 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType)
 	if err != nil {
+		log.Printf("[%s] Error extracting ingredients: %v", requestID, err)
 		http.Error(w, "Failed to extract ingredients", http.StatusInternalServerError)
 		return
 	}
