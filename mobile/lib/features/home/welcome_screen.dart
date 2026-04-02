@@ -140,36 +140,19 @@ class _LogoLockup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          height: 78,
-          width: 78,
+          height: 48,
+          width: 48,
           decoration: BoxDecoration(
             color: CulinexColors.ink,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Text(
-                'C',
-                style: textTheme.displaySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                ),
-              ),
-              Positioned(
-                right: 14,
-                top: 14,
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Colors.white.withValues(alpha: 0.92),
-                  size: 16,
-                ),
-              ),
-            ],
+          child: Image.asset(
+            'assets/icon/icon_transparent.png',
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +160,8 @@ class _LogoLockup extends StatelessWidget {
               Text(
                 'Culinex',
                 style: textTheme.displaySmall?.copyWith(
-                  fontSize: 36,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
                   color: CulinexColors.ink,
                 ),
               ),
