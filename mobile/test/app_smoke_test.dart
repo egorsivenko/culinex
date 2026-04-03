@@ -14,14 +14,14 @@ void main() {
     await tester.pumpWidget(CulinexApp(controller: controller));
 
     expect(find.text('Culinex'), findsOneWidget);
-    expect(find.text('Take a photo or type ingredients'), findsOneWidget);
-    expect(find.text('Take a photo of ingredients'), findsOneWidget);
+    expect(find.text('Use the camera'), findsOneWidget);
+    expect(find.text('Type ingredients'), findsOneWidget);
     expect(find.text('Enter ingredients manually'), findsOneWidget);
-    expect(find.text('Scan ingredients'), findsNothing);
-    expect(find.text('Understand what you have'), findsNothing);
-    expect(find.text('Create one smart recipe'), findsNothing);
+    expect(find.text('Choose how to start your recipe'), findsNothing);
+    expect(find.text('Take a photo or type ingredients'), findsNothing);
+    expect(find.text('Take a photo of ingredients'), findsNothing);
     expect(find.text('How it works'), findsNothing);
-    expect(find.text('Smart cooking from what you already have'), findsNothing);
+    expect(find.text('Show what is in front of you'), findsNothing);
     expect(
       culinexWelcomePhrases.any(
         (String phrase) => find.text(phrase).evaluate().isNotEmpty,
@@ -40,9 +40,9 @@ void main() {
     );
 
     await tester.pumpWidget(CulinexApp(controller: controller));
-    await tester.ensureVisible(find.text('Enter ingredients manually'));
+    await tester.ensureVisible(find.text('Type ingredients'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Enter ingredients manually'));
+    await tester.tap(find.text('Type ingredients'));
     await tester.pumpAndSettle();
 
     expect(find.text('Manual entry'), findsOneWidget);

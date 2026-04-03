@@ -3,24 +3,47 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/culinex_theme.dart';
-import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/primary_action_button.dart';
 
 const List<String> culinexWelcomePhrases = <String>[
-  'Turn your ingredients into something delicious.',
+  'Turn ingredients into flavor.',
   'Snap your ingredients. Get a recipe.',
   'Your next meal starts with a photo.',
   'Got ingredients? We\'ve got ideas.',
-  'Find a dish hiding in your fridge.',
-  'Cook smarter with what you already have.',
-  'From random ingredients to real meals.',
-  'Take a photo. Discover what you can cook.',
+  'Cook more with what you have.',
+  'Snap a photo. Start cooking.',
   'Let\'s cook something great today.',
-  'Your kitchen has more potential than you think.',
-  'Instant recipe ideas from a single photo.',
-  'Smart cooking starts with your camera.',
-  'Your ingredients are the beginning, not the problem.',
+  'Your kitchen has endless potential.',
+  'Your kitchen has hidden potential.',
+  'Recipe ideas from one photo.',
+  'Smart cooking starts here.',
 ];
+
+final Random _culinexWelcomePhraseRandom = Random();
+int _lastCulinexWelcomePhraseIndex = -1;
+
+String _nextWelcomePhrase() {
+  final bool hasValidPreviousIndex =
+      _lastCulinexWelcomePhraseIndex >= 0 &&
+      _lastCulinexWelcomePhraseIndex < culinexWelcomePhrases.length;
+
+  final int nextIndex;
+  if (!hasValidPreviousIndex) {
+    nextIndex = _culinexWelcomePhraseRandom.nextInt(
+      culinexWelcomePhrases.length,
+    );
+  } else {
+    final int rawIndex = _culinexWelcomePhraseRandom.nextInt(
+      culinexWelcomePhrases.length - 1,
+    );
+    nextIndex = rawIndex >= _lastCulinexWelcomePhraseIndex
+        ? rawIndex + 1
+        : rawIndex;
+  }
+
+  _lastCulinexWelcomePhraseIndex = nextIndex;
+  return culinexWelcomePhrases[nextIndex];
+}
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
@@ -37,88 +60,42 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  late final String _heroPhrase =
-      culinexWelcomePhrases[Random().nextInt(culinexWelcomePhrases.length)];
+  late final String _heroPhrase = _nextWelcomePhrase();
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _LogoLockup(),
-              const SizedBox(height: 44),
-              Text(
-                _heroPhrase,
-                style: textTheme.displayMedium?.copyWith(fontSize: 42),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Show what is in front of you or type what you have, and let Culinex turn it into one clear recipe you can cook right now.',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: CulinexColors.mutedInk,
-                ),
-              ),
               const SizedBox(height: 28),
-              GlassPanel(
-                padding: const EdgeInsets.all(22),
-                borderRadius: BorderRadius.circular(30),
-                color: CulinexColors.elevatedSurface,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _HowItWorksStep(
-                      number: '1',
-                      title: 'Take a photo or type ingredients',
-                      description:
-                          'Capture the ingredients you already have in a single frame, or skip the camera and enter them yourself.',
-                    ),
-                    const SizedBox(height: 14),
-                    const Divider(height: 1),
-                    const SizedBox(height: 14),
-                    const _HowItWorksStep(
-                      number: '2',
-                      title: 'Review the ingredient list',
-                      description:
-                          'Culinex detects the products from your photo or lets you build the list from scratch.',
-                    ),
-                    const SizedBox(height: 14),
-                    const Divider(height: 1),
-                    const SizedBox(height: 14),
-                    const _HowItWorksStep(
-                      number: '3',
-                      title: 'Cook the recipe',
-                      description:
-                          'Get one smart recipe with ingredients, steps, time, and macros.',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              PrimaryActionButton(
-                label: 'Take a photo of ingredients',
-                icon: Icons.camera_alt_rounded,
-                onPressed: widget.onStart,
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: widget.onStartManualEntry,
-                  icon: const Icon(Icons.edit_note_rounded),
-                  label: const Text('Enter ingredients manually'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Best results: use good light and keep every ingredient visible in the frame, or skip the photo and type the ingredients yourself.',
-                style: textTheme.bodySmall?.copyWith(
-                  color: CulinexColors.mutedInk,
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final bool isWideLayout =
+                        constraints.maxWidth >= 720 ||
+                        constraints.maxWidth > constraints.maxHeight;
+
+                    return Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: isWideLayout ? 760 : 392,
+                          child: _WelcomeChoiceLayout(
+                            isWideLayout: isWideLayout,
+                            heroPhrase: _heroPhrase,
+                            onStart: widget.onStart,
+                            onStartManualEntry: widget.onStartManualEntry,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -173,57 +150,187 @@ class _LogoLockup extends StatelessWidget {
   }
 }
 
-class _HowItWorksStep extends StatelessWidget {
-  const _HowItWorksStep({
-    required this.number,
-    required this.title,
-    required this.description,
+class _WelcomeChoiceLayout extends StatelessWidget {
+  const _WelcomeChoiceLayout({
+    required this.isWideLayout,
+    required this.heroPhrase,
+    required this.onStart,
+    required this.onStartManualEntry,
   });
 
-  final String number;
-  final String title;
-  final String description;
+  final bool isWideLayout;
+  final String heroPhrase;
+  final VoidCallback onStart;
+  final VoidCallback onStartManualEntry;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final Widget photoCard = _RecipeModeCard(
+      title: 'Take a photo',
+      description:
+          'Point your camera at the ingredients you already have and let Culinex turn what it sees into one clear recipe.',
+      button: PrimaryActionButton(
+        label: 'Use the camera',
+        icon: Icons.camera_alt_rounded,
+        onPressed: onStart,
+      ),
+    );
+    final Widget manualCard = _RecipeModeCard(
+      title: 'Enter ingredients manually',
+      description:
+          'Type the ingredients yourself when you already know the list and want to go straight to a recipe.',
+      button: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: onStartManualEntry,
+          icon: const Icon(Icons.edit_note_rounded),
+          label: const Text('Type ingredients'),
+        ),
+      ),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            heroPhrase,
+            style: textTheme.displayMedium?.copyWith(fontSize: 36),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Text(
+              'Scan ingredients with your camera or type them in to get one smart recipe in seconds.',
+              style: textTheme.bodyLarge?.copyWith(
+                color: CulinexColors.mutedInk,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 26),
+        if (isWideLayout)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: photoCard),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(width: 132, child: _ChoiceSeparator()),
+              ),
+              Expanded(child: manualCard),
+            ],
+          )
+        else
+          Column(
+            children: [
+              photoCard,
+              const SizedBox(height: 12),
+              const SizedBox(width: double.infinity, child: _ChoiceSeparator()),
+              const SizedBox(height: 12),
+              manualCard,
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _ChoiceSeparator extends StatelessWidget {
+  const _ChoiceSeparator();
 
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 36,
-          width: 36,
-          decoration: BoxDecoration(
-            color: CulinexColors.ink,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            number,
-            style: textTheme.titleMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+        const Expanded(
+          child: SizedBox(
+            height: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: CulinexColors.border),
             ),
           ),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: CulinexColors.mutedInk,
-                ),
-              ),
-            ],
+        const SizedBox(width: 10),
+        Text(
+          'or',
+          style: textTheme.titleMedium?.copyWith(
+            color: CulinexColors.subtleInk,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: SizedBox(
+            height: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: CulinexColors.border),
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _RecipeModeCard extends StatelessWidget {
+  const _RecipeModeCard({
+    required this.title,
+    required this.description,
+    required this.button,
+  });
+
+  final String title;
+  final String description;
+  final Widget button;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: CulinexColors.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: CulinexColors.border),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 240),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(26, 22, 26, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineMedium?.copyWith(fontSize: 26),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    description,
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: CulinexColors.mutedInk,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              button,
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
