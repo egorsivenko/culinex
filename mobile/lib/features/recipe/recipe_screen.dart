@@ -50,38 +50,38 @@ class _RecipeScreenState extends State<RecipeScreen> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   const double spacing = 12;
-                  final double cardWidth = (constraints.maxWidth - spacing) / 2;
-
-                  final List<_MetricCard> cards = [
-                    _MetricCard(
-                      label: 'Difficulty',
-                      value: recipe.difficulty.label,
-                      icon: Icons.restaurant_menu_rounded,
-                    ),
-                    _MetricCard(
-                      label: 'Cooking time',
-                      value: '${recipe.cookingTimeMinutes} min',
-                      icon: Icons.schedule_rounded,
-                    ),
-                    _MetricCard(
-                      label: 'Calories',
-                      value: '${recipe.macros.caloriesKcal.round()} kcal',
-                      icon: Icons.local_fire_department_rounded,
-                    ),
-                    _MetricCard(
-                      label: 'Macros',
-                      value:
-                          'P ${_formatNumber(recipe.macros.proteinG)}  C ${_formatNumber(recipe.macros.carbsG)}  F ${_formatNumber(recipe.macros.fatG)}',
-                      icon: Icons.monitor_heart_outlined,
-                    ),
-                  ];
+                  final double halfWidth = (constraints.maxWidth - spacing) / 2;
 
                   return Wrap(
                     spacing: spacing,
                     runSpacing: spacing,
                     children: [
-                      for (final _MetricCard card in cards)
-                        SizedBox(width: cardWidth, child: card),
+                      SizedBox(
+                        width: halfWidth,
+                        child: _MetricCard(
+                          label: 'Difficulty',
+                          value: recipe.difficulty.label,
+                          icon: Icons.restaurant_menu_rounded,
+                        ),
+                      ),
+                      SizedBox(
+                        width: halfWidth,
+                        child: _MetricCard(
+                          label: 'Cooking time',
+                          value: '${recipe.cookingTimeMinutes} min',
+                          icon: Icons.schedule_rounded,
+                        ),
+                      ),
+                      SizedBox(
+                        width: constraints.maxWidth,
+                        child: _NutritionSummaryCard(
+                          calories:
+                              '${recipe.macros.caloriesKcal.round()} kcal',
+                          protein: '${recipe.macros.proteinG.round()}g',
+                          carbs: '${recipe.macros.carbsG.round()}g',
+                          fat: '${recipe.macros.fatG.round()}g',
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -167,14 +167,6 @@ class _RecipeScreenState extends State<RecipeScreen> {
       ),
     );
   }
-
-  String _formatNumber(double value) {
-    if (value % 1 == 0) {
-      return value.toStringAsFixed(0);
-    }
-
-    return value.toStringAsFixed(1);
-  }
 }
 
 class _RecipeHeader extends StatelessWidget {
@@ -234,7 +226,10 @@ class _RecipeHeader extends StatelessWidget {
           const SizedBox(height: 22),
           Text(
             recipe.dishName,
-            style: textTheme.displaySmall?.copyWith(color: CulinexColors.ink),
+            style: textTheme.displaySmall?.copyWith(
+              color: CulinexColors.ink,
+              fontSize: 32,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -276,6 +271,106 @@ class _MetricCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(value, style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _NutritionSummaryCard extends StatelessWidget {
+  const _NutritionSummaryCard({
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+
+  final String calories;
+  final String protein;
+  final String carbs;
+  final String fat;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(16),
+      borderRadius: BorderRadius.circular(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: CulinexColors.ink,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Nutrition Summary',
+            style: textTheme.labelMedium?.copyWith(
+              color: CulinexColors.mutedInk,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text.rich(
+            TextSpan(
+              style: textTheme.bodyLarge?.copyWith(
+                color: CulinexColors.mutedInk,
+              ),
+              children: [
+                TextSpan(
+                  text: calories,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: CulinexColors.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            children: [
+              _NutritionDetail(label: 'Protein', value: protein),
+              _NutritionDetail(label: 'Carbs', value: carbs),
+              _NutritionDetail(label: 'Fat', value: fat),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NutritionDetail extends StatelessWidget {
+  const _NutritionDetail({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Text.rich(
+      TextSpan(
+        style: textTheme.bodyLarge?.copyWith(color: CulinexColors.mutedInk),
+        children: [
+          TextSpan(
+            text: value,
+            style: textTheme.titleMedium?.copyWith(
+              color: CulinexColors.ink,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          TextSpan(
+            text: ' $label',
+            style: textTheme.bodyLarge?.copyWith(
+              color: CulinexColors.mutedInk,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

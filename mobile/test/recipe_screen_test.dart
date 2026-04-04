@@ -29,9 +29,9 @@ void main() {
             ],
             macros: const NutritionMacros(
               caloriesKcal: 240,
-              proteinG: 14,
-              carbsG: 2,
-              fatG: 19,
+              proteinG: 14.4,
+              carbsG: 2.5,
+              fatG: 19.6,
             ),
           ),
           onBackToIngredients: () {
@@ -49,8 +49,13 @@ void main() {
     expect(find.text('Recipe ready'), findsOneWidget);
     expect(find.text('Culinex recipe'), findsNothing);
     expect(find.text('Quick metrics'), findsOneWidget);
-    expect(find.text('Macros'), findsOneWidget);
-    expect(find.text('P 14  C 2  F 19'), findsOneWidget);
+    expect(find.text('Nutrition Summary'), findsOneWidget);
+    expect(find.text('Calories'), findsNothing);
+    expect(find.text('Macros'), findsNothing);
+    expect(find.text('240 kcal', findRichText: true), findsOneWidget);
+    expect(find.text('14g Protein', findRichText: true), findsOneWidget);
+    expect(find.text('3g Carbs', findRichText: true), findsOneWidget);
+    expect(find.text('20g Fat', findRichText: true), findsOneWidget);
     expect(find.text('Eggs'), findsOneWidget);
     expect(find.text('Butter'), findsOneWidget);
     expect(find.text('Nutrition per serving'), findsNothing);
