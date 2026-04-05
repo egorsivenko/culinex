@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/network/culinex_api_client.dart';
 import '../core/network/culinex_repository.dart';
 import '../core/theme/culinex_theme.dart';
+import '../core/theme/theme_mode_store.dart';
 import '../features/camera/camera_capture_screen.dart';
 import '../features/home/welcome_screen.dart';
 import '../features/ingredients/ingredient_review_screen.dart';
@@ -13,9 +16,16 @@ import '../features/session/cook_session_controller.dart';
 import '../features/session/session_error_screen.dart';
 
 class CulinexApp extends StatefulWidget {
-  const CulinexApp({super.key, this.controller});
+  const CulinexApp({
+    super.key,
+    this.controller,
+    this.initialThemeMode = ThemeMode.light,
+    this.themeModeStore,
+  });
 
   final CookSessionController? controller;
+  final ThemeMode initialThemeMode;
+  final ThemeModeStore? themeModeStore;
 
   @override
   State<CulinexApp> createState() => _CulinexAppState();
@@ -31,6 +41,7 @@ class _CulinexAppState extends State<CulinexApp> {
     super.initState();
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? _buildController();
+    _themeMode = widget.initialThemeMode;
   }
 
   @override
@@ -63,11 +74,18 @@ class _CulinexAppState extends State<CulinexApp> {
   }
 
   void _toggleTheme() {
+    final ThemeMode nextThemeMode = _themeMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
+
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light
-          ? ThemeMode.dark
-          : ThemeMode.light;
+      _themeMode = nextThemeMode;
     });
+
+    final ThemeModeStore? themeModeStore = widget.themeModeStore;
+    if (themeModeStore != null) {
+      unawaited(themeModeStore.saveThemeMode(nextThemeMode));
+    }
   }
 }
 

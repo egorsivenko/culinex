@@ -6,6 +6,8 @@ import 'package:culinex/features/session/cook_session_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:culinex/core/theme/theme_mode_store.dart';
+
 void main() {
   testWidgets('app opens on the welcome screen', (tester) async {
     final CookSessionController controller = CookSessionController(
@@ -81,6 +83,45 @@ void main() {
 
     controller.dispose();
   });
+
+  testWidgets('app can start in dark mode from persisted theme', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, initialThemeMode: ThemeMode.dark),
+    );
+
+    final MaterialApp app = tester.widget<MaterialApp>(
+      find.byType(MaterialApp),
+    );
+    expect(app.themeMode, ThemeMode.dark);
+    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
+
+    controller.dispose();
+  });
+
+  testWidgets('theme toggle persists the selected theme', (tester) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final _FakeThemeModeStore themeModeStore = _FakeThemeModeStore();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, themeModeStore: themeModeStore),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('theme-toggle-button')));
+    await tester.pumpAndSettle();
+
+    expect(themeModeStore.savedModes, <ThemeMode>[ThemeMode.dark]);
+
+    controller.dispose();
+  });
 }
 
 class _NoopRepository implements CulinexRepository {
@@ -95,5 +136,19 @@ class _NoopRepository implements CulinexRepository {
   @override
   Future<GeneratedRecipe> generateRecipe(RecipeGenerationRequest request) {
     throw UnimplementedError();
+  }
+}
+
+class _FakeThemeModeStore implements ThemeModeStore {
+  final List<ThemeMode> savedModes = <ThemeMode>[];
+
+  @override
+  Future<ThemeMode> loadThemeMode() async {
+    return ThemeMode.light;
+  }
+
+  @override
+  Future<void> saveThemeMode(ThemeMode themeMode) async {
+    savedModes.add(themeMode);
   }
 }
