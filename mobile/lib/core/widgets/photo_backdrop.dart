@@ -21,10 +21,12 @@ class PhotoBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette palette = CulinexColors.of(context);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        const ColoredBox(color: CulinexColors.canvas),
+        ColoredBox(color: palette.canvas),
         if (imagePath != null)
           ImageFiltered(
             imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),

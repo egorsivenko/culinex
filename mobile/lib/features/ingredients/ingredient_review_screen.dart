@@ -119,6 +119,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   Widget build(BuildContext context) {
     _repairIngredientState();
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
     final String? footerMessage = _footerMessage;
     final RenderBox? basicStaplesSectionBox =
         _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
@@ -176,9 +177,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             const Spacer(),
                             DecoratedBox(
                               decoration: BoxDecoration(
-                                color: CulinexColors.elevatedSurface,
+                                color: colors.elevatedSurface,
                                 borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: CulinexColors.border),
+                                border: Border.all(color: colors.border),
                               ),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
@@ -199,7 +200,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                         Text(
                           widget.entryMode.description,
                           style: textTheme.bodyLarge?.copyWith(
-                            color: CulinexColors.mutedInk,
+                            color: colors.mutedInk,
                           ),
                         ),
                         if (widget.onOpenRecipe != null) ...[
@@ -223,7 +224,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             Text(
                               'Generate again to refresh the recipe after editing this list.',
                               style: textTheme.bodySmall?.copyWith(
-                                color: CulinexColors.mutedInk,
+                                color: colors.mutedInk,
                               ),
                             ),
                         ],
@@ -299,9 +300,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                           children: [
                             DecoratedBox(
                               decoration: BoxDecoration(
-                                color: CulinexColors.elevatedSurface,
+                                color: colors.elevatedSurface,
                                 borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: CulinexColors.border),
+                                border: Border.all(color: colors.border),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -327,7 +328,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                         Divider(
                           height: 1,
                           thickness: 1,
-                          color: CulinexColors.border.withValues(alpha: 0.7),
+                          color: colors.border.withValues(alpha: 0.7),
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -837,15 +838,17 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Color _cardBorderColor(IngredientConfidence? confidence) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
     return switch (confidence) {
-      IngredientConfidence.high => CulinexColors.border,
+      IngredientConfidence.high => colors.border,
       IngredientConfidence.medium => CulinexColors.confidenceMedium.withValues(
         alpha: 0.55,
       ),
       IngredientConfidence.low => CulinexColors.confidenceLow.withValues(
         alpha: 0.60,
       ),
-      null => CulinexColors.border,
+      null => colors.border,
     };
   }
 
@@ -928,6 +931,7 @@ class _ManualIngredientEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return GlassPanel(
       padding: const EdgeInsets.all(22),
@@ -939,9 +943,7 @@ class _ManualIngredientEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Add at least $minRecipeIngredientCount ingredients to continue.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: CulinexColors.mutedInk,
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colors.mutedInk),
           ),
         ],
       ),
@@ -1182,6 +1184,7 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1233,9 +1236,7 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
               const SizedBox(height: 8),
               Text(
                 'Use clear ingredient names and practical quantities.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: CulinexColors.mutedInk,
-                ),
+                style: textTheme.bodyMedium?.copyWith(color: colors.mutedInk),
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -1374,7 +1375,7 @@ class _ImagePreviewOverlay extends StatelessWidget {
                       onPressed: onClose,
                       icon: const Icon(
                         Icons.close_rounded,
-                        color: CulinexColors.ink,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -1392,20 +1393,25 @@ class _DetailChip extends StatelessWidget {
   const _DetailChip({
     required this.icon,
     required this.label,
-    this.foregroundColor = CulinexColors.ink,
-    this.backgroundColor = CulinexColors.elevatedSurface,
+    this.foregroundColor,
+    this.backgroundColor,
   });
 
   final IconData icon;
   final String label;
-  final Color foregroundColor;
-  final Color backgroundColor;
+  final Color? foregroundColor;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+    final Color resolvedForegroundColor = foregroundColor ?? colors.ink;
+    final Color resolvedBackgroundColor =
+        backgroundColor ?? colors.elevatedSurface;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: resolvedBackgroundColor,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
@@ -1413,13 +1419,13 @@ class _DetailChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: foregroundColor),
+            Icon(icon, size: 16, color: resolvedForegroundColor),
             const SizedBox(width: 6),
             Text(
               label,
               style: Theme.of(
                 context,
-              ).textTheme.labelMedium?.copyWith(color: foregroundColor),
+              ).textTheme.labelMedium?.copyWith(color: resolvedForegroundColor),
             ),
           ],
         ),
@@ -1439,6 +1445,8 @@ class _BasicStaplesInfoToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
     return IconButton(
       key: const ValueKey<String>('basic-staples-info-button'),
       visualDensity: VisualDensity.compact,
@@ -1448,7 +1456,7 @@ class _BasicStaplesInfoToggleButton extends StatelessWidget {
       icon: Icon(
         Icons.help_outline_rounded,
         size: 18,
-        color: isVisible ? CulinexColors.ink : CulinexColors.mutedInk,
+        color: isVisible ? colors.ink : colors.mutedInk,
       ),
     );
   }

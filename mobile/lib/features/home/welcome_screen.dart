@@ -49,11 +49,15 @@ class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
     required this.onStart,
     required this.onStartManualEntry,
+    required this.isDarkMode,
+    required this.onToggleTheme,
     super.key,
   });
 
   final VoidCallback onStart;
   final VoidCallback onStartManualEntry;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -71,7 +75,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _LogoLockup(),
+              _WelcomeHeader(
+                isDarkMode: widget.isDarkMode,
+                onToggleTheme: widget.onToggleTheme,
+              ),
               const SizedBox(height: 28),
               Expanded(
                 child: LayoutBuilder(
@@ -106,12 +113,35 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 }
 
+class _WelcomeHeader extends StatelessWidget {
+  const _WelcomeHeader({required this.isDarkMode, required this.onToggleTheme});
+
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(child: _LogoLockup()),
+        const SizedBox(width: 12),
+        _ThemeModeButton(isDarkMode: isDarkMode, onPressed: onToggleTheme),
+      ],
+    );
+  }
+}
+
 class _LogoLockup extends StatelessWidget {
   const _LogoLockup();
 
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final Brightness brightness = Theme.of(context).brightness;
+    final CulinexPalette colors = CulinexColors.of(context);
+    final String logoAsset = brightness == Brightness.dark
+        ? 'assets/icon/icon_transparent_dark.png'
+        : 'assets/icon/icon_transparent.png';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,11 +150,11 @@ class _LogoLockup extends StatelessWidget {
           height: 48,
           width: 48,
           decoration: BoxDecoration(
-            color: CulinexColors.ink,
+            color: colors.accent,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Image.asset(
-            'assets/icon/icon_transparent.png',
+            logoAsset,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),
@@ -139,13 +169,44 @@ class _LogoLockup extends StatelessWidget {
                 style: textTheme.displaySmall?.copyWith(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
-                  color: CulinexColors.ink,
+                  color: colors.ink,
                 ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ThemeModeButton extends StatelessWidget {
+  const _ThemeModeButton({required this.isDarkMode, required this.onPressed});
+
+  final bool isDarkMode;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: colors.border),
+      ),
+      child: IconButton(
+        key: const ValueKey<String>('theme-toggle-button'),
+        tooltip: isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+        onPressed: onPressed,
+        icon: Icon(
+          isDarkMode ? Icons.dark_mode_outlined : Icons.wb_sunny_outlined,
+          key: ValueKey<String>(
+            isDarkMode ? 'theme-icon-dark' : 'theme-icon-light',
+          ),
+        ),
+      ),
     );
   }
 }
@@ -166,6 +227,7 @@ class _WelcomeChoiceLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
     final Widget photoCard = _RecipeModeCard(
       title: 'Take a photo',
       description:
@@ -207,9 +269,7 @@ class _WelcomeChoiceLayout extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 560),
             child: Text(
               'Scan ingredients with your camera or type them in to get one smart recipe in seconds.',
-              style: textTheme.bodyLarge?.copyWith(
-                color: CulinexColors.mutedInk,
-              ),
+              style: textTheme.bodyLarge?.copyWith(color: colors.mutedInk),
             ),
           ),
         ),
@@ -247,14 +307,15 @@ class _ChoiceSeparator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: SizedBox(
             height: 1,
             child: DecoratedBox(
-              decoration: BoxDecoration(color: CulinexColors.border),
+              decoration: BoxDecoration(color: colors.border),
             ),
           ),
         ),
@@ -262,16 +323,16 @@ class _ChoiceSeparator extends StatelessWidget {
         Text(
           'or',
           style: textTheme.titleMedium?.copyWith(
-            color: CulinexColors.subtleInk,
+            color: colors.subtleInk,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
+        Expanded(
           child: SizedBox(
             height: 1,
             child: DecoratedBox(
-              decoration: BoxDecoration(color: CulinexColors.border),
+              decoration: BoxDecoration(color: colors.border),
             ),
           ),
         ),
@@ -294,12 +355,13 @@ class _RecipeModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: CulinexColors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: CulinexColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 240),
@@ -320,7 +382,7 @@ class _RecipeModeCard extends StatelessWidget {
                     description,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge?.copyWith(
-                      color: CulinexColors.mutedInk,
+                      color: colors.mutedInk,
                     ),
                   ),
                 ],

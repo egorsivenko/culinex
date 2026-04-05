@@ -56,6 +56,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Scaffold(
       body: PhotoBackdrop(
@@ -69,7 +70,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: GlassPanel(
-                  color: CulinexColors.surface,
+                  color: colors.surface,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +81,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: CulinexColors.elevatedSurface,
+                          color: colors.elevatedSurface,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -89,10 +90,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      const PulseDotsIndicator(
-                        color: CulinexColors.ink,
-                        size: 14,
-                      ),
+                      PulseDotsIndicator(color: colors.ink, size: 14),
                       const SizedBox(height: 22),
                       Text(
                         'Creating a recipe based on your ingredients...',
@@ -102,7 +100,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                       Text(
                         'This can take a few moments while the assistant builds a balanced single-serving dish.',
                         style: textTheme.bodyLarge?.copyWith(
-                          color: CulinexColors.mutedInk,
+                          color: colors.mutedInk,
                         ),
                       ),
                       const SizedBox(height: 22),
@@ -119,13 +117,13 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                                   height: 28,
                                   width: 28,
                                   decoration: BoxDecoration(
-                                    color: CulinexColors.ink,
+                                    color: colors.accent,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.check_rounded,
                                     size: 16,
-                                    color: Colors.white,
+                                    color: colors.onAccent,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -133,7 +131,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                                   child: Text(
                                     _milestones[index],
                                     style: textTheme.bodyLarge?.copyWith(
-                                      color: CulinexColors.ink,
+                                      color: colors.ink,
                                     ),
                                   ),
                                 ),

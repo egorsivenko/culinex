@@ -30,6 +30,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
     final GeneratedRecipe recipe = widget.recipe;
 
     return Scaffold(
@@ -129,14 +130,14 @@ class _RecipeScreenState extends State<RecipeScreen> {
                           height: 40,
                           width: 40,
                           decoration: BoxDecoration(
-                            color: CulinexColors.elevatedSurface,
+                            color: colors.elevatedSurface,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Center(
                             child: Text(
                               '${index + 1}',
                               style: textTheme.titleMedium?.copyWith(
-                                color: CulinexColors.ink,
+                                color: colors.ink,
                               ),
                             ),
                           ),
@@ -146,7 +147,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
                           child: Text(
                             recipe.steps[index],
                             style: textTheme.bodyLarge?.copyWith(
-                              color: CulinexColors.ink,
+                              color: colors.ink,
                             ),
                           ),
                         ),
@@ -183,11 +184,12 @@ class _RecipeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return GlassPanel(
       padding: const EdgeInsets.all(22),
       borderRadius: BorderRadius.circular(34),
-      color: CulinexColors.surface,
+      color: colors.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -195,15 +197,15 @@ class _RecipeHeader extends StatelessWidget {
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: CulinexColors.ink,
+                  color: colors.accent,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
                     'Recipe ready',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: colors.onAccent,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -227,14 +229,14 @@ class _RecipeHeader extends StatelessWidget {
           Text(
             recipe.dishName,
             style: textTheme.displaySmall?.copyWith(
-              color: CulinexColors.ink,
+              color: colors.ink,
               fontSize: 32,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             recipe.dishDescription,
-            style: textTheme.bodyLarge?.copyWith(color: CulinexColors.mutedInk),
+            style: textTheme.bodyLarge?.copyWith(color: colors.mutedInk),
           ),
         ],
       ),
@@ -255,19 +257,21 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
     return GlassPanel(
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: CulinexColors.ink),
+          Icon(icon, color: colors.ink),
           const SizedBox(height: 12),
           Text(
             label,
             style: Theme.of(
               context,
-            ).textTheme.labelMedium?.copyWith(color: CulinexColors.mutedInk),
+            ).textTheme.labelMedium?.copyWith(color: colors.mutedInk),
           ),
           const SizedBox(height: 6),
           Text(value, style: Theme.of(context).textTheme.titleMedium),
@@ -293,6 +297,7 @@ class _NutritionSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return GlassPanel(
       padding: const EdgeInsets.all(16),
@@ -300,29 +305,20 @@ class _NutritionSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.local_fire_department_rounded,
-            color: CulinexColors.ink,
-          ),
+          Icon(Icons.local_fire_department_rounded, color: colors.ink),
           const SizedBox(height: 12),
           Text(
             'Nutrition Summary',
-            style: textTheme.labelMedium?.copyWith(
-              color: CulinexColors.mutedInk,
-            ),
+            style: textTheme.labelMedium?.copyWith(color: colors.mutedInk),
           ),
           const SizedBox(height: 6),
           Text.rich(
             TextSpan(
-              style: textTheme.bodyLarge?.copyWith(
-                color: CulinexColors.mutedInk,
-              ),
+              style: textTheme.bodyLarge?.copyWith(color: colors.mutedInk),
               children: [
                 TextSpan(
                   text: calories,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: CulinexColors.ink,
-                  ),
+                  style: textTheme.titleMedium?.copyWith(color: colors.ink),
                 ),
               ],
             ),
@@ -352,22 +348,23 @@ class _NutritionDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Text.rich(
       TextSpan(
-        style: textTheme.bodyLarge?.copyWith(color: CulinexColors.mutedInk),
+        style: textTheme.bodyLarge?.copyWith(color: colors.mutedInk),
         children: [
           TextSpan(
             text: value,
             style: textTheme.titleMedium?.copyWith(
-              color: CulinexColors.ink,
+              color: colors.ink,
               fontWeight: FontWeight.w800,
             ),
           ),
           TextSpan(
             text: ' $label',
             style: textTheme.bodyLarge?.copyWith(
-              color: CulinexColors.mutedInk,
+              color: colors.mutedInk,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -390,15 +387,18 @@ class _HeaderActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: CulinexColors.elevatedSurface,
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface,
         shape: BoxShape.circle,
+        border: Border.all(color: colors.border),
       ),
       child: IconButton(
         tooltip: tooltip,
         onPressed: onPressed,
-        icon: Icon(icon, color: CulinexColors.ink),
+        icon: Icon(icon, color: colors.ink),
       ),
     );
   }
@@ -417,11 +417,13 @@ class _IngredientCheckboxTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
     return CheckboxListTile(
       value: value,
       onChanged: onChanged,
       controlAffinity: ListTileControlAffinity.leading,
-      activeColor: CulinexColors.accent,
+      activeColor: colors.accent,
       contentPadding: EdgeInsets.zero,
       title: Text(
         _formatIngredientName(ingredient.name),

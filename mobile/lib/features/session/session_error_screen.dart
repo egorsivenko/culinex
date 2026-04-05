@@ -25,6 +25,7 @@ class SessionErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -42,12 +43,12 @@ class SessionErrorScreen extends StatelessWidget {
                       height: 56,
                       width: 56,
                       decoration: BoxDecoration(
-                        color: CulinexColors.elevatedSurface,
+                        color: colors.elevatedSurface,
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.error_outline_rounded,
-                        color: CulinexColors.ink,
+                        color: colors.ink,
                       ),
                     ),
                     const SizedBox(height: 20),

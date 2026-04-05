@@ -24,6 +24,7 @@ class CulinexApp extends StatefulWidget {
 class _CulinexAppState extends State<CulinexApp> {
   late final bool _ownsController;
   late final CookSessionController _controller;
+  ThemeMode _themeMode = ThemeMode.light;
 
   @override
   void initState() {
@@ -46,7 +47,13 @@ class _CulinexAppState extends State<CulinexApp> {
       debugShowCheckedModeBanner: false,
       title: 'Culinex',
       theme: buildCulinexTheme(),
-      home: CulinexFlowShell(controller: _controller),
+      darkTheme: buildCulinexTheme(brightness: Brightness.dark),
+      themeMode: _themeMode,
+      home: CulinexFlowShell(
+        controller: _controller,
+        isDarkMode: _themeMode == ThemeMode.dark,
+        onToggleTheme: _toggleTheme,
+      ),
     );
   }
 
@@ -54,12 +61,27 @@ class _CulinexAppState extends State<CulinexApp> {
     final CulinexRepository repository = CulinexApiClient();
     return CookSessionController(repository: repository);
   }
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light
+          ? ThemeMode.dark
+          : ThemeMode.light;
+    });
+  }
 }
 
 class CulinexFlowShell extends StatelessWidget {
-  const CulinexFlowShell({required this.controller, super.key});
+  const CulinexFlowShell({
+    required this.controller,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    super.key,
+  });
 
   final CookSessionController controller;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +98,8 @@ class CulinexFlowShell extends StatelessWidget {
               SessionStage.welcome => WelcomeScreen(
                 onStart: controller.openCamera,
                 onStartManualEntry: controller.startManualIngredientEntry,
+                isDarkMode: isDarkMode,
+                onToggleTheme: onToggleTheme,
               ),
               SessionStage.camera => CameraCaptureScreen(
                 onBack: controller.showWelcome,

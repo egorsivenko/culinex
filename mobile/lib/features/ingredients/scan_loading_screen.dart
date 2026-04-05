@@ -13,6 +13,7 @@ class ScanLoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
 
     return Scaffold(
       body: PhotoBackdrop(
@@ -25,7 +26,7 @@ class ScanLoadingScreen extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: GlassPanel(
-                  color: CulinexColors.surface,
+                  color: colors.surface,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +37,7 @@ class ScanLoadingScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: CulinexColors.elevatedSurface,
+                          color: colors.elevatedSurface,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -45,10 +46,7 @@ class ScanLoadingScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      const PulseDotsIndicator(
-                        color: CulinexColors.ink,
-                        size: 14,
-                      ),
+                      PulseDotsIndicator(color: colors.ink, size: 14),
                       const SizedBox(height: 22),
                       Text(
                         'Recognizing ingredients...',
@@ -58,7 +56,7 @@ class ScanLoadingScreen extends StatelessWidget {
                       Text(
                         'The app is checking what is visible in the photo and estimating the product quantities before recipe creation.',
                         style: textTheme.bodyLarge?.copyWith(
-                          color: CulinexColors.mutedInk,
+                          color: colors.mutedInk,
                         ),
                       ),
                     ],
