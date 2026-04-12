@@ -1,12 +1,26 @@
 import 'package:culinex/app/app.dart';
+import 'package:culinex/core/localization/locale_store.dart';
 import 'package:culinex/core/network/culinex_repository.dart';
-import 'package:culinex/features/home/welcome_screen.dart';
 import 'package:culinex/features/session/culinex_models.dart';
 import 'package:culinex/features/session/cook_session_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:culinex/core/theme/theme_mode_store.dart';
+
+const List<String> _englishWelcomePhrases = <String>[
+  'Turn ingredients into flavor.',
+  'Snap your ingredients. Get a recipe.',
+  'Your next meal starts with a photo.',
+  'Got ingredients? We\'ve got ideas.',
+  'Cook more with what you have.',
+  'Snap a photo. Start cooking.',
+  'Let\'s cook something great today.',
+  'Your kitchen has endless potential.',
+  'Your kitchen has hidden potential.',
+  'Recipe ideas from one photo.',
+  'Smart cooking starts here.',
+];
 
 void main() {
   testWidgets('app opens on the welcome screen', (tester) async {
@@ -26,7 +40,7 @@ void main() {
     expect(find.text('How it works'), findsNothing);
     expect(find.text('Show what is in front of you'), findsNothing);
     expect(
-      culinexWelcomePhrases.any(
+      _englishWelcomePhrases.any(
         (String phrase) => find.text(phrase).evaluate().isNotEmpty,
       ),
       isTrue,
@@ -52,6 +66,34 @@ void main() {
     expect(find.text('Add your ingredients'), findsOneWidget);
     expect(find.text('No ingredients added yet'), findsOneWidget);
     expect(find.text('View original photo'), findsNothing);
+
+    controller.dispose();
+  });
+
+  testWidgets('language toggle switches between English and Ukrainian', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+
+    await tester.pumpWidget(CulinexApp(controller: controller));
+
+    MaterialApp app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.locale, const Locale('en'));
+    expect(find.text('Use the camera'), findsOneWidget);
+    expect(find.text('Використати камеру'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('language-toggle-button')),
+    );
+    await tester.pumpAndSettle();
+
+    app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.locale, const Locale('uk'));
+    expect(find.text('Use the camera'), findsNothing);
+    expect(find.text('Використати камеру'), findsOneWidget);
+    expect(find.text('Ввести інгредієнти'), findsOneWidget);
 
     controller.dispose();
   });
@@ -105,6 +147,28 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('app can start in Ukrainian from persisted locale', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, initialLocale: const Locale('uk')),
+    );
+
+    final MaterialApp app = tester.widget<MaterialApp>(
+      find.byType(MaterialApp),
+    );
+    expect(app.locale, const Locale('uk'));
+    expect(find.text('Використати камеру'), findsOneWidget);
+    expect(find.text('Ввести інгредієнти'), findsOneWidget);
+    expect(find.text('Use the camera'), findsNothing);
+
+    controller.dispose();
+  });
+
   testWidgets('theme toggle persists the selected theme', (tester) async {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
@@ -122,6 +186,26 @@ void main() {
 
     controller.dispose();
   });
+
+  testWidgets('language toggle persists the selected locale', (tester) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final _FakeLocaleStore localeStore = _FakeLocaleStore();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, localeStore: localeStore),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('language-toggle-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(localeStore.savedLocales, <Locale>[const Locale('uk')]);
+
+    controller.dispose();
+  });
 }
 
 class _NoopRepository implements CulinexRepository {
@@ -129,12 +213,18 @@ class _NoopRepository implements CulinexRepository {
   void close() {}
 
   @override
-  Future<List<ExtractedIngredient>> extractIngredients(imageFile) async {
+  Future<List<ExtractedIngredient>> extractIngredients(
+    imageFile, {
+    required Locale locale,
+  }) async {
     return const [];
   }
 
   @override
-  Future<GeneratedRecipe> generateRecipe(RecipeGenerationRequest request) {
+  Future<GeneratedRecipe> generateRecipe(
+    RecipeGenerationRequest request, {
+    required Locale locale,
+  }) {
     throw UnimplementedError();
   }
 }
@@ -150,5 +240,19 @@ class _FakeThemeModeStore implements ThemeModeStore {
   @override
   Future<void> saveThemeMode(ThemeMode themeMode) async {
     savedModes.add(themeMode);
+  }
+}
+
+class _FakeLocaleStore implements LocaleStore {
+  final List<Locale> savedLocales = <Locale>[];
+
+  @override
+  Future<Locale> loadLocale() async {
+    return const Locale('en');
+  }
+
+  @override
+  Future<void> saveLocale(Locale locale) async {
+    savedLocales.add(locale);
   }
 }

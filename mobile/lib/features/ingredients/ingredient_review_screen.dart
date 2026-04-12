@@ -7,31 +7,31 @@ import 'package:flutter/services.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/primary_action_button.dart';
+import '../../l10n/app_localizations.dart';
+import '../../l10n/l10n.dart';
 import '../session/culinex_models.dart';
+import '../session/session_localizations.dart';
 
 const int ingredientNameMaxLength = 50;
 const int ingredientQuantityMaxLength = 30;
-const String basicStaplesTooltipMessage =
-    'Water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.';
 
 enum IngredientReviewEntryMode { scanned, manual }
 
 extension IngredientReviewEntryModeCopy on IngredientReviewEntryMode {
-  String get statusLabel => switch (this) {
-    IngredientReviewEntryMode.scanned => 'Scan complete',
-    IngredientReviewEntryMode.manual => 'Manual entry',
+  String statusLabel(AppLocalizations l10n) => switch (this) {
+    IngredientReviewEntryMode.scanned => l10n.ingredientStatusScanned,
+    IngredientReviewEntryMode.manual => l10n.ingredientStatusManual,
   };
 
-  String get title => switch (this) {
-    IngredientReviewEntryMode.scanned => 'Review and adjust the list',
-    IngredientReviewEntryMode.manual => 'Add your ingredients',
+  String title(AppLocalizations l10n) => switch (this) {
+    IngredientReviewEntryMode.scanned => l10n.ingredientReviewScannedTitle,
+    IngredientReviewEntryMode.manual => l10n.ingredientReviewManualTitle,
   };
 
-  String get description => switch (this) {
+  String description(AppLocalizations l10n) => switch (this) {
     IngredientReviewEntryMode.scanned =>
-      'Add missing ingredients, edit names or quantities, or swipe left to remove anything irrelevant before recipe generation.',
-    IngredientReviewEntryMode.manual =>
-      'Start from scratch, add clear ingredient names and practical quantities, then generate a recipe when the list looks right.',
+      l10n.ingredientReviewScannedDescription,
+    IngredientReviewEntryMode.manual => l10n.ingredientReviewManualDescription,
   };
 }
 
@@ -120,7 +120,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     _repairIngredientState();
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
-    final String? footerMessage = _footerMessage;
+    final AppLocalizations l10n = context.l10n;
+    final String? footerMessage = _footerMessage(l10n);
     final RenderBox? basicStaplesSectionBox =
         _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
     final double? basicStaplesSectionWidth = basicStaplesSectionBox?.size.width;
@@ -137,7 +138,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PrimaryActionButton(
-                      label: 'Proceed',
+                      label: l10n.proceed,
                       icon: Icons.auto_awesome_rounded,
                       onPressed: _canProceed ? _handleProceed : null,
                     ),
@@ -186,19 +187,19 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                   horizontal: 12,
                                   vertical: 8,
                                 ),
-                                child: Text(widget.entryMode.statusLabel),
+                                child: Text(widget.entryMode.statusLabel(l10n)),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          widget.entryMode.title,
+                          widget.entryMode.title(l10n),
                           style: textTheme.headlineLarge,
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          widget.entryMode.description,
+                          widget.entryMode.description(l10n),
                           style: textTheme.bodyLarge?.copyWith(
                             color: colors.mutedInk,
                           ),
@@ -217,12 +218,12 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                   ),
                                 ),
                                 icon: const Icon(Icons.restaurant_menu_rounded),
-                                label: const Text('Return to recipe'),
+                                label: Text(l10n.returnToRecipe),
                               ),
                             )
                           else
                             Text(
-                              'Generate again to refresh the recipe after editing this list.',
+                              l10n.generateAgainHint,
                               style: textTheme.bodySmall?.copyWith(
                                 color: colors.mutedInk,
                               ),
@@ -237,7 +238,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                             child: OutlinedButton.icon(
                               onPressed: _showPreview,
                               icon: const Icon(Icons.photo_outlined),
-                              label: const Text('View original photo'),
+                              label: Text(l10n.viewOriginalPhoto),
                             ),
                           ),
                         ],
@@ -274,7 +275,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              'Assume basic staples are available',
+                                              l10n.assumeBasicStaplesTitle,
                                               style: textTheme.titleMedium,
                                             ),
                                           ),
@@ -310,7 +311,10 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                   vertical: 8,
                                 ),
                                 child: Text(
-                                  '${_ingredientRows.length} / $maxRecipeIngredientCount ingredients',
+                                  l10n.ingredientCountStatus(
+                                    _ingredientRows.length,
+                                    maxRecipeIngredientCount,
+                                  ),
                                   style: textTheme.labelMedium,
                                 ),
                               ),
@@ -320,7 +324,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                   ? null
                                   : _handleAddIngredient,
                               icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add ingredient'),
+                              label: Text(l10n.addIngredient),
                             ),
                           ],
                         ),
@@ -372,8 +376,12 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                             : 12,
                                       ),
                                       child: _SwipeRevealDeleteAction(
-                                        deleteTooltip:
-                                            'Delete ${_formatIngredientName(ingredient.name)}',
+                                        deleteTooltip: l10n
+                                            .deleteIngredientTooltip(
+                                              _formatIngredientName(
+                                                ingredient.name,
+                                              ),
+                                            ),
                                         enabled: !_isSubmitting && !isRemoving,
                                         onDeletePressed: () async =>
                                             _handleDeletePressed(ingredientId),
@@ -406,8 +414,12 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                                     ),
                                                   ),
                                                   IconButton(
-                                                    tooltip:
-                                                        'Edit ${_formatIngredientName(ingredient.name)}',
+                                                    tooltip: l10n
+                                                        .editIngredientTooltip(
+                                                          _formatIngredientName(
+                                                            ingredient.name,
+                                                          ),
+                                                        ),
                                                     onPressed:
                                                         _isSubmitting ||
                                                             isRemoving
@@ -448,7 +460,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                                           .auto_awesome_rounded,
                                                       label: ingredient
                                                           .confidence!
-                                                          .label,
+                                                          .label(l10n),
                                                       foregroundColor:
                                                           _confidenceColor(
                                                             ingredient
@@ -465,9 +477,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                                   if (_shouldShowEditedBadge(
                                                     ingredient,
                                                   ))
-                                                    const _DetailChip(
+                                                    _DetailChip(
                                                       icon: Icons.edit_rounded,
-                                                      label: 'Edited',
+                                                      label: l10n.editedBadge,
                                                     ),
                                                 ],
                                               ),
@@ -525,29 +537,27 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     );
   }
 
-  String? get _footerMessage {
+  String? _footerMessage(AppLocalizations l10n) {
     if (_ingredientRows.isEmpty &&
         widget.entryMode == IngredientReviewEntryMode.manual) {
       return null;
     }
 
     if (_ingredientRows.length < minRecipeIngredientCount) {
-      return 'Add at least $minRecipeIngredientCount ingredients to continue.';
+      return l10n.addAtLeastIngredientsToContinue(minRecipeIngredientCount);
     }
 
     if (_ingredientRows.length > maxRecipeIngredientCount) {
-      return 'Use no more than $maxRecipeIngredientCount ingredients.';
+      return l10n.useNoMoreThanIngredients(maxRecipeIngredientCount);
     }
 
     return null;
   }
 
   Future<void> _handleProceed() async {
+    final AppLocalizations l10n = context.l10n;
     if (!_canProceed) {
-      _showSnack(
-        _footerMessage ??
-            'Complete all ingredient names and quantities before continuing.',
-      );
+      _showSnack(_footerMessage(l10n) ?? l10n.completeIngredientFields);
       return;
     }
 
@@ -567,8 +577,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Future<void> _handleAddIngredient() async {
+    final AppLocalizations l10n = context.l10n;
     if (_ingredientRows.length >= maxRecipeIngredientCount) {
-      _showSnack('You can add up to $maxRecipeIngredientCount ingredients.');
+      _showSnack(l10n.addUpToIngredients(maxRecipeIngredientCount));
       return;
     }
 
@@ -627,10 +638,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Future<bool> _handleDeletePressed(String ingredientId) async {
+    final AppLocalizations l10n = context.l10n;
     if (_ingredientRows.length <= minRecipeIngredientCount) {
-      _showSnack(
-        'Keep at least $minRecipeIngredientCount ingredients before generating a recipe.',
-      );
+      _showSnack(l10n.keepAtLeastIngredients(minRecipeIngredientCount));
       return false;
     }
 
@@ -671,23 +681,24 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       _removingIngredientIds.remove(ingredientId);
     });
 
-    _showSnack('$removedName removed.');
+    _showSnack(context.l10n.ingredientRemoved(removedName));
   }
 
   Future<_IngredientDraft?> _showIngredientEditor({
     ExtractedIngredient? initialIngredient,
   }) {
+    final AppLocalizations l10n = context.l10n;
     return showModalBottomSheet<_IngredientDraft>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
         return _IngredientEditorSheet(
           title: initialIngredient == null
-              ? 'Add ingredient'
-              : 'Edit ingredient',
+              ? l10n.ingredientEditorAddTitle
+              : l10n.ingredientEditorEditTitle,
           actionLabel: initialIngredient == null
-              ? 'Add ingredient'
-              : 'Save ingredient',
+              ? l10n.ingredientEditorAddAction
+              : l10n.ingredientEditorSaveAction,
           initialName: _normalizeIngredientName(initialIngredient?.name ?? ''),
           initialQuantity: initialIngredient?.quantity ?? '',
         );
@@ -825,7 +836,10 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
         .clamp(0, double.infinity)
         .toDouble();
     final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: basicStaplesTooltipMessage, style: bodyStyle),
+      text: TextSpan(
+        text: context.l10n.basicStaplesTooltipMessage,
+        style: bodyStyle,
+      ),
       textDirection: Directionality.of(context),
       maxLines: null,
     )..layout(maxWidth: contentWidth);
@@ -932,6 +946,7 @@ class _ManualIngredientEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return GlassPanel(
       padding: const EdgeInsets.all(22),
@@ -939,10 +954,10 @@ class _ManualIngredientEmptyState extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('No ingredients added yet', style: textTheme.titleLarge),
+          Text(l10n.noIngredientsAddedYet, style: textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
-            'Add at least $minRecipeIngredientCount ingredients to continue.',
+            l10n.addAtLeastIngredientsToContinue(minRecipeIngredientCount),
             style: textTheme.bodyMedium?.copyWith(color: colors.mutedInk),
           ),
         ],
@@ -1185,6 +1200,7 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1217,7 +1233,7 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
                       top: -4,
                       right: 0,
                       child: IconButton(
-                        tooltip: 'Close ingredient editor',
+                        tooltip: l10n.closeIngredientEditorTooltip,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints.tightFor(
                           width: 32,
@@ -1235,7 +1251,7 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Use clear ingredient names and practical quantities.',
+                l10n.ingredientEditorDescription,
                 style: textTheme.bodyMedium?.copyWith(color: colors.mutedInk),
               ),
               const SizedBox(height: 20),
@@ -1248,14 +1264,16 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(ingredientNameMaxLength),
                 ],
-                decoration: const InputDecoration(labelText: 'Ingredient name'),
+                decoration: InputDecoration(
+                  labelText: l10n.ingredientNameLabel,
+                ),
                 validator: (value) {
                   final String trimmed = (value ?? '').trim();
                   if (trimmed.isEmpty) {
-                    return 'Enter an ingredient name.';
+                    return l10n.enterIngredientName;
                   }
                   if (trimmed.length > ingredientNameMaxLength) {
-                    return 'Use up to $ingredientNameMaxLength characters.';
+                    return l10n.useUpToCharacters(ingredientNameMaxLength);
                   }
                   return null;
                 },
@@ -1268,14 +1286,14 @@ class _IngredientEditorSheetState extends State<_IngredientEditorSheet> {
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(ingredientQuantityMaxLength),
                 ],
-                decoration: const InputDecoration(labelText: 'Quantity'),
+                decoration: InputDecoration(labelText: l10n.quantityLabel),
                 validator: (value) {
                   final String trimmed = (value ?? '').trim();
                   if (trimmed.isEmpty) {
-                    return 'Enter a quantity.';
+                    return l10n.enterQuantity;
                   }
                   if (trimmed.length > ingredientQuantityMaxLength) {
-                    return 'Use up to $ingredientQuantityMaxLength characters.';
+                    return l10n.useUpToCharacters(ingredientQuantityMaxLength);
                   }
                   return null;
                 },
@@ -1371,7 +1389,7 @@ class _ImagePreviewOverlay extends StatelessWidget {
                       border: Border.all(color: Colors.white),
                     ),
                     child: IconButton(
-                      tooltip: 'Close preview',
+                      tooltip: context.l10n.closePreviewTooltip,
                       onPressed: onClose,
                       icon: const Icon(
                         Icons.close_rounded,
@@ -1446,12 +1464,13 @@ class _BasicStaplesInfoToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return IconButton(
       key: const ValueKey<String>('basic-staples-info-button'),
       visualDensity: VisualDensity.compact,
       splashRadius: 18,
-      tooltip: 'Basic staples info',
+      tooltip: l10n.basicStaplesInfoTooltip,
       onPressed: onPressed,
       icon: Icon(
         Icons.help_outline_rounded,
@@ -1468,6 +1487,7 @@ class _BasicStaplesTooltipPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return IgnorePointer(
       child: DecoratedBox(
@@ -1500,7 +1520,7 @@ class _BasicStaplesTooltipPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Assumed staples',
+                    l10n.basicStaplesTooltipTitle,
                     style: textTheme.labelLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -1510,7 +1530,7 @@ class _BasicStaplesTooltipPanel extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                basicStaplesTooltipMessage,
+                l10n.basicStaplesTooltipMessage,
                 style: textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFFF1F1F1),
                   height: 1.42,

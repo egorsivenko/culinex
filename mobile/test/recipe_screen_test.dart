@@ -3,6 +3,8 @@ import 'package:culinex/features/session/culinex_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'test_app.dart';
+
 void main() {
   testWidgets('recipe screen uses the updated header and aligned metrics', (
     tester,
@@ -11,7 +13,7 @@ void main() {
     bool wentHome = false;
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: RecipeScreen(
           recipe: GeneratedRecipe(
             dishName: 'Soft Egg Scramble',

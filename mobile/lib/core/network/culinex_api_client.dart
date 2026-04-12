@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -24,12 +25,13 @@ class CulinexApiClient implements CulinexRepository {
   static const Duration _requestTimeout = Duration(seconds: 65);
 
   @override
-  Future<List<ExtractedIngredient>> extractIngredients(File imageFile) async {
+  Future<List<ExtractedIngredient>> extractIngredients(
+    File imageFile, {
+    required Locale locale,
+  }) async {
     final String mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
     if (!mimeType.startsWith('image/')) {
-      throw const CulinexApiException(
-        'Only image files can be scanned for ingredients.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.invalidImageFile);
     }
 
     final http.MultipartRequest request = http.MultipartRequest(
@@ -45,6 +47,7 @@ class CulinexApiClient implements CulinexRepository {
         contentType: MediaType.parse(mimeType),
       ),
     );
+    request.headers['Accept-Language'] = locale.toLanguageTag();
 
     final http.Response response = await _sendMultipart(request);
     final Map<String, dynamic> payload = _decodeJson(response.body);
@@ -59,8 +62,9 @@ class CulinexApiClient implements CulinexRepository {
 
   @override
   Future<GeneratedRecipe> generateRecipe(
-    RecipeGenerationRequest request,
-  ) async {
+    RecipeGenerationRequest request, {
+    required Locale locale,
+  }) async {
     final Uri uri = _apiBaseUri.resolve('generate-recipe');
     final http.Response response;
 
@@ -68,18 +72,17 @@ class CulinexApiClient implements CulinexRepository {
       response = await _client
           .post(
             uri,
-            headers: const {'Content-Type': 'application/json'},
+            headers: <String, String>{
+              'Content-Type': 'application/json',
+              'Accept-Language': locale.toLanguageTag(),
+            },
             body: jsonEncode(request.toJson()),
           )
           .timeout(_requestTimeout);
     } on TimeoutException {
-      throw const CulinexApiException(
-        'Recipe creation took too long. Please try again.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
     } on SocketException {
-      throw const CulinexApiException(
-        'Could not reach the server. Check the backend URL and network.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.networkUnavailable);
     }
 
     _ensureSuccess(response);
@@ -100,13 +103,9 @@ class CulinexApiClient implements CulinexRepository {
     try {
       streamedResponse = await _client.send(request).timeout(_requestTimeout);
     } on TimeoutException {
-      throw const CulinexApiException(
-        'Ingredient recognition took too long. Please try again.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
     } on SocketException {
-      throw const CulinexApiException(
-        'Could not reach the server. Check the backend URL and network.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.networkUnavailable);
     }
 
     final http.Response response = await http.Response.fromStream(
@@ -120,33 +119,36 @@ class CulinexApiClient implements CulinexRepository {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
-
-    final String body = response.body.trim();
-    if (body.isNotEmpty) {
-      throw CulinexApiException(body);
-    }
-
-    throw CulinexApiException(
-      'Server request failed with status ${response.statusCode}.',
-    );
+    throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
   }
 
   Map<String, dynamic> _decodeJson(String source) {
-    final Object? decoded = jsonDecode(source);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(source);
+    } on FormatException {
+      throw const CulinexApiException(CulinexApiErrorCode.unexpectedResponse);
+    }
     if (decoded is! Map<String, dynamic>) {
-      throw const CulinexApiException(
-        'The server returned an unexpected response.',
-      );
+      throw const CulinexApiException(CulinexApiErrorCode.unexpectedResponse);
     }
     return decoded;
   }
 }
 
-class CulinexApiException implements Exception {
-  const CulinexApiException(this.message);
+enum CulinexApiErrorCode {
+  invalidImageFile,
+  requestTimedOut,
+  networkUnavailable,
+  serverFailure,
+  unexpectedResponse,
+}
 
-  final String message;
+class CulinexApiException implements Exception {
+  const CulinexApiException(this.code);
+
+  final CulinexApiErrorCode code;
 
   @override
-  String toString() => message;
+  String toString() => code.name;
 }

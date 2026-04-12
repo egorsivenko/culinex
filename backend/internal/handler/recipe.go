@@ -35,13 +35,15 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples)
+	tag, lang := resolveLanguage(r)
+	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples, lang)
 	if err != nil {
 		log.Printf("[%s] Error generating recipe: %v", requestID, err)
 		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Language", tag)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)

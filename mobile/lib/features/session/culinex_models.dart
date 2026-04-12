@@ -13,12 +13,6 @@ enum IngredientConfidence {
       _ => IngredientConfidence.medium,
     };
   }
-
-  String get label => switch (this) {
-    IngredientConfidence.high => 'High confidence',
-    IngredientConfidence.medium => 'Medium confidence',
-    IngredientConfidence.low => 'Low confidence',
-  };
 }
 
 class ExtractedIngredient {
@@ -114,12 +108,6 @@ enum RecipeDifficulty {
       _ => RecipeDifficulty.medium,
     };
   }
-
-  String get label => switch (this) {
-    RecipeDifficulty.easy => 'Easy',
-    RecipeDifficulty.medium => 'Medium',
-    RecipeDifficulty.hard => 'Hard',
-  };
 }
 
 class NutritionMacros {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:culinex/core/network/culinex_repository.dart';
 import 'package:culinex/features/session/culinex_models.dart';
 import 'package:culinex/features/session/cook_session_controller.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -48,6 +49,7 @@ void main() {
     expect(controller.stage, SessionStage.ingredients);
     expect(controller.ingredients, hasLength(2));
     expect(repository.lastExtractedFile?.path, '/tmp/test-photo.jpg');
+    expect(repository.lastExtractLocale, const Locale('en'));
 
     controller.dispose();
   });
@@ -99,6 +101,7 @@ void main() {
     expect(controller.recipe?.dishName, 'Soft Egg Scramble');
     expect(repository.lastRecipeIngredients, hasLength(2));
     expect(repository.lastAssumeBasicStaples, isTrue);
+    expect(repository.lastGenerateLocale, const Locale('en'));
 
     controller.dispose();
   });
@@ -115,9 +118,11 @@ void main() {
       await controller.extractIngredientsFromPhoto('/tmp/test-photo.jpg');
 
       expect(controller.stage, SessionStage.error);
-      expect(controller.errorTitle, 'Ingredient scan failed');
-      expect(controller.primaryErrorActionLabel, 'Retake photo');
-      expect(controller.secondaryErrorActionLabel, 'Return home');
+      expect(controller.lastOperation, SessionOperation.extractIngredients);
+      expect(
+        controller.errorState.code,
+        SessionErrorCode.noClearIngredientsDetected,
+      );
       expect(repository.extractCallCount, 1);
 
       await controller.performErrorPrimaryAction();
@@ -190,11 +195,30 @@ void main() {
     ], true);
 
     expect(controller.stage, SessionStage.error);
-    expect(
-      controller.errorMessage,
-      'Add at least 2 ingredients before generating a recipe.',
-    );
+    expect(controller.errorState.code, SessionErrorCode.tooFewIngredients);
+    expect(controller.errorState.count, minRecipeIngredientCount);
     expect(repository.lastRecipeIngredients, isNull);
+
+    controller.dispose();
+  });
+
+  test('selected locale is used for extract and recipe generation', () async {
+    final FakeRepository repository = FakeRepository(
+      extractedIngredients: const [
+        ExtractedIngredient(name: 'Яйця', quantity: '2 шт'),
+        ExtractedIngredient(name: 'Масло', quantity: '10 г'),
+      ],
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    controller.setLocale(const Locale('uk'));
+    await controller.extractIngredientsFromPhoto('/tmp/test-photo.jpg');
+    await controller.generateRecipe();
+
+    expect(repository.lastExtractLocale, const Locale('uk'));
+    expect(repository.lastGenerateLocale, const Locale('uk'));
 
     controller.dispose();
   });
@@ -350,22 +374,30 @@ class FakeRepository implements CulinexRepository {
 
   int extractCallCount = 0;
   File? lastExtractedFile;
+  Locale? lastExtractLocale;
   List<RecipeIngredient>? lastRecipeIngredients;
   bool? lastAssumeBasicStaples;
+  Locale? lastGenerateLocale;
 
   @override
-  Future<List<ExtractedIngredient>> extractIngredients(File imageFile) async {
+  Future<List<ExtractedIngredient>> extractIngredients(
+    File imageFile, {
+    required Locale locale,
+  }) async {
     extractCallCount += 1;
     lastExtractedFile = imageFile;
+    lastExtractLocale = locale;
     return extractedIngredients;
   }
 
   @override
   Future<GeneratedRecipe> generateRecipe(
-    RecipeGenerationRequest request,
-  ) async {
+    RecipeGenerationRequest request, {
+    required Locale locale,
+  }) async {
     lastRecipeIngredients = request.ingredients;
     lastAssumeBasicStaples = request.assumeBasicStaples;
+    lastGenerateLocale = locale;
     return _generatedRecipe;
   }
 

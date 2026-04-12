@@ -54,11 +54,15 @@ type Macros struct {
 
 const (
 	model            = "gemini-3-flash-preview"
-	prompt           = "What food products are displayed in the image?"
 	responseMIMEType = "application/json"
+
+	ingredientPrompt         = "What food products are displayed in the image?"
+	recipePrompt             = "Generate a dish recipe using the provided ingredients:"
+	assumeBasicStaplesPrompt = "Assume basic staples are available - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil - but still list them explicitly in the ingredients."
 
 	ingredientSystemInstruction = `You are a helpful culinary assistant.
 Your job is to identify food products and cooking ingredients from user-provided photos so recipes can be generated based on what's available.
+Always respond in %s, regardless of the language the user writes in.
 
 Rules:
 * Only include items that are actually visible in the image. Do NOT invent ingredients that are not clearly present.
@@ -69,6 +73,7 @@ Rules:
 
 	recipeSystemInstruction = `You are a helpful culinary assistant.
 Your job is to generate a practical recipe based on the provided ingredients.
+Always respond in %s, regardless of the language the user writes in.
 
 Rules:
 * Use the provided ingredients as the primary ones.
@@ -85,15 +90,13 @@ Rules:
 * For each ingredient in the output, specify the amount actually USED (g, ml, pieces, or other precise units).
 * If the input "quantity" look like package availability (e.g., "1 bag", "1 box"), do NOT use the whole package by default - use a typical partial amount unless the recipe realistically needs all of it.
 * Calculate macros based ONLY on the amounts used in the recipe, not on everything available.
-* Sanity check: calories_kcal ≈ protein_g*4 + carbs_g*4 + fat_g*9 (within ~10%).`
-
-	assumeBasicStaplesPrompt = "Assume basic staples are available - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil - but still list them explicitly in the ingredients."
+* Sanity check: calories_kcal ≈ protein_g*4 + carbs_g*4 + fat_g*9 (within ~10%%).`
 )
 
-func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (IngredientsResponse, error) {
+func ExtractIngredients(ctx context.Context, data []byte, mimeType string, language string) (IngredientsResponse, error) {
 	parts := []*genai.Part{
 		genai.NewPartFromBytes(data, mimeType),
-		genai.NewPartFromText(prompt),
+		genai.NewPartFromText(ingredientPrompt),
 	}
 
 	contents := []*genai.Content{
@@ -132,7 +135,7 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 	}
 
 	config := &genai.GenerateContentConfig{
-		SystemInstruction: genai.NewContentFromText(ingredientSystemInstruction, genai.RoleUser),
+		SystemInstruction: genai.NewContentFromText(fmt.Sprintf(ingredientSystemInstruction, language), genai.RoleUser),
 		ThinkingConfig: &genai.ThinkingConfig{
 			ThinkingLevel: genai.ThinkingLevelMedium,
 		},
@@ -152,13 +155,13 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string) (Ingr
 	return resp, nil
 }
 
-func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeBasicStaples bool) (RecipeResponse, error) {
+func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeBasicStaples bool, language string) (RecipeResponse, error) {
 	var b strings.Builder
-	b.WriteString("Generate a dish recipe using the provided ingredients:")
+	b.WriteString(recipePrompt)
 	for _, it := range ingredients {
 		name := strings.TrimSpace(it.Name)
 		quantity := strings.TrimSpace(it.Quantity)
-		fmt.Fprintf(&b, "\n- %s (%s)", name, quantity)
+		fmt.Fprintf(&b, "\n- %s: %s", name, quantity)
 	}
 	if assumeBasicStaples {
 		b.WriteString("\n\n")
@@ -242,7 +245,7 @@ func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeB
 	}
 
 	config := &genai.GenerateContentConfig{
-		SystemInstruction: genai.NewContentFromText(recipeSystemInstruction, genai.RoleUser),
+		SystemInstruction: genai.NewContentFromText(fmt.Sprintf(recipeSystemInstruction, language), genai.RoleUser),
 		ThinkingConfig: &genai.ThinkingConfig{
 			ThinkingLevel: genai.ThinkingLevelMedium,
 		},

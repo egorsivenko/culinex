@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/primary_action_button.dart';
+import '../../l10n/l10n.dart';
 import '../session/culinex_models.dart';
+import '../session/session_localizations.dart';
 
 class RecipeScreen extends StatefulWidget {
   const RecipeScreen({
@@ -32,6 +34,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
     final GeneratedRecipe recipe = widget.recipe;
+    final l10n = context.l10n;
 
     return Scaffold(
       body: SafeArea(
@@ -46,7 +49,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
                 onCookAnother: widget.onCookAnother,
               ),
               const SizedBox(height: 20),
-              Text('Quick metrics', style: textTheme.titleLarge),
+              Text(l10n.quickMetrics, style: textTheme.titleLarge),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -60,27 +63,36 @@ class _RecipeScreenState extends State<RecipeScreen> {
                       SizedBox(
                         width: halfWidth,
                         child: _MetricCard(
-                          label: 'Difficulty',
-                          value: recipe.difficulty.label,
+                          label: l10n.difficultyLabel,
+                          value: recipe.difficulty.label(l10n),
                           icon: Icons.restaurant_menu_rounded,
                         ),
                       ),
                       SizedBox(
                         width: halfWidth,
                         child: _MetricCard(
-                          label: 'Cooking time',
-                          value: '${recipe.cookingTimeMinutes} min',
+                          label: l10n.cookingTimeLabel,
+                          value: l10n.cookingTimeValue(
+                            recipe.cookingTimeMinutes,
+                          ),
                           icon: Icons.schedule_rounded,
                         ),
                       ),
                       SizedBox(
                         width: constraints.maxWidth,
                         child: _NutritionSummaryCard(
-                          calories:
-                              '${recipe.macros.caloriesKcal.round()} kcal',
-                          protein: '${recipe.macros.proteinG.round()}g',
-                          carbs: '${recipe.macros.carbsG.round()}g',
-                          fat: '${recipe.macros.fatG.round()}g',
+                          calories: l10n.nutritionCaloriesValue(
+                            recipe.macros.caloriesKcal.round(),
+                          ),
+                          protein: l10n.nutritionMacroValue(
+                            recipe.macros.proteinG.round(),
+                          ),
+                          carbs: l10n.nutritionMacroValue(
+                            recipe.macros.carbsG.round(),
+                          ),
+                          fat: l10n.nutritionMacroValue(
+                            recipe.macros.fatG.round(),
+                          ),
                         ),
                       ),
                     ],
@@ -88,9 +100,9 @@ class _RecipeScreenState extends State<RecipeScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Text('Ingredients', style: textTheme.headlineMedium),
+              Text(l10n.ingredientsHeading, style: textTheme.headlineMedium),
               const SizedBox(height: 8),
-              Text('Check items off as you cook.', style: textTheme.bodyMedium),
+              Text(l10n.ingredientsChecklistHint, style: textTheme.bodyMedium),
               const SizedBox(height: 12),
               GlassPanel(
                 child: Column(
@@ -113,7 +125,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Steps', style: textTheme.headlineMedium),
+              Text(l10n.stepsHeading, style: textTheme.headlineMedium),
               const SizedBox(height: 12),
               ...List<Widget>.generate(recipe.steps.length, (index) {
                 return Padding(
@@ -158,7 +170,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
               }),
               const SizedBox(height: 24),
               PrimaryActionButton(
-                label: 'Cook another',
+                label: l10n.cookAnother,
                 icon: Icons.camera_alt_rounded,
                 onPressed: widget.onCookAnother,
               ),
@@ -185,6 +197,7 @@ class _RecipeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return GlassPanel(
       padding: const EdgeInsets.all(22),
@@ -203,7 +216,7 @@ class _RecipeHeader extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
-                    'Recipe ready',
+                    l10n.recipeReadyBadge,
                     style: TextStyle(
                       color: colors.onAccent,
                       fontWeight: FontWeight.w700,
@@ -213,13 +226,13 @@ class _RecipeHeader extends StatelessWidget {
               ),
               const Spacer(),
               _HeaderActionButton(
-                tooltip: 'Back to ingredients',
+                tooltip: l10n.backToIngredientsTooltip,
                 icon: Icons.arrow_back_ios_new_rounded,
                 onPressed: onBackToIngredients,
               ),
               const SizedBox(width: 10),
               _HeaderActionButton(
-                tooltip: 'Back to home',
+                tooltip: l10n.backToHomeTooltip,
                 icon: Icons.home_rounded,
                 onPressed: onCookAnother,
               ),
@@ -298,6 +311,7 @@ class _NutritionSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return GlassPanel(
       padding: const EdgeInsets.all(16),
@@ -308,7 +322,7 @@ class _NutritionSummaryCard extends StatelessWidget {
           Icon(Icons.local_fire_department_rounded, color: colors.ink),
           const SizedBox(height: 12),
           Text(
-            'Nutrition Summary',
+            l10n.nutritionSummary,
             style: textTheme.labelMedium?.copyWith(color: colors.mutedInk),
           ),
           const SizedBox(height: 6),
@@ -328,9 +342,9 @@ class _NutritionSummaryCard extends StatelessWidget {
             spacing: 12,
             runSpacing: 6,
             children: [
-              _NutritionDetail(label: 'Protein', value: protein),
-              _NutritionDetail(label: 'Carbs', value: carbs),
-              _NutritionDetail(label: 'Fat', value: fat),
+              _NutritionDetail(label: l10n.proteinLabel, value: protein),
+              _NutritionDetail(label: l10n.carbsLabel, value: carbs),
+              _NutritionDetail(label: l10n.fatLabel, value: fat),
             ],
           ),
         ],

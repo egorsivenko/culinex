@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/localization/app_locale.dart';
+import '../core/localization/locale_store.dart';
 import '../core/network/culinex_api_client.dart';
 import '../core/network/culinex_repository.dart';
 import '../core/theme/culinex_theme.dart';
@@ -13,7 +15,10 @@ import '../features/ingredients/scan_loading_screen.dart';
 import '../features/recipe/recipe_loading_screen.dart';
 import '../features/recipe/recipe_screen.dart';
 import '../features/session/cook_session_controller.dart';
+import '../features/session/session_localizations.dart';
 import '../features/session/session_error_screen.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n.dart';
 
 class CulinexApp extends StatefulWidget {
   const CulinexApp({
@@ -21,11 +26,15 @@ class CulinexApp extends StatefulWidget {
     this.controller,
     this.initialThemeMode = ThemeMode.light,
     this.themeModeStore,
+    this.initialLocale = AppLocale.english,
+    this.localeStore,
   });
 
   final CookSessionController? controller;
   final ThemeMode initialThemeMode;
   final ThemeModeStore? themeModeStore;
+  final Locale initialLocale;
+  final LocaleStore? localeStore;
 
   @override
   State<CulinexApp> createState() => _CulinexAppState();
@@ -35,6 +44,7 @@ class _CulinexAppState extends State<CulinexApp> {
   late final bool _ownsController;
   late final CookSessionController _controller;
   ThemeMode _themeMode = ThemeMode.light;
+  Locale _locale = AppLocale.english;
 
   @override
   void initState() {
@@ -42,6 +52,8 @@ class _CulinexAppState extends State<CulinexApp> {
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? _buildController();
     _themeMode = widget.initialThemeMode;
+    _locale = AppLocale.normalize(widget.initialLocale);
+    _controller.setLocale(_locale);
   }
 
   @override
@@ -57,6 +69,9 @@ class _CulinexAppState extends State<CulinexApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Culinex',
+      locale: _locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildCulinexTheme(),
       darkTheme: buildCulinexTheme(brightness: Brightness.dark),
       themeMode: _themeMode,
@@ -64,6 +79,8 @@ class _CulinexAppState extends State<CulinexApp> {
         controller: _controller,
         isDarkMode: _themeMode == ThemeMode.dark,
         onToggleTheme: _toggleTheme,
+        locale: _locale,
+        onSelectLocale: _selectLocale,
       ),
     );
   }
@@ -87,6 +104,23 @@ class _CulinexAppState extends State<CulinexApp> {
       unawaited(themeModeStore.saveThemeMode(nextThemeMode));
     }
   }
+
+  void _selectLocale(Locale locale) {
+    final Locale normalizedLocale = AppLocale.normalize(locale);
+    if (_locale == normalizedLocale) {
+      return;
+    }
+
+    setState(() {
+      _locale = normalizedLocale;
+    });
+    _controller.setLocale(normalizedLocale);
+
+    final LocaleStore? localeStore = widget.localeStore;
+    if (localeStore != null) {
+      unawaited(localeStore.saveLocale(normalizedLocale));
+    }
+  }
 }
 
 class CulinexFlowShell extends StatelessWidget {
@@ -94,18 +128,23 @@ class CulinexFlowShell extends StatelessWidget {
     required this.controller,
     required this.isDarkMode,
     required this.onToggleTheme,
+    required this.locale,
+    required this.onSelectLocale,
     super.key,
   });
 
   final CookSessionController controller;
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final Locale locale;
+  final ValueChanged<Locale> onSelectLocale;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final AppLocalizations l10n = context.l10n;
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 450),
           switchInCurve: Curves.easeOutCubic,
@@ -118,6 +157,8 @@ class CulinexFlowShell extends StatelessWidget {
                 onStartManualEntry: controller.startManualIngredientEntry,
                 isDarkMode: isDarkMode,
                 onToggleTheme: onToggleTheme,
+                locale: locale,
+                onSelectLocale: onSelectLocale,
               ),
               SessionStage.camera => CameraCaptureScreen(
                 onBack: controller.showWelcome,
@@ -148,10 +189,22 @@ class CulinexFlowShell extends StatelessWidget {
                 onCookAnother: controller.resetSession,
               ),
               SessionStage.error => SessionErrorScreen(
-                title: controller.errorTitle,
-                message: controller.errorMessage,
-                primaryActionLabel: controller.primaryErrorActionLabel,
-                secondaryActionLabel: controller.secondaryErrorActionLabel,
+                title: localizeSessionErrorTitle(
+                  l10n,
+                  controller.lastOperation,
+                ),
+                message: localizeSessionErrorMessage(
+                  l10n,
+                  controller.errorState,
+                ),
+                primaryActionLabel: localizeSessionPrimaryActionLabel(
+                  l10n,
+                  controller.lastOperation,
+                ),
+                secondaryActionLabel: localizeSessionSecondaryActionLabel(
+                  l10n,
+                  controller.lastOperation,
+                ),
                 onPrimaryAction: controller.performErrorPrimaryAction,
                 onSecondaryAction: controller.performErrorSecondaryAction,
               ),

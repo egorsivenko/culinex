@@ -5,6 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/widgets/pulse_dots_indicator.dart';
+import '../../l10n/l10n.dart';
+
+enum _CameraIssue {
+  noCamera,
+  flashUnavailable,
+  selectedPhotoOpenFailed,
+  cameraPermissionDenied,
+  cameraAccessRestricted,
+  microphoneDenied,
+  startFailed,
+}
 
 class CameraCaptureScreen extends StatefulWidget {
   const CameraCaptureScreen({
@@ -37,7 +48,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
   bool _isPickingImage = false;
   bool _isInfoPopupMounted = false;
   bool _isInfoPopupVisible = false;
-  String? _errorMessage;
+  _CameraIssue? _issue;
 
   @override
   void initState() {
@@ -85,7 +96,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
   Future<void> _initializeCamera({CameraDescription? preferredCamera}) async {
     setState(() {
       _isInitializing = true;
-      _errorMessage = null;
+      _issue = null;
     });
 
     try {
@@ -93,7 +104,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       if (_availableCameras.isEmpty) {
         setState(() {
           _isInitializing = false;
-          _errorMessage = 'No camera is available on this device.';
+          _issue = _CameraIssue.noCamera;
         });
         return;
       }
@@ -134,7 +145,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
 
       setState(() {
         _isInitializing = false;
-        _errorMessage = _readableCameraError(error);
+        _issue = _mapCameraIssue(error);
       });
     }
   }
@@ -164,7 +175,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       }
 
       setState(() {
-        _errorMessage = 'Flash is not available on this device.';
+        _issue = _CameraIssue.flashUnavailable;
       });
     }
   }
@@ -181,7 +192,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
 
     setState(() {
       _isCapturing = true;
-      _errorMessage = null;
+      _issue = null;
     });
 
     try {
@@ -197,7 +208,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       }
 
       setState(() {
-        _errorMessage = _readableCameraError(error);
+        _issue = _mapCameraIssue(error);
       });
     } finally {
       if (mounted) {
@@ -215,7 +226,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
 
     setState(() {
       _isPickingImage = true;
-      _errorMessage = null;
+      _issue = null;
     });
 
     try {
@@ -233,8 +244,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       }
 
       setState(() {
-        _errorMessage =
-            'The selected photo could not be opened. Please try another image.';
+        _issue = _CameraIssue.selectedPhotoOpenFailed;
       });
     } finally {
       if (mounted) {
@@ -251,13 +261,12 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
     await controller?.dispose();
   }
 
-  String _readableCameraError(CameraException error) {
+  _CameraIssue _mapCameraIssue(CameraException error) {
     return switch (error.code) {
-      'CameraAccessDenied' =>
-        'Camera permission was denied. Enable it in system settings.',
-      'CameraAccessRestricted' => 'Camera access is restricted on this device.',
-      'AudioAccessDenied' => 'Microphone access was denied.',
-      _ => 'The camera could not be started. Please try again.',
+      'CameraAccessDenied' => _CameraIssue.cameraPermissionDenied,
+      'CameraAccessRestricted' => _CameraIssue.cameraAccessRestricted,
+      'AudioAccessDenied' => _CameraIssue.microphoneDenied,
+      _ => _CameraIssue.startFailed,
     };
   }
 
@@ -295,6 +304,8 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -322,7 +333,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
                           const Spacer(),
                           _OverlayIconButton(
                             icon: Icons.info_outline_rounded,
-                            tooltip: 'Show frame hint',
+                            tooltip: l10n.cameraShowFrameHintTooltip,
                             onPressed: _showInfoPopup,
                           ),
                         ],
@@ -337,7 +348,9 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
                               opacity: _isInfoPopupVisible ? 1 : 0,
                               duration: _infoPopupFadeDuration,
                               curve: Curves.easeOutCubic,
-                              child: const _CameraInfoPopup(),
+                              child: _CameraInfoPopup(
+                                message: l10n.cameraInfoPopupText,
+                              ),
                             ),
                           ),
                         ),
@@ -353,7 +366,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
                   ),
                   _CameraControlStatusSlot(
                     isInitializing: _isInitializing,
-                    errorMessage: _errorMessage,
+                    errorMessage: _errorMessage(context),
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -382,6 +395,25 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
         ],
       ),
     );
+  }
+
+  String? _errorMessage(BuildContext context) {
+    final _CameraIssue? issue = _issue;
+    if (issue == null) {
+      return null;
+    }
+
+    final l10n = context.l10n;
+    return switch (issue) {
+      _CameraIssue.noCamera => l10n.cameraNoDevice,
+      _CameraIssue.flashUnavailable => l10n.cameraFlashUnavailable,
+      _CameraIssue.selectedPhotoOpenFailed =>
+        l10n.cameraSelectedPhotoOpenFailed,
+      _CameraIssue.cameraPermissionDenied => l10n.cameraPermissionDenied,
+      _CameraIssue.cameraAccessRestricted => l10n.cameraAccessRestricted,
+      _CameraIssue.microphoneDenied => l10n.cameraMicrophoneDenied,
+      _CameraIssue.startFailed => l10n.cameraStartFailed,
+    };
   }
 }
 
@@ -575,7 +607,9 @@ class _CameraControlStatusSlot extends StatelessWidget {
 }
 
 class _CameraInfoPopup extends StatelessWidget {
-  const _CameraInfoPopup();
+  const _CameraInfoPopup({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -590,7 +624,7 @@ class _CameraInfoPopup extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Text(
-            'Place the ingredients in the frame',
+            message,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.92),

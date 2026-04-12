@@ -2,39 +2,27 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/localization/app_locale.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/primary_action_button.dart';
+import '../../l10n/l10n.dart';
 
-const List<String> culinexWelcomePhrases = <String>[
-  'Turn ingredients into flavor.',
-  'Snap your ingredients. Get a recipe.',
-  'Your next meal starts with a photo.',
-  'Got ingredients? We\'ve got ideas.',
-  'Cook more with what you have.',
-  'Snap a photo. Start cooking.',
-  'Let\'s cook something great today.',
-  'Your kitchen has endless potential.',
-  'Your kitchen has hidden potential.',
-  'Recipe ideas from one photo.',
-  'Smart cooking starts here.',
-];
+const int _culinexWelcomePhraseCount = 11;
 
 final Random _culinexWelcomePhraseRandom = Random();
 int _lastCulinexWelcomePhraseIndex = -1;
 
-String _nextWelcomePhrase() {
+int _nextWelcomePhraseIndex() {
   final bool hasValidPreviousIndex =
       _lastCulinexWelcomePhraseIndex >= 0 &&
-      _lastCulinexWelcomePhraseIndex < culinexWelcomePhrases.length;
+      _lastCulinexWelcomePhraseIndex < _culinexWelcomePhraseCount;
 
   final int nextIndex;
   if (!hasValidPreviousIndex) {
-    nextIndex = _culinexWelcomePhraseRandom.nextInt(
-      culinexWelcomePhrases.length,
-    );
+    nextIndex = _culinexWelcomePhraseRandom.nextInt(_culinexWelcomePhraseCount);
   } else {
     final int rawIndex = _culinexWelcomePhraseRandom.nextInt(
-      culinexWelcomePhrases.length - 1,
+      _culinexWelcomePhraseCount - 1,
     );
     nextIndex = rawIndex >= _lastCulinexWelcomePhraseIndex
         ? rawIndex + 1
@@ -42,7 +30,24 @@ String _nextWelcomePhrase() {
   }
 
   _lastCulinexWelcomePhraseIndex = nextIndex;
-  return culinexWelcomePhrases[nextIndex];
+  return nextIndex;
+}
+
+List<String> localizedCulinexWelcomePhrases(BuildContext context) {
+  final l10n = context.l10n;
+  return <String>[
+    l10n.welcomePhrase1,
+    l10n.welcomePhrase2,
+    l10n.welcomePhrase3,
+    l10n.welcomePhrase4,
+    l10n.welcomePhrase5,
+    l10n.welcomePhrase6,
+    l10n.welcomePhrase7,
+    l10n.welcomePhrase8,
+    l10n.welcomePhrase9,
+    l10n.welcomePhrase10,
+    l10n.welcomePhrase11,
+  ];
 }
 
 class WelcomeScreen extends StatefulWidget {
@@ -51,6 +56,8 @@ class WelcomeScreen extends StatefulWidget {
     required this.onStartManualEntry,
     required this.isDarkMode,
     required this.onToggleTheme,
+    required this.locale,
+    required this.onSelectLocale,
     super.key,
   });
 
@@ -58,16 +65,20 @@ class WelcomeScreen extends StatefulWidget {
   final VoidCallback onStartManualEntry;
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final Locale locale;
+  final ValueChanged<Locale> onSelectLocale;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  late final String _heroPhrase = _nextWelcomePhrase();
+  late final int _heroPhraseIndex = _nextWelcomePhraseIndex();
 
   @override
   Widget build(BuildContext context) {
+    final List<String> welcomePhrases = localizedCulinexWelcomePhrases(context);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -78,6 +89,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               _WelcomeHeader(
                 isDarkMode: widget.isDarkMode,
                 onToggleTheme: widget.onToggleTheme,
+                locale: widget.locale,
+                onSelectLocale: widget.onSelectLocale,
               ),
               const SizedBox(height: 28),
               Expanded(
@@ -95,7 +108,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           width: isWideLayout ? 760 : 392,
                           child: _WelcomeChoiceLayout(
                             isWideLayout: isWideLayout,
-                            heroPhrase: _heroPhrase,
+                            heroPhrase: welcomePhrases[_heroPhraseIndex],
                             onStart: widget.onStart,
                             onStartManualEntry: widget.onStartManualEntry,
                           ),
@@ -114,16 +127,25 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 }
 
 class _WelcomeHeader extends StatelessWidget {
-  const _WelcomeHeader({required this.isDarkMode, required this.onToggleTheme});
+  const _WelcomeHeader({
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    required this.locale,
+    required this.onSelectLocale,
+  });
 
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final Locale locale;
+  final ValueChanged<Locale> onSelectLocale;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         const Expanded(child: _LogoLockup()),
+        const SizedBox(width: 12),
+        _LanguageToggle(locale: locale, onSelectLocale: onSelectLocale),
         const SizedBox(width: 12),
         _ThemeModeButton(isDarkMode: isDarkMode, onPressed: onToggleTheme),
       ],
@@ -189,6 +211,7 @@ class _ThemeModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -198,12 +221,114 @@ class _ThemeModeButton extends StatelessWidget {
       ),
       child: IconButton(
         key: const ValueKey<String>('theme-toggle-button'),
-        tooltip: isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+        tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
         onPressed: onPressed,
         icon: Icon(
           isDarkMode ? Icons.dark_mode_outlined : Icons.wb_sunny_outlined,
           key: ValueKey<String>(
             isDarkMode ? 'theme-icon-dark' : 'theme-icon-light',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({required this.locale, required this.onSelectLocale});
+
+  final Locale locale;
+  final ValueChanged<Locale> onSelectLocale;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isUkrainian = AppLocale.isUkrainian(locale);
+    final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
+
+    return Semantics(
+      button: true,
+      value: isUkrainian
+          ? l10n.languageUkrainianShort
+          : l10n.languageEnglishShort,
+      child: Tooltip(
+        message: isUkrainian ? l10n.switchToEnglish : l10n.switchToUkrainian,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey<String>('language-toggle-button'),
+            borderRadius: BorderRadius.circular(999),
+            onTap: () {
+              onSelectLocale(
+                isUkrainian ? AppLocale.english : AppLocale.ukrainian,
+              );
+            },
+            child: Ink(
+              width: 108,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: colors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      alignment: isUkrainian
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.5,
+                        heightFactor: 1,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.elevatedSurface,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              l10n.languageEnglishShort,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: isUkrainian
+                                        ? colors.mutedInk
+                                        : colors.ink,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              l10n.languageUkrainianShort,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: isUkrainian
+                                        ? colors.ink
+                                        : colors.mutedInk,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -228,26 +353,25 @@ class _WelcomeChoiceLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
     final Widget photoCard = _RecipeModeCard(
-      title: 'Take a photo',
-      description:
-          'Point your camera at the ingredients you already have and let Culinex turn what it sees into one clear recipe.',
+      title: l10n.takePhotoTitle,
+      description: l10n.takePhotoDescription,
       button: PrimaryActionButton(
-        label: 'Use the camera',
+        label: l10n.useCamera,
         icon: Icons.camera_alt_rounded,
         onPressed: onStart,
       ),
     );
     final Widget manualCard = _RecipeModeCard(
-      title: 'Enter ingredients manually',
-      description:
-          'Type the ingredients yourself when you already know the list and want to go straight to a recipe.',
+      title: l10n.enterIngredientsManuallyTitle,
+      description: l10n.enterIngredientsManuallyDescription,
       button: SizedBox(
         width: double.infinity,
         child: OutlinedButton.icon(
           onPressed: onStartManualEntry,
           icon: const Icon(Icons.edit_note_rounded),
-          label: const Text('Type ingredients'),
+          label: Text(l10n.typeIngredients),
         ),
       ),
     );
@@ -268,7 +392,7 @@ class _WelcomeChoiceLayout extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: Text(
-              'Scan ingredients with your camera or type them in to get one smart recipe in seconds.',
+              l10n.welcomeDescription,
               style: textTheme.bodyLarge?.copyWith(color: colors.mutedInk),
             ),
           ),
@@ -308,6 +432,7 @@ class _ChoiceSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return Row(
       children: [
@@ -321,7 +446,7 @@ class _ChoiceSeparator extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Text(
-          'or',
+          l10n.choiceSeparatorOr,
           style: textTheme.titleMedium?.copyWith(
             color: colors.subtleInk,
             fontWeight: FontWeight.w600,

@@ -73,13 +73,15 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 		humanize.Bytes(uint64(fileSize)),
 	)
 
-	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType)
+	tag, lang := resolveLanguage(r)
+	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType, lang)
 	if err != nil {
 		log.Printf("[%s] Error extracting ingredients: %v", requestID, err)
 		http.Error(w, "Failed to extract ingredients", http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Language", tag)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)

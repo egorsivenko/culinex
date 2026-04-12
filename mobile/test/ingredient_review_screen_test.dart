@@ -5,6 +5,11 @@ import 'package:culinex/features/session/culinex_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'test_app.dart';
+
+const String _basicStaplesTooltipMessage =
+    'Water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.';
+
 void main() {
   testWidgets(
     'ingredient review screen supports preview, add, edit, delete, and proceed',
@@ -14,7 +19,7 @@ void main() {
       bool? submittedAssumeBasicStaples;
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: '/tmp/fake-image.jpg',
             ingredients: const [
@@ -165,7 +170,7 @@ void main() {
       bool? submittedAssumeBasicStaples;
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [],
@@ -269,7 +274,7 @@ void main() {
       List<ExtractedIngredient>? submittedIngredients;
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [
@@ -345,7 +350,7 @@ void main() {
       _setTallSurface(tester);
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [
@@ -383,7 +388,7 @@ void main() {
     _setTallSurface(tester);
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: IngredientReviewScreen(
           imagePath: null,
           ingredients: const [
@@ -426,7 +431,7 @@ void main() {
     final Size staplesSectionSize = tester.getSize(sectionFinder);
     final Size tooltipSize = tester.getSize(tooltipFinder);
 
-    expect(find.text(basicStaplesTooltipMessage), findsOneWidget);
+    expect(find.text(_basicStaplesTooltipMessage), findsOneWidget);
     expect(tooltipSize.width, staplesSectionSize.width);
 
     await tester.tap(
@@ -434,19 +439,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(basicStaplesTooltipMessage), findsNothing);
+    expect(find.text(_basicStaplesTooltipMessage), findsNothing);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('basic-staples-info-button')),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(basicStaplesTooltipMessage), findsOneWidget);
+    expect(find.text(_basicStaplesTooltipMessage), findsOneWidget);
 
     await tester.tap(find.text('Review and adjust the list'));
     await tester.pumpAndSettle();
 
-    expect(find.text(basicStaplesTooltipMessage), findsNothing);
+    expect(find.text(_basicStaplesTooltipMessage), findsNothing);
   });
 
   testWidgets(
@@ -455,7 +460,7 @@ void main() {
       _setSurface(tester, const Size(390, 844));
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [
@@ -508,7 +513,7 @@ void main() {
   ) async {
     _setTallSurface(tester);
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: IngredientReviewScreen(
           imagePath: null,
           ingredients: const [
@@ -567,7 +572,7 @@ void main() {
     _setSurface(tester, const Size(390, 844));
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: IngredientReviewScreen(
           imagePath: null,
           ingredients: const [
@@ -591,7 +596,11 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(GlassPanel).at(1), const Offset(-600, 0));
+    await tester.drag(
+      find.byType(GlassPanel).at(1),
+      const Offset(-600, 0),
+      warnIfMissed: false,
+    );
     await tester.pumpAndSettle();
 
     final Finder deleteButton = find.widgetWithIcon(
@@ -603,7 +612,7 @@ void main() {
     final Size initialDeleteButtonSize = tester.getSize(deleteButton);
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: IngredientReviewScreen(
           imagePath: null,
           ingredients: const [
@@ -630,7 +639,11 @@ void main() {
     expect(find.text('Very ripe cherry tomatoes'), findsOneWidget);
     expect(find.text('Edited'), findsOneWidget);
 
-    await tester.drag(find.byType(GlassPanel).at(1), const Offset(-600, 0));
+    await tester.drag(
+      find.byType(GlassPanel).at(1),
+      const Offset(-600, 0),
+      warnIfMissed: false,
+    );
     await tester.pumpAndSettle();
 
     final Size updatedDeleteButtonSize = tester.getSize(deleteButton);
@@ -644,7 +657,7 @@ void main() {
     _setTallSurface(tester);
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedApp(
         home: IngredientReviewScreen(
           imagePath: null,
           ingredients: const [
@@ -708,7 +721,7 @@ void main() {
     (tester) async {
       _setTallSurface(tester);
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [
@@ -752,7 +765,7 @@ void main() {
       _setTallSurface(tester);
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: '/tmp/fake-image.jpg',
             ingredients: const [
@@ -802,7 +815,7 @@ void main() {
       bool openedRecipe = false;
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: '/tmp/fake-image.jpg',
             ingredients: const [
@@ -866,7 +879,7 @@ void main() {
       _setTallSurface(tester);
 
       await tester.pumpWidget(
-        MaterialApp(
+        buildLocalizedApp(
           home: IngredientReviewScreen(
             imagePath: null,
             ingredients: const [

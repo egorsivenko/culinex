@@ -1,0 +1,223 @@
+{
+  "@@locale": "en",
+  "languageEnglishShort": "EN",
+  "languageUkrainianShort": "УКР",
+  "switchToLightMode": "Switch to light mode",
+  "switchToDarkMode": "Switch to dark mode",
+  "switchToEnglish": "Switch to English",
+  "switchToUkrainian": "Switch to Ukrainian",
+  "welcomePhrase1": "Turn ingredients into flavor.",
+  "welcomePhrase2": "Snap your ingredients. Get a recipe.",
+  "welcomePhrase3": "Your next meal starts with a photo.",
+  "welcomePhrase4": "Got ingredients? We've got ideas.",
+  "welcomePhrase5": "Cook more with what you have.",
+  "welcomePhrase6": "Snap a photo. Start cooking.",
+  "welcomePhrase7": "Let's cook something great today.",
+  "welcomePhrase8": "Your kitchen has endless potential.",
+  "welcomePhrase9": "Your kitchen has hidden potential.",
+  "welcomePhrase10": "Recipe ideas from one photo.",
+  "welcomePhrase11": "Smart cooking starts here.",
+  "takePhotoTitle": "Take a photo",
+  "takePhotoDescription": "Point your camera at the ingredients you already have and let Culinex turn what it sees into one clear recipe.",
+  "useCamera": "Use the camera",
+  "enterIngredientsManuallyTitle": "Enter ingredients manually",
+  "enterIngredientsManuallyDescription": "Type the ingredients yourself when you already know the list and want to go straight to a recipe.",
+  "typeIngredients": "Type ingredients",
+  "welcomeDescription": "Scan ingredients with your camera or type them in to get one smart recipe in seconds.",
+  "choiceSeparatorOr": "or",
+  "cameraNoDevice": "No camera is available on this device.",
+  "cameraFlashUnavailable": "Flash is not available on this device.",
+  "cameraSelectedPhotoOpenFailed": "The selected photo could not be opened. Please try another image.",
+  "cameraPermissionDenied": "Camera permission was denied. Enable it in system settings.",
+  "cameraAccessRestricted": "Camera access is restricted on this device.",
+  "cameraMicrophoneDenied": "Microphone access was denied.",
+  "cameraStartFailed": "The camera could not be started. Please try again.",
+  "cameraShowFrameHintTooltip": "Show frame hint",
+  "cameraInfoPopupText": "Place the ingredients in the frame",
+  "scanLoadingBadge": "Scanning ingredients",
+  "scanLoadingTitle": "Recognizing ingredients...",
+  "scanLoadingDescription": "The app is checking what is visible in the photo and estimating the product quantities before recipe creation.",
+  "ingredientConfidenceHigh": "High confidence",
+  "ingredientConfidenceMedium": "Medium confidence",
+  "ingredientConfidenceLow": "Low confidence",
+  "ingredientStatusScanned": "Scan complete",
+  "ingredientStatusManual": "Manual entry",
+  "ingredientReviewScannedTitle": "Review and adjust the list",
+  "ingredientReviewManualTitle": "Add your ingredients",
+  "ingredientReviewScannedDescription": "Add missing ingredients, edit names or quantities, or swipe left to remove anything irrelevant before recipe generation.",
+  "ingredientReviewManualDescription": "Start from scratch, add clear ingredient names and practical quantities, then generate a recipe when the list looks right.",
+  "proceed": "Proceed",
+  "returnToRecipe": "Return to recipe",
+  "generateAgainHint": "Generate again to refresh the recipe after editing this list.",
+  "viewOriginalPhoto": "View original photo",
+  "assumeBasicStaplesTitle": "Assume basic staples are available",
+  "ingredientCountStatus": "{current} / {max} ingredients",
+  "@ingredientCountStatus": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "addIngredient": "Add ingredient",
+  "deleteIngredientTooltip": "Delete {name}",
+  "@deleteIngredientTooltip": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "editIngredientTooltip": "Edit {name}",
+  "@editIngredientTooltip": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "editedBadge": "Edited",
+  "addAtLeastIngredientsToContinue": "Add at least {count} ingredients to continue.",
+  "@addAtLeastIngredientsToContinue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "useNoMoreThanIngredients": "Use no more than {count} ingredients.",
+  "@useNoMoreThanIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "completeIngredientFields": "Complete all ingredient names and quantities before continuing.",
+  "addUpToIngredients": "You can add up to {count} ingredients.",
+  "@addUpToIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "keepAtLeastIngredients": "Keep at least {count} ingredients before generating a recipe.",
+  "@keepAtLeastIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ingredientRemoved": "{name} removed.",
+  "@ingredientRemoved": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "ingredientEditorAddTitle": "Add ingredient",
+  "ingredientEditorEditTitle": "Edit ingredient",
+  "ingredientEditorAddAction": "Add ingredient",
+  "ingredientEditorSaveAction": "Save ingredient",
+  "noIngredientsAddedYet": "No ingredients added yet",
+  "closeIngredientEditorTooltip": "Close ingredient editor",
+  "ingredientEditorDescription": "Use clear ingredient names and practical quantities.",
+  "ingredientNameLabel": "Ingredient name",
+  "enterIngredientName": "Enter an ingredient name.",
+  "useUpToCharacters": "Use up to {count} characters.",
+  "@useUpToCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quantityLabel": "Quantity",
+  "enterQuantity": "Enter a quantity.",
+  "closePreviewTooltip": "Close preview",
+  "basicStaplesInfoTooltip": "Basic staples info",
+  "basicStaplesTooltipTitle": "Assumed staples",
+  "basicStaplesTooltipMessage": "Water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.",
+  "recipeDifficultyEasy": "Easy",
+  "recipeDifficultyMedium": "Medium",
+  "recipeDifficultyHard": "Hard",
+  "recipeReadyBadge": "Recipe ready",
+  "quickMetrics": "Quick metrics",
+  "difficultyLabel": "Difficulty",
+  "cookingTimeLabel": "Cooking time",
+  "cookingTimeValue": "{minutes} min",
+  "@cookingTimeValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "nutritionSummary": "Nutrition Summary",
+  "nutritionCaloriesValue": "{calories} kcal",
+  "@nutritionCaloriesValue": {
+    "placeholders": {
+      "calories": {
+        "type": "int"
+      }
+    }
+  },
+  "nutritionMacroValue": "{grams}g",
+  "@nutritionMacroValue": {
+    "placeholders": {
+      "grams": {
+        "type": "int"
+      }
+    }
+  },
+  "proteinLabel": "Protein",
+  "carbsLabel": "Carbs",
+  "fatLabel": "Fat",
+  "ingredientsHeading": "Ingredients",
+  "ingredientsChecklistHint": "Check items off as you cook.",
+  "stepsHeading": "Steps",
+  "cookAnother": "Cook another",
+  "backToIngredientsTooltip": "Back to ingredients",
+  "backToHomeTooltip": "Back to home",
+  "recipeLoadingMilestone1": "Analyzing products",
+  "recipeLoadingMilestone2": "Selecting flavor combinations",
+  "recipeLoadingMilestone3": "Calculating cooking time",
+  "recipeLoadingMilestone4": "Estimating calories",
+  "recipeLoadingBadge": "AI is cooking",
+  "recipeLoadingTitle": "Creating a recipe based on your ingredients...",
+  "recipeLoadingDescription": "This can take a few moments while the assistant builds a balanced single-serving dish.",
+  "sessionErrorUnknownTitle": "Something went wrong",
+  "sessionErrorUnknownMessage": "Something went wrong. Please try again.",
+  "sessionErrorIngredientScanTitle": "Ingredient scan failed",
+  "sessionErrorRecipeGenerationTitle": "Recipe generation failed",
+  "sessionErrorActionStartOver": "Start over",
+  "sessionErrorActionRetakePhoto": "Retake photo",
+  "sessionErrorActionTryGeneratingAgain": "Try generating again",
+  "sessionErrorActionReturnHome": "Return home",
+  "sessionErrorActionBackToIngredients": "Back to ingredients",
+  "sessionErrorActionHome": "Home",
+  "sessionErrorNoClearIngredients": "No clear ingredients were detected. Try moving closer and improving the lighting.",
+  "sessionErrorCouldNotRecognizePhoto": "I could not recognize the ingredients from this photo. Please try again.",
+  "sessionErrorTooFewIngredients": "Add at least {count} ingredients before generating a recipe.",
+  "@sessionErrorTooFewIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionErrorTooManyIngredients": "Use no more than {count} ingredients for one recipe.",
+  "@sessionErrorTooManyIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionErrorRecipeGenerationMessage": "Recipe generation failed. Please try again.",
+  "sessionErrorNetworkUnavailable": "Could not reach the server. Check the backend URL and network.",
+  "sessionErrorRequestTimedOutScan": "Ingredient recognition took too long. Please try again.",
+  "sessionErrorRequestTimedOutRecipe": "Recipe creation took too long. Please try again.",
+  "sessionErrorInvalidImageFile": "Only image files can be scanned for ingredients.",
+  "sessionErrorUnexpectedResponse": "The server returned an unexpected response."
+}

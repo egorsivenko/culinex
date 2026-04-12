@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../core/network/culinex_api_client.dart';
+import '../../core/localization/app_locale.dart';
 import '../../core/network/culinex_repository.dart';
 import 'culinex_models.dart';
 
@@ -20,6 +21,27 @@ enum SessionOperation { none, extractIngredients, generateRecipe }
 
 enum IngredientEntryMethod { photo, manual }
 
+enum SessionErrorCode {
+  unknown,
+  noClearIngredientsDetected,
+  couldNotRecognizePhoto,
+  tooFewIngredients,
+  tooManyIngredients,
+  recipeGenerationFailed,
+  networkUnavailable,
+  requestTimedOut,
+  invalidImageFile,
+  unexpectedResponse,
+}
+
+class SessionErrorState {
+  const SessionErrorState(this.code, {this.count, this.operation});
+
+  final SessionErrorCode code;
+  final int? count;
+  final SessionOperation? operation;
+}
+
 class CookSessionController extends ChangeNotifier {
   CookSessionController({required CulinexRepository repository})
     : _repository = repository;
@@ -33,47 +55,35 @@ class CookSessionController extends ChangeNotifier {
   List<ExtractedIngredient> _ingredients = const [];
   bool _assumeBasicStaples = true;
   GeneratedRecipe? _recipe;
-  String? _errorMessage;
+  SessionErrorState? _errorState;
+  Locale _locale = AppLocale.english;
   bool _isDisposed = false;
 
   SessionStage get stage => _stage;
+  SessionOperation get lastOperation => _lastOperation;
   String? get capturedImagePath => _capturedImagePath;
   List<ExtractedIngredient> get ingredients => _ingredients;
   bool get assumeBasicStaples => _assumeBasicStaples;
   bool get isManualIngredientEntry =>
       _ingredientEntryMethod == IngredientEntryMethod.manual;
   GeneratedRecipe? get recipe => _recipe;
-  String get errorMessage =>
-      _errorMessage ?? 'Something went wrong. Please try again.';
+  SessionErrorState get errorState =>
+      _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
 
-  String get errorTitle => switch (_lastOperation) {
-    SessionOperation.extractIngredients => 'Ingredient scan failed',
-    SessionOperation.generateRecipe => 'Recipe generation failed',
-    SessionOperation.none => 'Something went wrong',
-  };
-
-  String get primaryErrorActionLabel => switch (_lastOperation) {
-    SessionOperation.none => 'Start over',
-    SessionOperation.extractIngredients => 'Retake photo',
-    SessionOperation.generateRecipe => 'Try generating again',
-  };
-
-  String get secondaryErrorActionLabel => switch (_lastOperation) {
-    SessionOperation.extractIngredients => 'Return home',
-    SessionOperation.generateRecipe => 'Back to ingredients',
-    SessionOperation.none => 'Home',
-  };
+  void setLocale(Locale locale) {
+    _locale = AppLocale.normalize(locale);
+  }
 
   void showWelcome() {
     _stage = SessionStage.welcome;
-    _errorMessage = null;
+    _errorState = null;
     _notifySafely();
   }
 
   void openCamera() {
     _ingredientEntryMethod = IngredientEntryMethod.photo;
     _stage = SessionStage.camera;
-    _errorMessage = null;
+    _errorState = null;
     _notifySafely();
   }
 
@@ -83,7 +93,7 @@ class CookSessionController extends ChangeNotifier {
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
-    _errorMessage = null;
+    _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.ingredients;
     _notifySafely();
@@ -96,7 +106,7 @@ class CookSessionController extends ChangeNotifier {
     }
 
     _stage = SessionStage.ingredients;
-    _errorMessage = null;
+    _errorState = null;
     _notifySafely();
   }
 
@@ -107,7 +117,7 @@ class CookSessionController extends ChangeNotifier {
     }
 
     _stage = SessionStage.recipe;
-    _errorMessage = null;
+    _errorState = null;
     _notifySafely();
   }
 
@@ -117,7 +127,7 @@ class CookSessionController extends ChangeNotifier {
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
-    _errorMessage = null;
+    _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.welcome;
     _notifySafely();
@@ -129,7 +139,7 @@ class CookSessionController extends ChangeNotifier {
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
-    _errorMessage = null;
+    _errorState = null;
     _stage = SessionStage.camera;
     _notifySafely();
   }
@@ -177,14 +187,14 @@ class CookSessionController extends ChangeNotifier {
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
-    _errorMessage = null;
+    _errorState = null;
     _lastOperation = SessionOperation.extractIngredients;
     _stage = SessionStage.extracting;
     _notifySafely();
 
     try {
       final List<ExtractedIngredient> extractedIngredients = await _repository
-          .extractIngredients(File(imagePath));
+          .extractIngredients(File(imagePath), locale: _locale);
 
       if (_isDisposed) {
         return;
@@ -192,7 +202,7 @@ class CookSessionController extends ChangeNotifier {
 
       if (extractedIngredients.isEmpty) {
         throw const CulinexSessionException(
-          'No clear ingredients were detected. Try moving closer and improving the lighting.',
+          SessionErrorState(SessionErrorCode.noClearIngredientsDetected),
         );
       }
 
@@ -208,8 +218,9 @@ class CookSessionController extends ChangeNotifier {
 
       _setError(
         error,
-        fallbackMessage:
-            'I could not recognize the ingredients from this photo. Please try again.',
+        fallbackError: const SessionErrorState(
+          SessionErrorCode.couldNotRecognizePhoto,
+        ),
       );
     }
   }
@@ -218,10 +229,15 @@ class CookSessionController extends ChangeNotifier {
     if (_ingredients.length < minRecipeIngredientCount) {
       _setError(
         const CulinexSessionException(
-          'Add at least 2 ingredients before generating a recipe.',
+          SessionErrorState(
+            SessionErrorCode.tooFewIngredients,
+            count: minRecipeIngredientCount,
+          ),
         ),
-        fallbackMessage:
-            'Add at least 2 ingredients before generating a recipe.',
+        fallbackError: const SessionErrorState(
+          SessionErrorCode.tooFewIngredients,
+          count: minRecipeIngredientCount,
+        ),
       );
       return;
     }
@@ -229,15 +245,20 @@ class CookSessionController extends ChangeNotifier {
     if (_ingredients.length > maxRecipeIngredientCount) {
       _setError(
         CulinexSessionException(
-          'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+          SessionErrorState(
+            SessionErrorCode.tooManyIngredients,
+            count: maxRecipeIngredientCount,
+          ),
         ),
-        fallbackMessage:
-            'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+        fallbackError: const SessionErrorState(
+          SessionErrorCode.tooManyIngredients,
+          count: maxRecipeIngredientCount,
+        ),
       );
       return;
     }
 
-    _errorMessage = null;
+    _errorState = null;
     _lastOperation = SessionOperation.generateRecipe;
     _stage = SessionStage.generatingRecipe;
     _notifySafely();
@@ -250,6 +271,7 @@ class CookSessionController extends ChangeNotifier {
               .toList(),
           assumeBasicStaples: _assumeBasicStaples,
         ),
+        locale: _locale,
       );
 
       if (_isDisposed) {
@@ -266,7 +288,9 @@ class CookSessionController extends ChangeNotifier {
 
       _setError(
         error,
-        fallbackMessage: 'Recipe generation failed. Please try again.',
+        fallbackError: const SessionErrorState(
+          SessionErrorCode.recipeGenerationFailed,
+        ),
       );
     }
   }
@@ -289,7 +313,9 @@ class CookSessionController extends ChangeNotifier {
 
       _setError(
         error,
-        fallbackMessage: 'Recipe generation failed. Please try again.',
+        fallbackError: const SessionErrorState(
+          SessionErrorCode.recipeGenerationFailed,
+        ),
       );
     }
   }
@@ -311,27 +337,58 @@ class CookSessionController extends ChangeNotifier {
 
     if (sanitized.length < minRecipeIngredientCount) {
       throw const CulinexSessionException(
-        'Add at least 2 ingredients before generating a recipe.',
+        SessionErrorState(
+          SessionErrorCode.tooFewIngredients,
+          count: minRecipeIngredientCount,
+        ),
       );
     }
 
     if (sanitized.length > maxRecipeIngredientCount) {
       throw CulinexSessionException(
-        'Use no more than $maxRecipeIngredientCount ingredients for one recipe.',
+        const SessionErrorState(
+          SessionErrorCode.tooManyIngredients,
+          count: maxRecipeIngredientCount,
+        ),
       );
     }
 
     return List<ExtractedIngredient>.unmodifiable(sanitized);
   }
 
-  void _setError(Object error, {required String fallbackMessage}) {
-    _errorMessage = switch (error) {
-      CulinexApiException apiException => apiException.message,
-      CulinexSessionException sessionException => sessionException.message,
-      _ => fallbackMessage,
+  void _setError(Object error, {required SessionErrorState fallbackError}) {
+    _errorState = switch (error) {
+      CulinexApiException apiException => _mapApiError(
+        apiException,
+        fallbackError,
+      ),
+      CulinexSessionException sessionException => sessionException.error,
+      _ => fallbackError,
     };
     _stage = SessionStage.error;
     _notifySafely();
+  }
+
+  SessionErrorState _mapApiError(
+    CulinexApiException error,
+    SessionErrorState fallbackError,
+  ) {
+    return switch (error.code) {
+      CulinexApiErrorCode.invalidImageFile => const SessionErrorState(
+        SessionErrorCode.invalidImageFile,
+      ),
+      CulinexApiErrorCode.requestTimedOut => SessionErrorState(
+        SessionErrorCode.requestTimedOut,
+        operation: _lastOperation,
+      ),
+      CulinexApiErrorCode.networkUnavailable => const SessionErrorState(
+        SessionErrorCode.networkUnavailable,
+      ),
+      CulinexApiErrorCode.unexpectedResponse => const SessionErrorState(
+        SessionErrorCode.unexpectedResponse,
+      ),
+      CulinexApiErrorCode.serverFailure => fallbackError,
+    };
   }
 
   void _notifySafely() {
@@ -349,10 +406,10 @@ class CookSessionController extends ChangeNotifier {
 }
 
 class CulinexSessionException implements Exception {
-  const CulinexSessionException(this.message);
+  const CulinexSessionException(this.error);
 
-  final String message;
+  final SessionErrorState error;
 
   @override
-  String toString() => message;
+  String toString() => error.code.name;
 }

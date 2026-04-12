@@ -6,6 +6,7 @@ import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/photo_backdrop.dart';
 import '../../core/widgets/pulse_dots_indicator.dart';
+import '../../l10n/l10n.dart';
 
 class RecipeLoadingScreen extends StatefulWidget {
   const RecipeLoadingScreen({required this.imagePath, super.key});
@@ -17,12 +18,7 @@ class RecipeLoadingScreen extends StatefulWidget {
 }
 
 class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
-  static const List<String> _milestones = <String>[
-    'Analyzing products',
-    'Selecting flavor combinations',
-    'Calculating cooking time',
-    'Estimating calories',
-  ];
+  static const int _milestoneCount = 4;
 
   Timer? _timer;
   int _visibleMilestones = 0;
@@ -36,7 +32,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
         return;
       }
 
-      if (_visibleMilestones >= _milestones.length) {
+      if (_visibleMilestones >= _milestoneCount) {
         timer.cancel();
         return;
       }
@@ -57,6 +53,13 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
+    final List<String> milestones = <String>[
+      l10n.recipeLoadingMilestone1,
+      l10n.recipeLoadingMilestone2,
+      l10n.recipeLoadingMilestone3,
+      l10n.recipeLoadingMilestone4,
+    ];
 
     return Scaffold(
       body: PhotoBackdrop(
@@ -85,7 +88,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'AI is cooking',
+                          l10n.recipeLoadingBadge,
                           style: textTheme.labelLarge,
                         ),
                       ),
@@ -93,18 +96,18 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                       PulseDotsIndicator(color: colors.ink, size: 14),
                       const SizedBox(height: 22),
                       Text(
-                        'Creating a recipe based on your ingredients...',
+                        l10n.recipeLoadingTitle,
                         style: textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'This can take a few moments while the assistant builds a balanced single-serving dish.',
+                        l10n.recipeLoadingDescription,
                         style: textTheme.bodyLarge?.copyWith(
                           color: colors.mutedInk,
                         ),
                       ),
                       const SizedBox(height: 22),
-                      ...List<Widget>.generate(_milestones.length, (index) {
+                      ...List<Widget>.generate(milestones.length, (index) {
                         final bool isVisible = index < _visibleMilestones;
                         return AnimatedOpacity(
                           duration: const Duration(milliseconds: 350),
@@ -129,7 +132,7 @@ class _RecipeLoadingScreenState extends State<RecipeLoadingScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    _milestones[index],
+                                    milestones[index],
                                     style: textTheme.bodyLarge?.copyWith(
                                       color: colors.ink,
                                     ),

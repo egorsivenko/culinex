@@ -1,0 +1,223 @@
+{
+  "@@locale": "uk",
+  "languageEnglishShort": "EN",
+  "languageUkrainianShort": "УКР",
+  "switchToLightMode": "Перемкнути на світлу тему",
+  "switchToDarkMode": "Перемкнути на темну тему",
+  "switchToEnglish": "Перемкнути на англійську",
+  "switchToUkrainian": "Перемкнути на українську",
+  "welcomePhrase1": "Перетворюйте інгредієнти на смак.",
+  "welcomePhrase2": "Сфотографуйте інгредієнти. Отримайте рецепт.",
+  "welcomePhrase3": "Наступна страва починається з фото.",
+  "welcomePhrase4": "Є інгредієнти? Ідеї знайдуться.",
+  "welcomePhrase5": "Готуйте більше з того, що вже є.",
+  "welcomePhrase6": "Зробіть фото. Почніть готувати.",
+  "welcomePhrase7": "Сьогодні приготуємо щось справді смачне.",
+  "welcomePhrase8": "На вашій кухні безліч можливостей.",
+  "welcomePhrase9": "На вашій кухні прихований потенціал.",
+  "welcomePhrase10": "Ідеї рецептів з одного фото.",
+  "welcomePhrase11": "Розумне готування починається тут.",
+  "takePhotoTitle": "Зробити фото",
+  "takePhotoDescription": "Наведіть камеру на інгредієнти, які вже маєте, і дозвольте Culinex перетворити побачене на один зрозумілий рецепт.",
+  "useCamera": "Використати камеру",
+  "enterIngredientsManuallyTitle": "Ввести інгредієнти вручну",
+  "enterIngredientsManuallyDescription": "Введіть інгредієнти самостійно, якщо вже знаєте список і хочете одразу перейти до рецепта.",
+  "typeIngredients": "Ввести інгредієнти",
+  "welcomeDescription": "Скануйте інгредієнти камерою або введіть їх вручну, щоб за секунди отримати один продуманий рецепт.",
+  "choiceSeparatorOr": "або",
+  "cameraNoDevice": "На цьому пристрої немає доступної камери.",
+  "cameraFlashUnavailable": "Спалах недоступний на цьому пристрої.",
+  "cameraSelectedPhotoOpenFailed": "Не вдалося відкрити вибране фото. Спробуйте інше зображення.",
+  "cameraPermissionDenied": "Доступ до камери заборонено. Увімкніть його в системних налаштуваннях.",
+  "cameraAccessRestricted": "Доступ до камери обмежений на цьому пристрої.",
+  "cameraMicrophoneDenied": "Доступ до мікрофона заборонено.",
+  "cameraStartFailed": "Не вдалося запустити камеру. Спробуйте ще раз.",
+  "cameraShowFrameHintTooltip": "Показати підказку для кадру",
+  "cameraInfoPopupText": "Розмістіть інгредієнти в межах кадру",
+  "scanLoadingBadge": "Сканування інгредієнтів",
+  "scanLoadingTitle": "Розпізнаємо інгредієнти...",
+  "scanLoadingDescription": "Застосунок перевіряє, що видно на фото, і оцінює кількість продуктів перед створенням рецепта.",
+  "ingredientConfidenceHigh": "Висока впевненість",
+  "ingredientConfidenceMedium": "Середня впевненість",
+  "ingredientConfidenceLow": "Низька впевненість",
+  "ingredientStatusScanned": "Сканування завершено",
+  "ingredientStatusManual": "Ручне введення",
+  "ingredientReviewScannedTitle": "Перевірте й скоригуйте список",
+  "ingredientReviewManualTitle": "Додайте інгредієнти",
+  "ingredientReviewScannedDescription": "Додайте пропущені інгредієнти, відредагуйте назви або кількості, або змахніть ліворуч, щоб прибрати зайве перед генерацією рецепта.",
+  "ingredientReviewManualDescription": "Почніть з нуля, додайте чіткі назви інгредієнтів і практичні кількості, а потім згенеруйте рецепт, коли список буде готовий.",
+  "proceed": "Продовжити",
+  "returnToRecipe": "Повернутися до рецепта",
+  "generateAgainHint": "Згенеруйте рецепт ще раз, щоб оновити його після редагування списку.",
+  "viewOriginalPhoto": "Переглянути оригінальне фото",
+  "assumeBasicStaplesTitle": "Вважати базові продукти доступними",
+  "ingredientCountStatus": "{current} / {max} інгредієнтів",
+  "@ingredientCountStatus": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "addIngredient": "Додати інгредієнт",
+  "deleteIngredientTooltip": "Видалити: {name}",
+  "@deleteIngredientTooltip": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "editIngredientTooltip": "Редагувати: {name}",
+  "@editIngredientTooltip": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "editedBadge": "Змінено",
+  "addAtLeastIngredientsToContinue": "Додайте щонайменше {count} інгредієнти, щоб продовжити.",
+  "@addAtLeastIngredientsToContinue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "useNoMoreThanIngredients": "Використовуйте не більше ніж {count} інгредієнтів.",
+  "@useNoMoreThanIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "completeIngredientFields": "Заповніть усі назви інгредієнтів і кількості перед продовженням.",
+  "addUpToIngredients": "Можна додати до {count} інгредієнтів.",
+  "@addUpToIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "keepAtLeastIngredients": "Залиште щонайменше {count} інгредієнти перед генерацією рецепта.",
+  "@keepAtLeastIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ingredientRemoved": "{name}: видалено.",
+  "@ingredientRemoved": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "ingredientEditorAddTitle": "Додати інгредієнт",
+  "ingredientEditorEditTitle": "Редагувати інгредієнт",
+  "ingredientEditorAddAction": "Додати інгредієнт",
+  "ingredientEditorSaveAction": "Зберегти інгредієнт",
+  "noIngredientsAddedYet": "Інгредієнти ще не додані",
+  "closeIngredientEditorTooltip": "Закрити редактор інгредієнта",
+  "ingredientEditorDescription": "Використовуйте зрозумілі назви інгредієнтів і практичні кількості.",
+  "ingredientNameLabel": "Назва інгредієнта",
+  "enterIngredientName": "Введіть назву інгредієнта.",
+  "useUpToCharacters": "Використовуйте до {count} символів.",
+  "@useUpToCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quantityLabel": "Кількість",
+  "enterQuantity": "Введіть кількість.",
+  "closePreviewTooltip": "Закрити перегляд",
+  "basicStaplesInfoTooltip": "Інформація про базові продукти",
+  "basicStaplesTooltipTitle": "Базові продукти",
+  "basicStaplesTooltipMessage": "Вода, поширені сухі спеції та приправи, масло вершкове та нейтральна олія або оливкова олія.",
+  "recipeDifficultyEasy": "Легко",
+  "recipeDifficultyMedium": "Середньо",
+  "recipeDifficultyHard": "Складно",
+  "recipeReadyBadge": "Рецепт готовий",
+  "quickMetrics": "Коротко про рецепт",
+  "difficultyLabel": "Складність",
+  "cookingTimeLabel": "Час приготування",
+  "cookingTimeValue": "{minutes} хв",
+  "@cookingTimeValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "nutritionSummary": "Харчова цінність",
+  "nutritionCaloriesValue": "{calories} ккал",
+  "@nutritionCaloriesValue": {
+    "placeholders": {
+      "calories": {
+        "type": "int"
+      }
+    }
+  },
+  "nutritionMacroValue": "{grams} г",
+  "@nutritionMacroValue": {
+    "placeholders": {
+      "grams": {
+        "type": "int"
+      }
+    }
+  },
+  "proteinLabel": "Білки",
+  "carbsLabel": "Вуглеводи",
+  "fatLabel": "Жири",
+  "ingredientsHeading": "Інгредієнти",
+  "ingredientsChecklistHint": "Відмічайте пункти під час готування.",
+  "stepsHeading": "Кроки",
+  "cookAnother": "Приготувати ще",
+  "backToIngredientsTooltip": "Назад до інгредієнтів",
+  "backToHomeTooltip": "Назад на головну",
+  "recipeLoadingMilestone1": "Аналізуємо продукти",
+  "recipeLoadingMilestone2": "Підбираємо поєднання смаків",
+  "recipeLoadingMilestone3": "Розраховуємо час приготування",
+  "recipeLoadingMilestone4": "Оцінюємо калорійність",
+  "recipeLoadingBadge": "AI готує",
+  "recipeLoadingTitle": "Створюємо рецепт на основі ваших інгредієнтів...",
+  "recipeLoadingDescription": "Це може зайняти кілька миттєвостей, поки помічник формує збалансовану страву на одну порцію.",
+  "sessionErrorUnknownTitle": "Щось пішло не так",
+  "sessionErrorUnknownMessage": "Щось пішло не так. Спробуйте ще раз.",
+  "sessionErrorIngredientScanTitle": "Не вдалося просканувати інгредієнти",
+  "sessionErrorRecipeGenerationTitle": "Не вдалося згенерувати рецепт",
+  "sessionErrorActionStartOver": "Почати спочатку",
+  "sessionErrorActionRetakePhoto": "Зробити фото ще раз",
+  "sessionErrorActionTryGeneratingAgain": "Спробувати згенерувати ще раз",
+  "sessionErrorActionReturnHome": "Повернутися на головну",
+  "sessionErrorActionBackToIngredients": "Назад до інгредієнтів",
+  "sessionErrorActionHome": "Головна",
+  "sessionErrorNoClearIngredients": "Не вдалося чітко розпізнати інгредієнти. Спробуйте наблизитися та покращити освітлення.",
+  "sessionErrorCouldNotRecognizePhoto": "Не вдалося розпізнати інгредієнти на цьому фото. Спробуйте ще раз.",
+  "sessionErrorTooFewIngredients": "Додайте щонайменше {count} інгредієнти перед генерацією рецепта.",
+  "@sessionErrorTooFewIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionErrorTooManyIngredients": "Використовуйте не більше ніж {count} інгредієнтів для одного рецепта.",
+  "@sessionErrorTooManyIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionErrorRecipeGenerationMessage": "Не вдалося згенерувати рецепт. Спробуйте ще раз.",
+  "sessionErrorNetworkUnavailable": "Не вдалося з'єднатися із сервером. Перевірте адресу бекенда та мережу.",
+  "sessionErrorRequestTimedOutScan": "Розпізнавання інгредієнтів триває надто довго. Спробуйте ще раз.",
+  "sessionErrorRequestTimedOutRecipe": "Створення рецепта триває надто довго. Спробуйте ще раз.",
+  "sessionErrorInvalidImageFile": "Для сканування інгредієнтів можна використовувати лише зображення.",
+  "sessionErrorUnexpectedResponse": "Сервер повернув неочікувану відповідь."
+}

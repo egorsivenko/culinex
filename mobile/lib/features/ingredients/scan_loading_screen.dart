@@ -4,6 +4,7 @@ import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/photo_backdrop.dart';
 import '../../core/widgets/pulse_dots_indicator.dart';
+import '../../l10n/l10n.dart';
 
 class ScanLoadingScreen extends StatelessWidget {
   const ScanLoadingScreen({required this.imagePath, super.key});
@@ -14,6 +15,7 @@ class ScanLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       body: PhotoBackdrop(
@@ -41,7 +43,7 @@ class ScanLoadingScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Scanning ingredients',
+                          l10n.scanLoadingBadge,
                           style: textTheme.labelLarge,
                         ),
                       ),
@@ -49,12 +51,12 @@ class ScanLoadingScreen extends StatelessWidget {
                       PulseDotsIndicator(color: colors.ink, size: 14),
                       const SizedBox(height: 22),
                       Text(
-                        'Recognizing ingredients...',
+                        l10n.scanLoadingTitle,
                         style: textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'The app is checking what is visible in the photo and estimating the product quantities before recipe creation.',
+                        l10n.scanLoadingDescription,
                         style: textTheme.bodyLarge?.copyWith(
                           color: colors.mutedInk,
                         ),
