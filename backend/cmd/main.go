@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/egorsivenko/culinex/internal/ai"
+	"github.com/egorsivenko/culinex/internal/db"
 	"github.com/egorsivenko/culinex/internal/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,7 +16,12 @@ import (
 )
 
 func main() {
-	ai.InitGeminiClient(context.Background())
+	ctx := context.Background()
+
+	db.InitDB(ctx, os.Getenv("DATABASE_URL"))
+	defer db.Pool.Close()
+
+	ai.InitGeminiClient(ctx)
 
 	r := chi.NewRouter()
 
