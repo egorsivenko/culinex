@@ -17,9 +17,11 @@ import (
 
 func main() {
 	ctx := context.Background()
+	databaseURL := os.Getenv("DATABASE_URL")
 
-	db.InitDB(ctx, os.Getenv("DATABASE_URL"))
+	db.InitDB(ctx, databaseURL)
 	defer db.Pool.Close()
+	db.RunMigrations(ctx, databaseURL)
 
 	ai.InitGeminiClient(ctx)
 
