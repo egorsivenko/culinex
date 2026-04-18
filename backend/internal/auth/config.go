@@ -30,6 +30,7 @@ func LoadConfig() {
 	if err := Cfg.validate(); err != nil {
 		log.Fatalf("Invalid JWT config: %v", err)
 	}
+	log.Println("JWT config loaded and validated")
 }
 
 func parseDuration(value string) time.Duration {

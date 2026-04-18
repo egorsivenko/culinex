@@ -18,6 +18,7 @@ func InitGeminiClient(ctx context.Context) {
 	if err != nil {
 		log.Fatalf("Failed to create Gemini client: %v", err)
 	}
+	log.Println("Gemini client initialized")
 }
 
 type IngredientsResponse struct {
