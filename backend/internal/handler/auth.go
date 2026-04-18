@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/egorsivenko/culinex/internal/auth"
-	"github.com/egorsivenko/culinex/internal/db"
 )
 
 type authRequest struct {
@@ -49,8 +48,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service := auth.NewService(db.Pool)
-	result, err := service.SignUp(r.Context(), auth.SignUpInput{
+	result, err := auth.SignUp(r.Context(), auth.SignUpInput{
 		FullName: req.FullName,
 		Email:    req.Email,
 		Password: req.Password,
@@ -70,8 +68,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service := auth.NewService(db.Pool)
-	result, err := service.Login(r.Context(), auth.LoginInput{
+	result, err := auth.Login(r.Context(), auth.LoginInput{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -90,8 +87,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service := auth.NewService(db.Pool)
-	result, err := service.Refresh(r.Context(), auth.RefreshInput{
+	result, err := auth.Refresh(r.Context(), auth.RefreshInput{
 		RefreshToken: req.RefreshToken,
 	})
 	if err != nil {
@@ -109,8 +105,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service := auth.NewService(db.Pool)
-	if err := service.Logout(r.Context(), auth.LogoutInput{
+	if err := auth.Logout(r.Context(), auth.LogoutInput{
 		RefreshToken: req.RefreshToken,
 	}); err != nil {
 		writeAuthServiceError(w, err)

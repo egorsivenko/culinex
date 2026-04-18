@@ -7,10 +7,10 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/egorsivenko/culinex/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,10 +25,6 @@ var (
 	ErrInvalidCredentials = errors.New("auth: invalid credentials")
 	ErrSessionExpired     = errors.New("auth: session expired")
 )
-
-type Service struct {
-	db *pgxpool.Pool
-}
 
 type SignUpInput struct {
 	FullName string
@@ -55,11 +51,7 @@ type AuthResult struct {
 	TokenPair TokenPair
 }
 
-func NewService(db *pgxpool.Pool) *Service {
-	return &Service{db: db}
-}
-
-func (s *Service) SignUp(ctx context.Context, input SignUpInput) (AuthResult, error) {
+func SignUp(ctx context.Context, input SignUpInput) (AuthResult, error) {
 	normalizedInput, err := normalizeSignUpInput(input)
 	if err != nil {
 		return AuthResult{}, err
@@ -70,7 +62,7 @@ func (s *Service) SignUp(ctx context.Context, input SignUpInput) (AuthResult, er
 		return AuthResult{}, fmt.Errorf("hash password: %w", err)
 	}
 
-	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return AuthResult{}, fmt.Errorf("begin transaction: %w", err)
 	}
@@ -138,7 +130,7 @@ func (s *Service) SignUp(ctx context.Context, input SignUpInput) (AuthResult, er
 	}, nil
 }
 
-func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, error) {
+func Login(ctx context.Context, input LoginInput) (AuthResult, error) {
 	normalizedInput, err := normalizeLoginInput(input)
 	if err != nil {
 		return AuthResult{}, err
@@ -157,7 +149,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 	`
 	var result AuthResult
 	var passwordHash string
-	if err := s.db.QueryRow(ctx, loginQuery, ProviderLocal, normalizedInput.Email).Scan(
+	if err := db.Pool.QueryRow(ctx, loginQuery, ProviderLocal, normalizedInput.Email).Scan(
 		&result.User.ID,
 		&result.User.FullName,
 		&result.User.CreatedAt,
@@ -183,7 +175,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 		return AuthResult{}, fmt.Errorf("issue token pair: %w", err)
 	}
 
-	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return AuthResult{}, fmt.Errorf("begin transaction: %w", err)
 	}
@@ -202,7 +194,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 	return result, nil
 }
 
-func (s *Service) Refresh(ctx context.Context, input RefreshInput) (AuthResult, error) {
+func Refresh(ctx context.Context, input RefreshInput) (AuthResult, error) {
 	refreshToken := strings.TrimSpace(input.RefreshToken)
 	if refreshToken == "" {
 		return AuthResult{}, fmt.Errorf("%w: refresh_token is required", ErrValidation)
@@ -213,7 +205,7 @@ func (s *Service) Refresh(ctx context.Context, input RefreshInput) (AuthResult, 
 		return AuthResult{}, ErrSessionExpired
 	}
 
-	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return AuthResult{}, fmt.Errorf("begin transaction: %w", err)
 	}
@@ -280,7 +272,7 @@ func (s *Service) Refresh(ctx context.Context, input RefreshInput) (AuthResult, 
 	}, nil
 }
 
-func (s *Service) Logout(ctx context.Context, input LogoutInput) error {
+func Logout(ctx context.Context, input LogoutInput) error {
 	refreshToken := strings.TrimSpace(input.RefreshToken)
 	if refreshToken == "" {
 		return fmt.Errorf("%w: refresh_token is required", ErrValidation)
@@ -295,7 +287,7 @@ func (s *Service) Logout(ctx context.Context, input LogoutInput) error {
 		DELETE FROM user_sessions
 		WHERE id = $1 AND user_id = $2 AND refresh_token_hash = $3
 	`
-	commandTag, err := s.db.Exec(
+	commandTag, err := db.Pool.Exec(
 		ctx,
 		deleteSessionQuery,
 		claims.SessionID,
