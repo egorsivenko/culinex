@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/egorsivenko/culinex/internal/ai"
+	"github.com/egorsivenko/culinex/internal/auth"
 	"github.com/egorsivenko/culinex/internal/db"
 	"github.com/egorsivenko/culinex/internal/handler"
 	"github.com/go-chi/chi/v5"
@@ -22,6 +23,8 @@ func main() {
 	db.InitDB(ctx, databaseURL)
 	defer db.Pool.Close()
 	db.RunMigrations(ctx, databaseURL)
+
+	auth.LoadConfig()
 
 	ai.InitGeminiClient(ctx)
 
