@@ -40,6 +40,10 @@ func main() {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	r.Route("/api", func(r chi.Router) {
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/signup", handler.SignUp)
+			r.Post("/login", handler.Login)
+		})
 		r.Post("/extract-ingredients", handler.ExtractIngredients)
 		r.Post("/generate-recipe", handler.GenerateRecipe)
 	})
