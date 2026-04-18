@@ -364,7 +364,7 @@ func getUserByID(ctx context.Context, tx pgx.Tx, userID uuid.UUID) (User, string
 }
 
 func normalizeSignUpInput(input SignUpInput) (SignUpInput, error) {
-	input.FullName = strings.TrimSpace(input.FullName)
+	input.FullName = normalizeFullName(input.FullName)
 	input.Email = normalizeEmail(input.Email)
 
 	switch {
@@ -396,6 +396,10 @@ func normalizeLoginInput(input LoginInput) (LoginInput, error) {
 
 func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
+}
+
+func normalizeFullName(fullName string) string {
+	return strings.Join(strings.Fields(fullName), " ")
 }
 
 func isValidEmail(email string) bool {
