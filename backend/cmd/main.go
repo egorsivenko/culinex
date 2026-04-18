@@ -46,8 +46,12 @@ func main() {
 			r.Post("/refresh", handler.Refresh)
 			r.Post("/logout", handler.Logout)
 		})
-		r.Post("/extract-ingredients", handler.ExtractIngredients)
-		r.Post("/generate-recipe", handler.GenerateRecipe)
+
+		r.Group(func(r chi.Router) {
+			r.Use(auth.Middleware())
+			r.Post("/extract-ingredients", handler.ExtractIngredients)
+			r.Post("/generate-recipe", handler.GenerateRecipe)
+		})
 	})
 
 	log.Println("HTTP server listening on :8080")
