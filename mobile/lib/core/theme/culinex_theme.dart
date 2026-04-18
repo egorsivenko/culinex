@@ -247,6 +247,7 @@ ThemeData buildCulinexTheme({Brightness brightness = Brightness.light}) {
       labelStyle: textTheme.bodyMedium?.copyWith(color: palette.mutedInk),
       hintStyle: textTheme.bodyMedium?.copyWith(color: palette.subtleInk),
       counterStyle: textTheme.bodySmall?.copyWith(color: palette.mutedInk),
+      errorMaxLines: 2,
       border: inputBorder,
       enabledBorder: inputBorder,
       focusedBorder: inputBorder.copyWith(

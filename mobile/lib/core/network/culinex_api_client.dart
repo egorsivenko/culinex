@@ -8,17 +8,24 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
+import '../auth/auth_api_client.dart';
+import '../auth/auth_session_coordinator.dart';
 import '../../features/session/culinex_models.dart';
 import '../config/app_config.dart';
 import 'culinex_repository.dart';
 
 class CulinexApiClient implements CulinexRepository {
-  CulinexApiClient({Uri? apiBaseUri, http.Client? client})
-    : _apiBaseUri = apiBaseUri ?? AppConfig.apiBaseUri,
-      _client = client ?? http.Client(),
-      _ownsClient = client == null;
+  CulinexApiClient({
+    required AuthSessionCoordinator authSessionCoordinator,
+    Uri? apiBaseUri,
+    http.Client? client,
+  }) : _apiBaseUri = apiBaseUri ?? AppConfig.apiBaseUri,
+       _authSessionCoordinator = authSessionCoordinator,
+       _client = client ?? http.Client(),
+       _ownsClient = client == null;
 
   final Uri _apiBaseUri;
+  final AuthSessionCoordinator _authSessionCoordinator;
   final http.Client _client;
   final bool _ownsClient;
 
@@ -34,22 +41,25 @@ class CulinexApiClient implements CulinexRepository {
       throw const CulinexApiException(CulinexApiErrorCode.invalidImageFile);
     }
 
-    final http.MultipartRequest request = http.MultipartRequest(
-      'POST',
-      _apiBaseUri.resolve('extract-ingredients'),
-    );
+    final http.Response response = await _sendAuthorizedMultipart(
+      locale: locale,
+      buildRequest: () async {
+        final http.MultipartRequest request = http.MultipartRequest(
+          'POST',
+          _apiBaseUri.resolve('extract-ingredients'),
+        );
 
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'image',
-        imageFile.path,
-        filename: p.basename(imageFile.path),
-        contentType: MediaType.parse(mimeType),
-      ),
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'image',
+            imageFile.path,
+            filename: p.basename(imageFile.path),
+            contentType: MediaType.parse(mimeType),
+          ),
+        );
+        return request;
+      },
     );
-    request.headers['Accept-Language'] = locale.toLanguageTag();
-
-    final http.Response response = await _sendMultipart(request);
     final Map<String, dynamic> payload = _decodeJson(response.body);
     final List<dynamic> items = payload['ingredients'] as List<dynamic>? ?? [];
 
@@ -65,27 +75,11 @@ class CulinexApiClient implements CulinexRepository {
     RecipeGenerationRequest request, {
     required Locale locale,
   }) async {
-    final Uri uri = _apiBaseUri.resolve('generate-recipe');
-    final http.Response response;
-
-    try {
-      response = await _client
-          .post(
-            uri,
-            headers: <String, String>{
-              'Content-Type': 'application/json',
-              'Accept-Language': locale.toLanguageTag(),
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(_requestTimeout);
-    } on TimeoutException {
-      throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
-    } on SocketException {
-      throw const CulinexApiException(CulinexApiErrorCode.networkUnavailable);
-    }
-
-    _ensureSuccess(response);
+    final http.Response response = await _sendAuthorizedJson(
+      path: 'generate-recipe',
+      locale: locale,
+      payload: request.toJson(),
+    );
     final Map<String, dynamic> payload = _decodeJson(response.body);
     return GeneratedRecipe.fromJson(payload);
   }
@@ -94,6 +88,79 @@ class CulinexApiClient implements CulinexRepository {
   void close() {
     if (_ownsClient) {
       _client.close();
+    }
+  }
+
+  Future<http.Response> _sendAuthorizedJson({
+    required String path,
+    required Locale locale,
+    required Map<String, dynamic> payload,
+  }) {
+    return _sendAuthorized(
+      send: (String accessToken) async {
+        final Uri uri = _apiBaseUri.resolve(path);
+
+        try {
+          return await _client
+              .post(
+                uri,
+                headers: <String, String>{
+                  'Content-Type': 'application/json',
+                  'Accept-Language': locale.toLanguageTag(),
+                  'Authorization': 'Bearer $accessToken',
+                },
+                body: jsonEncode(payload),
+              )
+              .timeout(_requestTimeout);
+        } on TimeoutException {
+          throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
+        } on SocketException {
+          throw const CulinexApiException(
+            CulinexApiErrorCode.networkUnavailable,
+          );
+        }
+      },
+    );
+  }
+
+  Future<http.Response> _sendAuthorizedMultipart({
+    required Locale locale,
+    required Future<http.MultipartRequest> Function() buildRequest,
+  }) {
+    return _sendAuthorized(
+      send: (String accessToken) async {
+        final http.MultipartRequest request = await buildRequest();
+        request.headers['Accept-Language'] = locale.toLanguageTag();
+        request.headers['Authorization'] = 'Bearer $accessToken';
+        return _sendMultipart(request);
+      },
+    );
+  }
+
+  Future<http.Response> _sendAuthorized({
+    required Future<http.Response> Function(String accessToken) send,
+  }) async {
+    try {
+      final String accessToken = await _authSessionCoordinator
+          .getValidAccessToken();
+      http.Response response = await send(accessToken);
+      if (response.statusCode != HttpStatus.unauthorized) {
+        _ensureSuccess(response);
+        return response;
+      }
+
+      final String refreshedAccessToken = await _authSessionCoordinator
+          .refreshAccessToken();
+      response = await send(refreshedAccessToken);
+      if (response.statusCode == HttpStatus.unauthorized) {
+        await _authSessionCoordinator.handleUnauthorized();
+        throw const CulinexApiException(CulinexApiErrorCode.unauthorized);
+      }
+
+      _ensureSuccess(response);
+      return response;
+    } on AuthApiException catch (error) {
+      throw _mapAuthException(error);
     }
   }
 
@@ -111,7 +178,6 @@ class CulinexApiClient implements CulinexRepository {
     final http.Response response = await http.Response.fromStream(
       streamedResponse,
     );
-    _ensureSuccess(response);
     return response;
   }
 
@@ -119,7 +185,25 @@ class CulinexApiClient implements CulinexRepository {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
+    if (response.statusCode == HttpStatus.unauthorized) {
+      throw const CulinexApiException(CulinexApiErrorCode.unauthorized);
+    }
     throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
+  }
+
+  CulinexApiException _mapAuthException(AuthApiException error) {
+    return CulinexApiException(switch (error.code) {
+      AuthApiErrorCode.requestTimedOut => CulinexApiErrorCode.requestTimedOut,
+      AuthApiErrorCode.networkUnavailable =>
+        CulinexApiErrorCode.networkUnavailable,
+      AuthApiErrorCode.unexpectedResponse =>
+        CulinexApiErrorCode.unexpectedResponse,
+      AuthApiErrorCode.sessionExpired => CulinexApiErrorCode.unauthorized,
+      AuthApiErrorCode.serverFailure => CulinexApiErrorCode.serverFailure,
+      AuthApiErrorCode.validationFailed => CulinexApiErrorCode.serverFailure,
+      AuthApiErrorCode.emailAlreadyInUse => CulinexApiErrorCode.serverFailure,
+      AuthApiErrorCode.invalidCredentials => CulinexApiErrorCode.serverFailure,
+    });
   }
 
   Map<String, dynamic> _decodeJson(String source) {
@@ -140,6 +224,7 @@ enum CulinexApiErrorCode {
   invalidImageFile,
   requestTimedOut,
   networkUnavailable,
+  unauthorized,
   serverFailure,
   unexpectedResponse,
 }

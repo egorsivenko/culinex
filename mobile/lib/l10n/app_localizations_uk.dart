@@ -27,6 +27,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get switchToUkrainian => 'Перемкнути на українську';
 
   @override
+  String get signOut => 'Вийти';
+
+  @override
   String get welcomePhrase1 => 'Перетворюйте інгредієнти на смак.';
 
   @override
@@ -438,4 +441,104 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get sessionErrorUnexpectedResponse =>
       'Сервер повернув неочікувану відповідь.';
+
+  @override
+  String get authSignInIntro => 'Увійдіть, щоб продовжити готувати.';
+
+  @override
+  String get authSignUpIntro =>
+      'Створіть обліковий запис, щоб зберігати свою сесію.';
+
+  @override
+  String get authModeSignIn => 'Увійти';
+
+  @override
+  String get authModeSignUp => 'Зареєструватися';
+
+  @override
+  String get authFullNameLabel => 'Повне Ім\'я';
+
+  @override
+  String get authEmailLabel => 'Електронна пошта';
+
+  @override
+  String get authPasswordLabel => 'Пароль';
+
+  @override
+  String get authConfirmPasswordLabel => 'Підтвердження пароля';
+
+  @override
+  String get authEnterFullName => 'Введіть повне ім\'я';
+
+  @override
+  String get authEnterEmail => 'Введіть електронну пошту';
+
+  @override
+  String get authEnterValidEmail => 'Введіть коректну електронну пошту';
+
+  @override
+  String get authEnterPassword => 'Введіть пароль';
+
+  @override
+  String get authPasswordMinLength =>
+      'Пароль має містити щонайменше 8 символів';
+
+  @override
+  String get authConfirmPassword => 'Підтвердіть пароль';
+
+  @override
+  String get authPasswordsDoNotMatch => 'Паролі не збігаються';
+
+  @override
+  String get authSubmitLoading => 'Зачекайте...';
+
+  @override
+  String get authFutureProvidersHint =>
+      'Вхід через Google та Apple можна буде додати пізніше без зміни цього сценарію.';
+
+  @override
+  String get authSwitchToSignUpPrompt => 'Ще не маєте акаунта?';
+
+  @override
+  String get authSwitchToSignInPrompt => 'Вже маєте акаунт?';
+
+  @override
+  String get authShowPassword => 'Показати пароль';
+
+  @override
+  String get authHidePassword => 'Приховати пароль';
+
+  @override
+  String get authDismissError => 'Закрити помилку';
+
+  @override
+  String get authErrorValidationFailed =>
+      'Перевірте форму та спробуйте ще раз.';
+
+  @override
+  String get authErrorEmailAlreadyInUse =>
+      'Ця електронна пошта вже використовується.';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'Неправильна електронна пошта або пароль.';
+
+  @override
+  String get authErrorSessionExpired => 'Термін дії вашої сесії завершився.';
+
+  @override
+  String get authErrorRequestTimedOut =>
+      'Час очікування запиту вичерпано. Спробуйте ще раз.';
+
+  @override
+  String get authErrorNetworkUnavailable => 'Немає мережевого з\'єднання.';
+
+  @override
+  String get authErrorServerFailure => 'Помилка сервера. Спробуйте пізніше.';
+
+  @override
+  String get authErrorUnexpectedResponse => 'Неочікувана відповідь сервера.';
+
+  @override
+  String get authErrorRestoreSession => 'Не вдалося відновити збережену сесію.';
 }

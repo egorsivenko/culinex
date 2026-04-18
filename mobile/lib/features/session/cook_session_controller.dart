@@ -384,6 +384,7 @@ class CookSessionController extends ChangeNotifier {
       CulinexApiErrorCode.networkUnavailable => const SessionErrorState(
         SessionErrorCode.networkUnavailable,
       ),
+      CulinexApiErrorCode.unauthorized => fallbackError,
       CulinexApiErrorCode.unexpectedResponse => const SessionErrorState(
         SessionErrorCode.unexpectedResponse,
       ),

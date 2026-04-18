@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get switchToUkrainian => 'Switch to Ukrainian';
 
   @override
+  String get signOut => 'Sign out';
+
+  @override
   String get welcomePhrase1 => 'Turn ingredients into flavor.';
 
   @override
@@ -435,4 +438,99 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sessionErrorUnexpectedResponse =>
       'The server returned an unexpected response.';
+
+  @override
+  String get authSignInIntro => 'Sign in to continue cooking.';
+
+  @override
+  String get authSignUpIntro => 'Create your account to save your session.';
+
+  @override
+  String get authModeSignIn => 'Sign in';
+
+  @override
+  String get authModeSignUp => 'Sign up';
+
+  @override
+  String get authFullNameLabel => 'Full Name';
+
+  @override
+  String get authEmailLabel => 'Email';
+
+  @override
+  String get authPasswordLabel => 'Password';
+
+  @override
+  String get authConfirmPasswordLabel => 'Confirm Password';
+
+  @override
+  String get authEnterFullName => 'Enter your full name';
+
+  @override
+  String get authEnterEmail => 'Enter your email';
+
+  @override
+  String get authEnterValidEmail => 'Enter a valid email';
+
+  @override
+  String get authEnterPassword => 'Enter your password';
+
+  @override
+  String get authPasswordMinLength => 'Password must be at least 8 characters';
+
+  @override
+  String get authConfirmPassword => 'Confirm your password';
+
+  @override
+  String get authPasswordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get authSubmitLoading => 'Please wait...';
+
+  @override
+  String get authFutureProvidersHint =>
+      'Google and Apple sign-in can be added later without changing this flow.';
+
+  @override
+  String get authSwitchToSignUpPrompt => 'Don\'t have an account?';
+
+  @override
+  String get authSwitchToSignInPrompt => 'Already have an account?';
+
+  @override
+  String get authShowPassword => 'Show password';
+
+  @override
+  String get authHidePassword => 'Hide password';
+
+  @override
+  String get authDismissError => 'Dismiss error';
+
+  @override
+  String get authErrorValidationFailed =>
+      'Please check the form and try again.';
+
+  @override
+  String get authErrorEmailAlreadyInUse => 'This email is already in use.';
+
+  @override
+  String get authErrorInvalidCredentials => 'Incorrect email or password.';
+
+  @override
+  String get authErrorSessionExpired => 'Your session has expired.';
+
+  @override
+  String get authErrorRequestTimedOut => 'The request timed out. Try again.';
+
+  @override
+  String get authErrorNetworkUnavailable => 'No network connection.';
+
+  @override
+  String get authErrorServerFailure => 'Server error. Try again later.';
+
+  @override
+  String get authErrorUnexpectedResponse => 'Unexpected server response.';
+
+  @override
+  String get authErrorRestoreSession => 'Could not restore the saved session.';
 }

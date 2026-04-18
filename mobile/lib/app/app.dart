@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/auth/auth_api_client.dart';
+import '../core/auth/auth_session_store.dart';
 import '../core/localization/app_locale.dart';
 import '../core/localization/locale_store.dart';
 import '../core/network/culinex_api_client.dart';
 import '../core/network/culinex_repository.dart';
 import '../core/theme/culinex_theme.dart';
 import '../core/theme/theme_mode_store.dart';
+import '../features/auth/auth_controller.dart';
+import '../features/auth/auth_screen.dart';
 import '../features/camera/camera_capture_screen.dart';
 import '../features/home/welcome_screen.dart';
 import '../features/ingredients/ingredient_review_screen.dart';
@@ -24,6 +28,7 @@ class CulinexApp extends StatefulWidget {
   const CulinexApp({
     super.key,
     this.controller,
+    this.authController,
     this.initialThemeMode = ThemeMode.light,
     this.themeModeStore,
     this.initialLocale = AppLocale.english,
@@ -31,6 +36,7 @@ class CulinexApp extends StatefulWidget {
   });
 
   final CookSessionController? controller;
+  final AuthController? authController;
   final ThemeMode initialThemeMode;
   final ThemeModeStore? themeModeStore;
   final Locale initialLocale;
@@ -43,23 +49,31 @@ class CulinexApp extends StatefulWidget {
 class _CulinexAppState extends State<CulinexApp> {
   late final bool _ownsController;
   late final CookSessionController _controller;
+  late final bool _ownsAuthController;
+  late final AuthController _authController;
   ThemeMode _themeMode = ThemeMode.light;
   Locale _locale = AppLocale.english;
 
   @override
   void initState() {
     super.initState();
+    _ownsAuthController = widget.authController == null;
+    _authController = widget.authController ?? _buildAuthController();
     _ownsController = widget.controller == null;
-    _controller = widget.controller ?? _buildController();
+    _controller = widget.controller ?? _buildController(_authController);
     _themeMode = widget.initialThemeMode;
     _locale = AppLocale.normalize(widget.initialLocale);
     _controller.setLocale(_locale);
+    unawaited(_authController.restoreSession());
   }
 
   @override
   void dispose() {
     if (_ownsController) {
       _controller.dispose();
+    }
+    if (_ownsAuthController) {
+      _authController.dispose();
     }
     super.dispose();
   }
@@ -75,19 +89,44 @@ class _CulinexAppState extends State<CulinexApp> {
       theme: buildCulinexTheme(),
       darkTheme: buildCulinexTheme(brightness: Brightness.dark),
       themeMode: _themeMode,
-      home: CulinexFlowShell(
-        controller: _controller,
-        isDarkMode: _themeMode == ThemeMode.dark,
-        onToggleTheme: _toggleTheme,
-        locale: _locale,
-        onSelectLocale: _selectLocale,
+      home: AnimatedBuilder(
+        animation: _authController,
+        builder: (BuildContext context, _) {
+          return switch (_authController.stage) {
+            AuthStage.loading => const _AuthLoadingScreen(),
+            AuthStage.signedOut => AuthScreen(
+              controller: _authController,
+              isDarkMode: _themeMode == ThemeMode.dark,
+              onToggleTheme: _toggleTheme,
+              locale: _locale,
+              onSelectLocale: _selectLocale,
+            ),
+            AuthStage.authenticated => CulinexFlowShell(
+              controller: _controller,
+              authController: _authController,
+              isDarkMode: _themeMode == ThemeMode.dark,
+              onToggleTheme: _toggleTheme,
+              locale: _locale,
+              onSelectLocale: _selectLocale,
+            ),
+          };
+        },
       ),
     );
   }
 
-  CookSessionController _buildController() {
-    final CulinexRepository repository = CulinexApiClient();
+  CookSessionController _buildController(AuthController authController) {
+    final CulinexRepository repository = CulinexApiClient(
+      authSessionCoordinator: authController,
+    );
     return CookSessionController(repository: repository);
+  }
+
+  AuthController _buildAuthController() {
+    return AuthController(
+      authClient: AuthApiClient(),
+      sessionStore: SecureStorageAuthSessionStore(),
+    );
   }
 
   void _toggleTheme() {
@@ -126,6 +165,7 @@ class _CulinexAppState extends State<CulinexApp> {
 class CulinexFlowShell extends StatelessWidget {
   const CulinexFlowShell({
     required this.controller,
+    required this.authController,
     required this.isDarkMode,
     required this.onToggleTheme,
     required this.locale,
@@ -134,6 +174,7 @@ class CulinexFlowShell extends StatelessWidget {
   });
 
   final CookSessionController controller;
+  final AuthController authController;
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
   final Locale locale;
@@ -155,6 +196,10 @@ class CulinexFlowShell extends StatelessWidget {
               SessionStage.welcome => WelcomeScreen(
                 onStart: controller.openCamera,
                 onStartManualEntry: controller.startManualIngredientEntry,
+                onSignOut: () async {
+                  controller.resetSession();
+                  await authController.signOut();
+                },
                 isDarkMode: isDarkMode,
                 onToggleTheme: onToggleTheme,
                 locale: locale,
@@ -213,5 +258,14 @@ class CulinexFlowShell extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _AuthLoadingScreen extends StatelessWidget {
+  const _AuthLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

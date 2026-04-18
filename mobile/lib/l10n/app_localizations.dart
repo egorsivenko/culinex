@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Switch to Ukrainian'**
   String get switchToUkrainian;
 
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
   /// No description provided for @welcomePhrase1.
   ///
   /// In en, this message translates to:
@@ -847,6 +853,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The server returned an unexpected response.'**
   String get sessionErrorUnexpectedResponse;
+
+  /// No description provided for @authSignInIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue cooking.'**
+  String get authSignInIntro;
+
+  /// No description provided for @authSignUpIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to save your session.'**
+  String get authSignUpIntro;
+
+  /// No description provided for @authModeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authModeSignIn;
+
+  /// No description provided for @authModeSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get authModeSignUp;
+
+  /// No description provided for @authFullNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get authFullNameLabel;
+
+  /// No description provided for @authEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get authEmailLabel;
+
+  /// No description provided for @authPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPasswordLabel;
+
+  /// No description provided for @authConfirmPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get authConfirmPasswordLabel;
+
+  /// No description provided for @authEnterFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your full name'**
+  String get authEnterFullName;
+
+  /// No description provided for @authEnterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get authEnterEmail;
+
+  /// No description provided for @authEnterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get authEnterValidEmail;
+
+  /// No description provided for @authEnterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get authEnterPassword;
+
+  /// No description provided for @authPasswordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get authPasswordMinLength;
+
+  /// No description provided for @authConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your password'**
+  String get authConfirmPassword;
+
+  /// No description provided for @authPasswordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get authPasswordsDoNotMatch;
+
+  /// No description provided for @authSubmitLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait...'**
+  String get authSubmitLoading;
+
+  /// No description provided for @authFutureProvidersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Google and Apple sign-in can be added later without changing this flow.'**
+  String get authFutureProvidersHint;
+
+  /// No description provided for @authSwitchToSignUpPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get authSwitchToSignUpPrompt;
+
+  /// No description provided for @authSwitchToSignInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get authSwitchToSignInPrompt;
+
+  /// No description provided for @authShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get authShowPassword;
+
+  /// No description provided for @authHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get authHidePassword;
+
+  /// No description provided for @authDismissError.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss error'**
+  String get authDismissError;
+
+  /// No description provided for @authErrorValidationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check the form and try again.'**
+  String get authErrorValidationFailed;
+
+  /// No description provided for @authErrorEmailAlreadyInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already in use.'**
+  String get authErrorEmailAlreadyInUse;
+
+  /// No description provided for @authErrorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password.'**
+  String get authErrorInvalidCredentials;
+
+  /// No description provided for @authErrorSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired.'**
+  String get authErrorSessionExpired;
+
+  /// No description provided for @authErrorRequestTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Try again.'**
+  String get authErrorRequestTimedOut;
+
+  /// No description provided for @authErrorNetworkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No network connection.'**
+  String get authErrorNetworkUnavailable;
+
+  /// No description provided for @authErrorServerFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Try again later.'**
+  String get authErrorServerFailure;
+
+  /// No description provided for @authErrorUnexpectedResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpected server response.'**
+  String get authErrorUnexpectedResponse;
+
+  /// No description provided for @authErrorRestoreSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore the saved session.'**
+  String get authErrorRestoreSession;
 }
 
 class _AppLocalizationsDelegate

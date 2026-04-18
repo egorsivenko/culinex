@@ -1,6 +1,10 @@
 import 'package:culinex/app/app.dart';
+import 'package:culinex/core/auth/auth_api_client.dart';
+import 'package:culinex/core/auth/auth_models.dart';
+import 'package:culinex/core/auth/auth_session_store.dart';
 import 'package:culinex/core/localization/locale_store.dart';
 import 'package:culinex/core/network/culinex_repository.dart';
+import 'package:culinex/features/auth/auth_controller.dart';
 import 'package:culinex/features/session/culinex_models.dart';
 import 'package:culinex/features/session/cook_session_controller.dart';
 import 'package:flutter/material.dart';
@@ -27,8 +31,12 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
-    await tester.pumpWidget(CulinexApp(controller: controller));
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('Culinex'), findsOneWidget);
     expect(find.text('Use the camera'), findsOneWidget);
@@ -47,6 +55,7 @@ void main() {
     );
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('manual entry button opens the ingredient screen', (
@@ -55,8 +64,12 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
-    await tester.pumpWidget(CulinexApp(controller: controller));
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Type ingredients'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Type ingredients'));
@@ -68,6 +81,7 @@ void main() {
     expect(find.text('View original photo'), findsNothing);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('language toggle switches between English and Ukrainian', (
@@ -76,8 +90,12 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
-    await tester.pumpWidget(CulinexApp(controller: controller));
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
 
     MaterialApp app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.locale, const Locale('en'));
@@ -96,6 +114,7 @@ void main() {
     expect(find.text('Ввести інгредієнти'), findsOneWidget);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('theme toggle switches between light and dark modes on welcome', (
@@ -104,8 +123,12 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
-    await tester.pumpWidget(CulinexApp(controller: controller));
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
 
     MaterialApp app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.light);
@@ -124,6 +147,7 @@ void main() {
     expect(find.text('Type ingredients'), findsOneWidget);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('app can start in dark mode from persisted theme', (
@@ -132,10 +156,16 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
     await tester.pumpWidget(
-      CulinexApp(controller: controller, initialThemeMode: ThemeMode.dark),
+      CulinexApp(
+        controller: controller,
+        authController: authController,
+        initialThemeMode: ThemeMode.dark,
+      ),
     );
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget<MaterialApp>(
       find.byType(MaterialApp),
@@ -145,6 +175,7 @@ void main() {
     expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('app can start in Ukrainian from persisted locale', (
@@ -153,10 +184,16 @@ void main() {
     final CookSessionController controller = CookSessionController(
       repository: _NoopRepository(),
     );
+    final AuthController authController = _buildAuthenticatedAuthController();
 
     await tester.pumpWidget(
-      CulinexApp(controller: controller, initialLocale: const Locale('uk')),
+      CulinexApp(
+        controller: controller,
+        authController: authController,
+        initialLocale: const Locale('uk'),
+      ),
     );
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget<MaterialApp>(
       find.byType(MaterialApp),
@@ -167,6 +204,7 @@ void main() {
     expect(find.text('Use the camera'), findsNothing);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('theme toggle persists the selected theme', (tester) async {
@@ -174,10 +212,16 @@ void main() {
       repository: _NoopRepository(),
     );
     final _FakeThemeModeStore themeModeStore = _FakeThemeModeStore();
+    final AuthController authController = _buildAuthenticatedAuthController();
 
     await tester.pumpWidget(
-      CulinexApp(controller: controller, themeModeStore: themeModeStore),
+      CulinexApp(
+        controller: controller,
+        authController: authController,
+        themeModeStore: themeModeStore,
+      ),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('theme-toggle-button')));
     await tester.pumpAndSettle();
@@ -185,6 +229,7 @@ void main() {
     expect(themeModeStore.savedModes, <ThemeMode>[ThemeMode.dark]);
 
     controller.dispose();
+    authController.dispose();
   });
 
   testWidgets('language toggle persists the selected locale', (tester) async {
@@ -192,10 +237,16 @@ void main() {
       repository: _NoopRepository(),
     );
     final _FakeLocaleStore localeStore = _FakeLocaleStore();
+    final AuthController authController = _buildAuthenticatedAuthController();
 
     await tester.pumpWidget(
-      CulinexApp(controller: controller, localeStore: localeStore),
+      CulinexApp(
+        controller: controller,
+        authController: authController,
+        localeStore: localeStore,
+      ),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(
       find.byKey(const ValueKey<String>('language-toggle-button')),
@@ -205,6 +256,31 @@ void main() {
     expect(localeStore.savedLocales, <Locale>[const Locale('uk')]);
 
     controller.dispose();
+    authController.dispose();
+  });
+
+  testWidgets('app shows auth gate when there is no stored session', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final AuthController authController = AuthController(
+      authClient: _FakeAuthClient(),
+      sessionStore: _MemorySessionStore(),
+    );
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in'), findsWidgets);
+    expect(find.text("Don't have an account?"), findsOneWidget);
+    expect(find.text('Use the camera'), findsNothing);
+
+    controller.dispose();
+    authController.dispose();
   });
 }
 
@@ -255,4 +331,95 @@ class _FakeLocaleStore implements LocaleStore {
   Future<void> saveLocale(Locale locale) async {
     savedLocales.add(locale);
   }
+}
+
+AuthController _buildAuthenticatedAuthController() {
+  return AuthController(
+    authClient: _FakeAuthClient(),
+    sessionStore: _MemorySessionStore(
+      initialSession: AuthSession(
+        user: const AuthUser(
+          id: 'user-1',
+          fullName: 'Ada Lovelace',
+          email: 'ada@example.com',
+        ),
+        accessToken: 'access-token',
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(minutes: 15),
+        ),
+        refreshToken: 'refresh-token',
+        refreshTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(days: 30),
+        ),
+      ),
+    ),
+  );
+}
+
+class _FakeAuthClient implements AuthClient {
+  @override
+  void close() {}
+
+  @override
+  Future<AuthSession> login({
+    required String email,
+    required String password,
+  }) async {
+    return _buildSession();
+  }
+
+  @override
+  Future<void> logout({required String refreshToken}) async {}
+
+  @override
+  Future<AuthSession> refresh({required String refreshToken}) async {
+    return _buildSession();
+  }
+
+  @override
+  Future<AuthSession> signUp({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    return _buildSession();
+  }
+}
+
+class _MemorySessionStore implements AuthSessionStore {
+  _MemorySessionStore({AuthSession? initialSession})
+    : _session = initialSession;
+
+  AuthSession? _session;
+
+  @override
+  Future<void> clearSession() async {
+    _session = null;
+  }
+
+  @override
+  Future<AuthSession?> loadSession() async {
+    return _session;
+  }
+
+  @override
+  Future<void> saveSession(AuthSession session) async {
+    _session = session;
+  }
+}
+
+AuthSession _buildSession() {
+  return AuthSession(
+    user: const AuthUser(
+      id: 'user-1',
+      fullName: 'Ada Lovelace',
+      email: 'ada@example.com',
+    ),
+    accessToken: 'access-token',
+    accessTokenExpiresAt: DateTime.now().toUtc().add(
+      const Duration(minutes: 15),
+    ),
+    refreshToken: 'refresh-token',
+    refreshTokenExpiresAt: DateTime.now().toUtc().add(const Duration(days: 30)),
+  );
 }
