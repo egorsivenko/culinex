@@ -15,6 +15,10 @@ type authRequest struct {
 	Password string `json:"password"`
 }
 
+type refreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 type authUserResponse struct {
 	ID       string `json:"id"`
 	FullName string `json:"full_name"`
@@ -79,6 +83,43 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, buildAuthResponse(result))
 }
 
+func Refresh(w http.ResponseWriter, r *http.Request) {
+	var req refreshTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	service := auth.NewService(db.Pool)
+	result, err := service.Refresh(r.Context(), auth.RefreshInput{
+		RefreshToken: req.RefreshToken,
+	})
+	if err != nil {
+		writeAuthServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, buildAuthResponse(result))
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	var req refreshTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	service := auth.NewService(db.Pool)
+	if err := service.Logout(r.Context(), auth.LogoutInput{
+		RefreshToken: req.RefreshToken,
+	}); err != nil {
+		writeAuthServiceError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func buildAuthResponse(result auth.AuthResult) authResponse {
 	return authResponse{
 		User: authUserResponse{
@@ -101,6 +142,8 @@ func writeAuthServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "email_already_in_use", "Email is already in use")
 	case errors.Is(err, auth.ErrInvalidCredentials):
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
+	case errors.Is(err, auth.ErrSessionExpired):
+		writeError(w, http.StatusUnauthorized, "session_expired", "Session expired or invalid")
 	default:
 		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
 	}

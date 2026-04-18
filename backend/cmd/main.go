@@ -43,6 +43,8 @@ func main() {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/signup", handler.SignUp)
 			r.Post("/login", handler.Login)
+			r.Post("/refresh", handler.Refresh)
+			r.Post("/logout", handler.Logout)
 		})
 		r.Post("/extract-ingredients", handler.ExtractIngredients)
 		r.Post("/generate-recipe", handler.GenerateRecipe)

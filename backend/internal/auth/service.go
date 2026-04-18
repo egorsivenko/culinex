@@ -23,6 +23,7 @@ var (
 	ErrValidation         = errors.New("auth: validation failed")
 	ErrEmailAlreadyInUse  = errors.New("auth: email already in use")
 	ErrInvalidCredentials = errors.New("auth: invalid credentials")
+	ErrSessionExpired     = errors.New("auth: session expired")
 )
 
 type Service struct {
@@ -38,6 +39,14 @@ type SignUpInput struct {
 type LoginInput struct {
 	Email    string
 	Password string
+}
+
+type RefreshInput struct {
+	RefreshToken string
+}
+
+type LogoutInput struct {
+	RefreshToken string
 }
 
 type AuthResult struct {
@@ -193,6 +202,116 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 	return result, nil
 }
 
+func (s *Service) Refresh(ctx context.Context, input RefreshInput) (AuthResult, error) {
+	refreshToken := strings.TrimSpace(input.RefreshToken)
+	if refreshToken == "" {
+		return AuthResult{}, fmt.Errorf("%w: refresh_token is required", ErrValidation)
+	}
+
+	claims, err := VerifyRefreshToken(refreshToken)
+	if err != nil {
+		return AuthResult{}, ErrSessionExpired
+	}
+
+	tx, err := s.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return AuthResult{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	const selectSessionQuery = `
+		SELECT user_id
+		FROM user_sessions
+		WHERE id = $1 AND refresh_token_hash = $2
+		FOR UPDATE
+	`
+	var sessionUserID uuid.UUID
+	if err := tx.QueryRow(
+		ctx,
+		selectSessionQuery,
+		claims.SessionID,
+		HashToken(refreshToken),
+	).Scan(&sessionUserID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AuthResult{}, ErrSessionExpired
+		}
+		return AuthResult{}, fmt.Errorf("select user session: %w", err)
+	}
+	if sessionUserID != claims.UserID {
+		return AuthResult{}, ErrSessionExpired
+	}
+
+	user, email, err := getUserByID(ctx, tx, claims.UserID)
+	if err != nil {
+		return AuthResult{}, err
+	}
+
+	tokenPair, err := IssueTokenPair(claims.UserID, claims.SessionID)
+	if err != nil {
+		return AuthResult{}, fmt.Errorf("issue token pair: %w", err)
+	}
+
+	const rotateSessionQuery = `
+		UPDATE user_sessions
+		SET
+			refresh_token_hash = $1,
+			expires_at = $2,
+			last_used_at = NOW()
+		WHERE id = $3
+	`
+	if _, err := tx.Exec(
+		ctx,
+		rotateSessionQuery,
+		HashToken(tokenPair.RefreshToken),
+		tokenPair.RefreshTokenExpiresAt,
+		claims.SessionID,
+	); err != nil {
+		return AuthResult{}, fmt.Errorf("rotate user session: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return AuthResult{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return AuthResult{
+		User:      user,
+		Email:     email,
+		TokenPair: tokenPair,
+	}, nil
+}
+
+func (s *Service) Logout(ctx context.Context, input LogoutInput) error {
+	refreshToken := strings.TrimSpace(input.RefreshToken)
+	if refreshToken == "" {
+		return fmt.Errorf("%w: refresh_token is required", ErrValidation)
+	}
+
+	claims, err := VerifyRefreshToken(refreshToken)
+	if err != nil {
+		return ErrSessionExpired
+	}
+
+	const deleteSessionQuery = `
+		DELETE FROM user_sessions
+		WHERE id = $1 AND user_id = $2 AND refresh_token_hash = $3
+	`
+	commandTag, err := s.db.Exec(
+		ctx,
+		deleteSessionQuery,
+		claims.SessionID,
+		claims.UserID,
+		HashToken(refreshToken),
+	)
+	if err != nil {
+		return fmt.Errorf("delete user session: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrSessionExpired
+	}
+
+	return nil
+}
+
 func insertSession(ctx context.Context, tx pgx.Tx, sessionID, userID uuid.UUID, tokenPair TokenPair) error {
 	const createSessionQuery = `
 		INSERT INTO user_sessions (
@@ -214,6 +333,42 @@ func insertSession(ctx context.Context, tx pgx.Tx, sessionID, userID uuid.UUID, 
 		return fmt.Errorf("insert user session: %w", err)
 	}
 	return nil
+}
+
+func getUserByID(ctx context.Context, tx pgx.Tx, userID uuid.UUID) (User, string, error) {
+	const getUserQuery = `
+		SELECT
+			u.id,
+			u.full_name,
+			u.created_at,
+			u.updated_at,
+			ui.email
+		FROM users u
+		LEFT JOIN user_identities ui
+			ON ui.user_id = u.id AND ui.provider = $2
+		WHERE u.id = $1
+	`
+
+	var user User
+	var email *string
+	if err := tx.QueryRow(ctx, getUserQuery, userID, ProviderLocal).Scan(
+		&user.ID,
+		&user.FullName,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&email,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, "", ErrSessionExpired
+		}
+		return User{}, "", fmt.Errorf("select user: %w", err)
+	}
+
+	if email == nil {
+		return user, "", nil
+	}
+
+	return user, *email, nil
 }
 
 func normalizeSignUpInput(input SignUpInput) (SignUpInput, error) {
