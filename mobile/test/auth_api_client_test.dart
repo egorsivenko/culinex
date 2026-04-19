@@ -132,4 +132,23 @@ void main() {
     await client.logout(refreshToken: 'refresh-token');
     client.close();
   });
+
+  test('delete account sends authorized delete request', () async {
+    final AuthApiClient client = AuthApiClient(
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/account',
+        );
+        expect(request.method, 'DELETE');
+        expect(request.headers['Authorization'], 'Bearer access-token');
+        expect(request.body, isEmpty);
+        return http.Response('', 204);
+      }),
+    );
+
+    await client.deleteAccount(accessToken: 'access-token');
+    client.close();
+  });
 }

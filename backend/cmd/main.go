@@ -52,6 +52,7 @@ func main() {
 			r.Use(auth.Middleware())
 			r.Post("/extract-ingredients", handler.ExtractIngredients)
 			r.Post("/generate-recipe", handler.GenerateRecipe)
+			r.Delete("/account", handler.DeleteAccount)
 		})
 	})
 

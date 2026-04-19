@@ -144,6 +144,78 @@ void main() {
     },
   );
 
+  test('deleteAccount clears the local session after success', () async {
+    final _FakeAuthClient authClient = _FakeAuthClient();
+    final _MemorySessionStore sessionStore = _MemorySessionStore(
+      initialSession: _session(),
+    );
+    final AuthController controller = AuthController(
+      authClient: authClient,
+      sessionStore: sessionStore,
+    );
+
+    await controller.restoreSession();
+    await controller.deleteAccount();
+
+    expect(controller.stage, AuthStage.signedOut);
+    expect(await sessionStore.loadSession(), isNull);
+    expect(authClient.deletedAccountAccessToken, 'access-token');
+    expect(controller.error, isNull);
+    controller.dispose();
+  });
+
+  test(
+    'deleteAccount clears the local session when the session is no longer valid',
+    () async {
+      final _FakeAuthClient authClient = _FakeAuthClient(
+        deleteAccountError: const AuthApiException(
+          AuthApiErrorCode.sessionExpired,
+        ),
+      );
+      final _MemorySessionStore sessionStore = _MemorySessionStore(
+        initialSession: _session(),
+      );
+      final AuthController controller = AuthController(
+        authClient: authClient,
+        sessionStore: sessionStore,
+      );
+
+      await controller.restoreSession();
+      await controller.deleteAccount();
+
+      expect(controller.stage, AuthStage.signedOut);
+      expect(await sessionStore.loadSession(), isNull);
+      expect(controller.error, isNull);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'deleteAccount keeps the user signed in and exposes a friendly error on failure',
+    () async {
+      final _FakeAuthClient authClient = _FakeAuthClient(
+        deleteAccountError: const AuthApiException(
+          AuthApiErrorCode.serverFailure,
+        ),
+      );
+      final _MemorySessionStore sessionStore = _MemorySessionStore(
+        initialSession: _session(),
+      );
+      final AuthController controller = AuthController(
+        authClient: authClient,
+        sessionStore: sessionStore,
+      );
+
+      await controller.restoreSession();
+      await controller.deleteAccount();
+
+      expect(controller.stage, AuthStage.authenticated);
+      expect(await sessionStore.loadSession(), isNotNull);
+      expect(controller.error?.code, AuthErrorCode.serverFailure);
+      controller.dispose();
+    },
+  );
+
   test('handleUnauthorized clears the local session and signs out', () async {
     final _FakeAuthClient authClient = _FakeAuthClient();
     final _MemorySessionStore sessionStore = _MemorySessionStore(
@@ -169,14 +241,17 @@ class _FakeAuthClient implements AuthClient {
     this.refreshResult,
     this.checkEmailError,
     this.logoutError,
+    this.deleteAccountError,
   });
 
   final AuthSession? loginResult;
   final AuthSession? refreshResult;
   final AuthApiException? checkEmailError;
   final AuthApiException? logoutError;
+  final AuthApiException? deleteAccountError;
 
   bool closed = false;
+  String? deletedAccountAccessToken;
 
   @override
   void close() {
@@ -202,6 +277,14 @@ class _FakeAuthClient implements AuthClient {
   Future<void> logout({required String refreshToken}) async {
     if (logoutError != null) {
       throw logoutError!;
+    }
+  }
+
+  @override
+  Future<void> deleteAccount({required String accessToken}) async {
+    deletedAccountAccessToken = accessToken;
+    if (deleteAccountError != null) {
+      throw deleteAccountError!;
     }
   }
 

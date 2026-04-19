@@ -158,6 +158,28 @@ class AuthController extends ChangeNotifier implements AuthSessionCoordinator {
     }
   }
 
+  Future<void> deleteAccount() async {
+    _isSubmitting = true;
+    _error = null;
+    _notifySafely();
+
+    try {
+      final String accessToken = await getValidAccessToken();
+      await _authClient.deleteAccount(accessToken: accessToken);
+      _isSubmitting = false;
+      await _clearLocalSession();
+    } on AuthApiException catch (error) {
+      _isSubmitting = false;
+      if (error.code == AuthApiErrorCode.sessionExpired) {
+        await _clearLocalSession();
+        return;
+      }
+
+      _error = AuthErrorState(code: _mapErrorCode(error.code));
+      _notifySafely();
+    }
+  }
+
   void clearError() {
     if (_error == null) {
       return;

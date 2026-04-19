@@ -49,6 +49,10 @@ type LogoutInput struct {
 	RefreshToken string
 }
 
+type DeleteAccountInput struct {
+	UserID uuid.UUID
+}
+
 type AuthResult struct {
 	User      User
 	Email     string
@@ -323,6 +327,26 @@ func Logout(ctx context.Context, input LogoutInput) error {
 	)
 	if err != nil {
 		return fmt.Errorf("delete user session: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrSessionExpired
+	}
+
+	return nil
+}
+
+func DeleteAccount(ctx context.Context, input DeleteAccountInput) error {
+	if input.UserID == uuid.Nil {
+		return fmt.Errorf("%w: user_id is required", ErrValidation)
+	}
+
+	const deleteUserQuery = `
+		DELETE FROM users
+		WHERE id = $1
+	`
+	commandTag, err := db.Pool.Exec(ctx, deleteUserQuery, input.UserID)
+	if err != nil {
+		return fmt.Errorf("delete user: %w", err)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return ErrSessionExpired

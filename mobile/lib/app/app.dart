@@ -218,9 +218,16 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onToggleTheme: widget.onToggleTheme,
                       locale: widget.locale,
                       onSelectLocale: widget.onSelectLocale,
+                      isSubmitting: widget.authController.isSubmitting,
+                      errorCode: widget.authController.error?.code,
+                      onClearError: widget.authController.clearError,
                       onSignOut: () async {
                         widget.controller.resetSession();
                         await widget.authController.signOut();
+                      },
+                      onDeleteAccount: () async {
+                        widget.controller.resetSession();
+                        await widget.authController.deleteAccount();
                       },
                     ),
                   ],

@@ -22,6 +22,8 @@ abstract interface class AuthClient {
 
   Future<void> logout({required String refreshToken});
 
+  Future<void> deleteAccount({required String accessToken});
+
   void close();
 }
 
@@ -80,6 +82,14 @@ class AuthApiClient implements AuthClient {
   }
 
   @override
+  Future<void> deleteAccount({required String accessToken}) async {
+    await _deleteWithoutResponse(
+      'account',
+      headers: <String, String>{'Authorization': 'Bearer $accessToken'},
+    );
+  }
+
+  @override
   void close() {
     if (_ownsClient) {
       _client.close();
@@ -106,23 +116,61 @@ class AuthApiClient implements AuthClient {
     String path,
     Map<String, dynamic> payload,
   ) async {
-    final http.Response response = await _post(path, payload);
+    final http.Response response = await _send(
+      'POST',
+      path,
+      payload: payload,
+      headers: const <String, String>{'Content-Type': 'application/json'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw _mapError(response);
+    }
+  }
+
+  Future<void> _deleteWithoutResponse(
+    String path, {
+    Map<String, String>? headers,
+  }) async {
+    final http.Response response = await _send(
+      'DELETE',
+      path,
+      headers: headers,
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw _mapError(response);
     }
   }
 
   Future<http.Response> _post(String path, Map<String, dynamic> payload) async {
+    return _send(
+      'POST',
+      path,
+      payload: payload,
+      headers: const <String, String>{'Content-Type': 'application/json'},
+    );
+  }
+
+  Future<http.Response> _send(
+    String method,
+    String path, {
+    Map<String, dynamic>? payload,
+    Map<String, String>? headers,
+  }) async {
     final Uri uri = _apiBaseUri.resolve(path);
 
     try {
-      return await _client
-          .post(
-            uri,
-            headers: const <String, String>{'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
+      final http.Request request = http.Request(method, uri);
+      if (headers != null) {
+        request.headers.addAll(headers);
+      }
+      if (payload != null) {
+        request.body = jsonEncode(payload);
+      }
+
+      final http.StreamedResponse streamedResponse = await _client
+          .send(request)
           .timeout(_requestTimeout);
+      return http.Response.fromStream(streamedResponse);
     } on TimeoutException {
       throw const AuthApiException(AuthApiErrorCode.requestTimedOut);
     } on SocketException {
@@ -148,6 +196,7 @@ class AuthApiClient implements AuthClient {
       'email_already_in_use' => AuthApiErrorCode.emailAlreadyInUse,
       'invalid_credentials' => AuthApiErrorCode.invalidCredentials,
       'session_expired' => AuthApiErrorCode.sessionExpired,
+      'unauthorized' => AuthApiErrorCode.sessionExpired,
       _ => AuthApiErrorCode.serverFailure,
     }, message: error.message);
   }

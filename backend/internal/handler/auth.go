@@ -132,6 +132,23 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	if err := auth.DeleteAccount(r.Context(), auth.DeleteAccountInput{
+		UserID: claims.UserID,
+	}); err != nil {
+		writeAuthServiceError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func buildAuthResponse(result auth.AuthResult) authResponse {
 	return authResponse{
 		User: authUserResponse{

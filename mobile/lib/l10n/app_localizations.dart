@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get signOut;
 
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
   /// No description provided for @mainTabLabel.
   ///
   /// In en, this message translates to:
@@ -181,6 +187,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark'**
   String get settingsDarkOption;
+
+  /// No description provided for @deleteAccountDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account?'**
+  String get deleteAccountDialogTitle;
+
+  /// No description provided for @deleteAccountDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your account is permanent and cannot be undone.'**
+  String get deleteAccountDialogMessage;
+
+  /// No description provided for @deleteAccountDialogInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Type DELETE to confirm.'**
+  String get deleteAccountDialogInstruction;
+
+  /// No description provided for @deleteAccountDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccountDialogConfirm;
 
   /// No description provided for @welcomePhrase1.
   ///

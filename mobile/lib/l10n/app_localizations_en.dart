@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
+  String get deleteAccount => 'Delete account';
+
+  @override
   String get mainTabLabel => 'Home';
 
   @override
@@ -49,6 +52,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDarkOption => 'Dark';
+
+  @override
+  String get deleteAccountDialogTitle => 'Delete account?';
+
+  @override
+  String get deleteAccountDialogMessage =>
+      'Deleting your account is permanent and cannot be undone.';
+
+  @override
+  String get deleteAccountDialogInstruction => 'Type DELETE to confirm.';
+
+  @override
+  String get deleteAccountDialogConfirm => 'Delete account';
 
   @override
   String get welcomePhrase1 => 'Turn ingredients into flavor.';

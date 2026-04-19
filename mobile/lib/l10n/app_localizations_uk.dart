@@ -30,6 +30,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get signOut => 'Вийти';
 
   @override
+  String get deleteAccount => 'Видалити акаунт';
+
+  @override
   String get mainTabLabel => 'Головна';
 
   @override
@@ -49,6 +52,20 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settingsDarkOption => 'Темна';
+
+  @override
+  String get deleteAccountDialogTitle => 'Видалити акаунт?';
+
+  @override
+  String get deleteAccountDialogMessage =>
+      'Видалення акаунта є незворотним і його не можна скасувати.';
+
+  @override
+  String get deleteAccountDialogInstruction =>
+      'Введіть DELETE для підтвердження.';
+
+  @override
+  String get deleteAccountDialogConfirm => 'Видалити акаунт';
 
   @override
   String get welcomePhrase1 => 'Перетворюйте інгредієнти на смак.';

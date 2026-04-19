@@ -307,6 +307,53 @@ void main() {
     authController.dispose();
   });
 
+  testWidgets('delete account requires DELETE confirmation and signs out', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final _FakeAuthClient authClient = _FakeAuthClient();
+    final AuthController authController = AuthController(
+      authClient: authClient,
+      sessionStore: _MemorySessionStore(initialSession: _buildSession()),
+    );
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-delete-account-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete account?'), findsOneWidget);
+    final Finder confirmButton = find.byKey(
+      const ValueKey<String>('delete-account-confirm-button'),
+    );
+    expect(tester.widget<FilledButton>(confirmButton).onPressed, isNull);
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('delete-account-confirmation-input')),
+      'DELETE',
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<FilledButton>(confirmButton).onPressed, isNotNull);
+    await tester.tap(confirmButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in'), findsWidgets);
+    expect(authClient.deletedAccountAccessToken, 'access-token');
+
+    controller.dispose();
+    authController.dispose();
+  });
+
   testWidgets('bottom navigation is hidden during the cooking flow', (
     tester,
   ) async {
@@ -408,6 +455,8 @@ AuthController _buildAuthenticatedAuthController() {
 }
 
 class _FakeAuthClient implements AuthClient {
+  String? deletedAccountAccessToken;
+
   @override
   void close() {}
 
@@ -424,6 +473,11 @@ class _FakeAuthClient implements AuthClient {
 
   @override
   Future<void> logout({required String refreshToken}) async {}
+
+  @override
+  Future<void> deleteAccount({required String accessToken}) async {
+    deletedAccountAccessToken = accessToken;
+  }
 
   @override
   Future<AuthSession> refresh({required String refreshToken}) async {

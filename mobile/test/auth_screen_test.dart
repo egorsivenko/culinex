@@ -515,6 +515,9 @@ class _FakeAuthClient implements AuthClient {
   Future<void> logout({required String refreshToken}) async {}
 
   @override
+  Future<void> deleteAccount({required String accessToken}) async {}
+
+  @override
   Future<AuthSession> refresh({required String refreshToken}) async {
     return _session();
   }
