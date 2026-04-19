@@ -123,6 +123,10 @@ class CulinexThemeIconButton extends StatelessWidget {
         key: buttonKey,
         tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
         onPressed: onPressed,
+        style: const ButtonStyle(
+          overlayColor: WidgetStatePropertyAll<Color>(Colors.transparent),
+          splashFactory: NoSplash.splashFactory,
+        ),
         icon: Icon(
           isDarkMode ? Icons.dark_mode_outlined : Icons.wb_sunny_outlined,
           key: ValueKey<String>(
@@ -240,6 +244,10 @@ class CulinexSegmentedToggle extends StatelessWidget {
         key: buttonKey,
         borderRadius: BorderRadius.circular(999),
         onTap: onPressed,
+        overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         child: Ink(
           width: width,
           height: 48,
