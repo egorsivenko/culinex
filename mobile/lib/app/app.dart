@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -292,7 +293,7 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
   }
 }
 
-class _RootBottomNavigationBar extends StatelessWidget {
+class _RootBottomNavigationBar extends StatefulWidget {
   const _RootBottomNavigationBar({
     required this.selectedTab,
     required this.onTabSelected,
@@ -306,25 +307,193 @@ class _RootBottomNavigationBar extends StatelessWidget {
   final String settingsLabel;
 
   @override
+  State<_RootBottomNavigationBar> createState() =>
+      _RootBottomNavigationBarState();
+}
+
+class _RootBottomNavigationBarState extends State<_RootBottomNavigationBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late double _fromIndex;
+  late double _toIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _fromIndex = widget.selectedTab.index.toDouble();
+    _toIndex = _fromIndex;
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      value: 1,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _RootBottomNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final double nextIndex = widget.selectedTab.index.toDouble();
+    if (nextIndex == _toIndex) {
+      return;
+    }
+
+    final double progress = Curves.easeOutCubic.transform(_controller.value);
+    _fromIndex = _fromIndex + ((_toIndex - _fromIndex) * progress);
+    _toIndex = nextIndex;
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      height: 68,
-      selectedIndex: selectedTab.index,
-      onDestinationSelected: (int index) {
-        onTabSelected(_RootTab.values[index]);
+    final ThemeData theme = Theme.of(context);
+    final Color backgroundColor =
+        theme.navigationBarTheme.backgroundColor ??
+        theme.colorScheme.surfaceContainer;
+    final Color indicatorColor =
+        theme.navigationBarTheme.indicatorColor ??
+        theme.colorScheme.secondaryContainer;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, _) {
+        final double progress = Curves.easeOutCubic.transform(
+          _controller.value,
+        );
+
+        return Material(
+          color: backgroundColor,
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 68,
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final double segmentWidth = constraints.maxWidth / 2;
+                  final double animatedIndex =
+                      _fromIndex + ((_toIndex - _fromIndex) * progress);
+                  final double stretch = math.sin(progress * math.pi);
+                  final double pillWidth = 64 + (12 * stretch);
+                  final double pillHeight = 32 - (8 * stretch);
+                  final double centerX = segmentWidth * (animatedIndex + 0.5);
+                  final double pillTop = 24 - (pillHeight / 2);
+
+                  return Stack(
+                    children: [
+                      Positioned(
+                        left: centerX - (pillWidth / 2),
+                        top: pillTop,
+                        width: pillWidth,
+                        height: pillHeight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: indicatorColor,
+                            borderRadius: BorderRadius.circular(pillHeight / 2),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _RootBottomNavDestination(
+                              label: widget.mainLabel,
+                              icon: Icons.home_outlined,
+                              selectedIcon: Icons.home_rounded,
+                              isSelected: widget.selectedTab == _RootTab.main,
+                              onPressed: () =>
+                                  widget.onTabSelected(_RootTab.main),
+                            ),
+                          ),
+                          Expanded(
+                            child: _RootBottomNavDestination(
+                              label: widget.settingsLabel,
+                              icon: Icons.settings_outlined,
+                              selectedIcon: Icons.settings_rounded,
+                              isSelected:
+                                  widget.selectedTab == _RootTab.settings,
+                              onPressed: () =>
+                                  widget.onTabSelected(_RootTab.settings),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
       },
-      destinations: <NavigationDestination>[
-        NavigationDestination(
-          icon: const Icon(Icons.home_outlined),
-          selectedIcon: const Icon(Icons.home_rounded),
-          label: mainLabel,
+    );
+  }
+}
+
+class _RootBottomNavDestination extends StatelessWidget {
+  const _RootBottomNavDestination({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color selectedColor =
+        theme.navigationBarTheme.labelTextStyle?.resolve(<WidgetState>{
+          WidgetState.selected,
+        })?.color ??
+        theme.colorScheme.onSecondaryContainer;
+    final Color unselectedColor =
+        theme.navigationBarTheme.labelTextStyle
+            ?.resolve(<WidgetState>{})
+            ?.color ??
+        theme.colorScheme.onSurfaceVariant;
+    final TextStyle labelStyle =
+        theme.navigationBarTheme.labelTextStyle?.resolve(
+          isSelected ? <WidgetState>{WidgetState.selected} : <WidgetState>{},
+        ) ??
+        theme.textTheme.labelMedium!.copyWith(
+          color: isSelected ? selectedColor : unselectedColor,
+          fontWeight: FontWeight.w500,
+        );
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: SizedBox(
+          height: 68,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 2),
+              Icon(
+                isSelected ? selectedIcon : icon,
+                size: 24,
+                color: isSelected ? selectedColor : unselectedColor,
+              ),
+              const SizedBox(height: 6),
+              Text(label, style: labelStyle),
+            ],
+          ),
         ),
-        NavigationDestination(
-          icon: const Icon(Icons.settings_outlined),
-          selectedIcon: const Icon(Icons.settings_rounded),
-          label: settingsLabel,
-        ),
-      ],
+      ),
     );
   }
 }
