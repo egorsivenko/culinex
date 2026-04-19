@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @takePhotoDescription.
   ///
   /// In en, this message translates to:
-  /// **'Point your camera at the ingredients you already have and let Culinex turn what it sees into one clear recipe.'**
+  /// **'Scan the ingredients you already have and turn them into a recipe.'**
   String get takePhotoDescription;
 
   /// No description provided for @useCamera.
@@ -269,13 +269,13 @@ abstract class AppLocalizations {
   /// No description provided for @enterIngredientsManuallyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Enter ingredients manually'**
+  /// **'Type ingredients'**
   String get enterIngredientsManuallyTitle;
 
   /// No description provided for @enterIngredientsManuallyDescription.
   ///
   /// In en, this message translates to:
-  /// **'Type the ingredients yourself when you already know the list and want to go straight to a recipe.'**
+  /// **'Enter your ingredients manually and go straight to recipe generation.'**
   String get enterIngredientsManuallyDescription;
 
   /// No description provided for @typeIngredients.
@@ -287,7 +287,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Scan ingredients with your camera or type them in to get one smart recipe in seconds.'**
+  /// **'Scan ingredients with your camera or type them in to get a recipe in seconds.'**
   String get welcomeDescription;
 
   /// No description provided for @choiceSeparatorOr.

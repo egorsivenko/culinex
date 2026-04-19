@@ -272,34 +272,25 @@ class _RecipeModeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: colors.border),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 240),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(26, 22, 26, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: textTheme.headlineMedium?.copyWith(fontSize: 26),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    description,
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colors.mutedInk,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              button,
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(26, 22, 26, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineMedium?.copyWith(fontSize: 26),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(color: colors.mutedInk),
+            ),
+            const SizedBox(height: 18),
+            button,
+          ],
         ),
       ),
     );

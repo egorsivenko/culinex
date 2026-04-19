@@ -26,6 +26,10 @@ const List<String> _englishWelcomePhrases = <String>[
   'Smart cooking starts here.',
 ];
 
+Finder _manualEntryButtonFinder(String label) {
+  return find.widgetWithText(OutlinedButton, label);
+}
+
 void main() {
   testWidgets('app opens on the welcome screen', (tester) async {
     final CookSessionController controller = CookSessionController(
@@ -42,8 +46,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Use the camera'), findsOneWidget);
-    expect(find.text('Type ingredients'), findsOneWidget);
-    expect(find.text('Enter ingredients manually'), findsOneWidget);
+    expect(find.text('Type ingredients'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('language-toggle-button')),
       findsNothing,
@@ -80,9 +83,9 @@ void main() {
       CulinexApp(controller: controller, authController: authController),
     );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Type ingredients'));
+    await tester.ensureVisible(_manualEntryButtonFinder('Type ingredients'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Type ingredients'));
+    await tester.tap(_manualEntryButtonFinder('Type ingredients'));
     await tester.pumpAndSettle();
 
     expect(find.text('Manual entry'), findsOneWidget);
@@ -213,7 +216,7 @@ void main() {
     );
     expect(app.locale, const Locale('uk'));
     expect(find.text('Використати камеру'), findsOneWidget);
-    expect(find.text('Ввести інгредієнти'), findsOneWidget);
+    expect(find.text('Ввести інгредієнти'), findsWidgets);
     expect(find.text('Use the camera'), findsNothing);
 
     controller.dispose();
@@ -320,7 +323,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
 
-    await tester.tap(find.text('Type ingredients'));
+    await tester.tap(_manualEntryButtonFinder('Type ingredients'));
     await tester.pumpAndSettle();
 
     expect(find.text('Manual entry'), findsOneWidget);

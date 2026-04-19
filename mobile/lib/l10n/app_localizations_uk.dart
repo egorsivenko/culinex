@@ -88,24 +88,24 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get takePhotoDescription =>
-      'Наведіть камеру на інгредієнти, які вже маєте, і дозвольте Culinex перетворити побачене на один зрозумілий рецепт.';
+      'Скануйте інгредієнти, які вже маєте, і перетворіть їх на рецепт.';
 
   @override
   String get useCamera => 'Використати камеру';
 
   @override
-  String get enterIngredientsManuallyTitle => 'Ввести інгредієнти вручну';
+  String get enterIngredientsManuallyTitle => 'Ввести інгредієнти';
 
   @override
   String get enterIngredientsManuallyDescription =>
-      'Введіть інгредієнти самостійно, якщо вже знаєте список і хочете одразу перейти до рецепта.';
+      'Введіть інгредієнти вручну й одразу перейдіть до створення рецепта.';
 
   @override
   String get typeIngredients => 'Ввести інгредієнти';
 
   @override
   String get welcomeDescription =>
-      'Скануйте інгредієнти камерою або введіть їх вручну, щоб за секунди отримати один продуманий рецепт.';
+      'Скануйте інгредієнти камерою або введіть їх вручну, щоб за лічені секунди отримати рецепт.';
 
   @override
   String get choiceSeparatorOr => 'або';

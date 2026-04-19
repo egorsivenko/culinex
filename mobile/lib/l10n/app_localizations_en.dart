@@ -88,24 +88,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get takePhotoDescription =>
-      'Point your camera at the ingredients you already have and let Culinex turn what it sees into one clear recipe.';
+      'Scan the ingredients you already have and turn them into a recipe.';
 
   @override
   String get useCamera => 'Use the camera';
 
   @override
-  String get enterIngredientsManuallyTitle => 'Enter ingredients manually';
+  String get enterIngredientsManuallyTitle => 'Type ingredients';
 
   @override
   String get enterIngredientsManuallyDescription =>
-      'Type the ingredients yourself when you already know the list and want to go straight to a recipe.';
+      'Enter your ingredients manually and go straight to recipe generation.';
 
   @override
   String get typeIngredients => 'Type ingredients';
 
   @override
   String get welcomeDescription =>
-      'Scan ingredients with your camera or type them in to get one smart recipe in seconds.';
+      'Scan ingredients with your camera or type them in to get a recipe in seconds.';
 
   @override
   String get choiceSeparatorOr => 'or';
