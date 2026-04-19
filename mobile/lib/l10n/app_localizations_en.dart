@@ -30,7 +30,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
-  String get mainTabLabel => 'Main';
+  String get mainTabLabel => 'Home';
 
   @override
   String get settingsTabLabel => 'Settings';

@@ -143,7 +143,7 @@ abstract class AppLocalizations {
   /// No description provided for @mainTabLabel.
   ///
   /// In en, this message translates to:
-  /// **'Main'**
+  /// **'Home'**
   String get mainTabLabel;
 
   /// No description provided for @settingsTabLabel.

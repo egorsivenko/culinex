@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Culinex'), findsOneWidget);
-    expect(find.text('Main'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Use the camera'), findsOneWidget);
     expect(find.text('Type ingredients'), findsOneWidget);
@@ -317,14 +317,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Main'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
 
     await tester.tap(find.text('Type ingredients'));
     await tester.pumpAndSettle();
 
     expect(find.text('Manual entry'), findsOneWidget);
-    expect(find.text('Main'), findsNothing);
+    expect(find.text('Home'), findsNothing);
     expect(find.text('Settings'), findsNothing);
 
     controller.dispose();
