@@ -140,6 +140,48 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get signOut;
 
+  /// No description provided for @mainTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get mainTabLabel;
+
+  /// No description provided for @settingsTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTabLabel;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsLanguageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguageLabel;
+
+  /// No description provided for @settingsAppearanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsAppearanceLabel;
+
+  /// No description provided for @settingsLightOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsLightOption;
+
+  /// No description provided for @settingsDarkOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsDarkOption;
+
   /// No description provided for @welcomePhrase1.
   ///
   /// In en, this message translates to:

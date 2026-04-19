@@ -23,18 +23,37 @@ class CulinexHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(child: _LogoLockup()),
+        const Expanded(child: CulinexBrandLockup()),
         const SizedBox(width: 12),
-        _LanguageToggle(locale: locale, onSelectLocale: onSelectLocale),
+        CulinexLanguageToggle(
+          locale: locale,
+          onSelectLocale: onSelectLocale,
+          buttonKey: const ValueKey<String>('language-toggle-button'),
+        ),
         const SizedBox(width: 12),
-        _ThemeModeButton(isDarkMode: isDarkMode, onPressed: onToggleTheme),
+        CulinexThemeIconButton(
+          isDarkMode: isDarkMode,
+          onPressed: onToggleTheme,
+        ),
       ],
     );
   }
 }
 
-class _LogoLockup extends StatelessWidget {
-  const _LogoLockup();
+class CulinexBrandHeader extends StatelessWidget {
+  const CulinexBrandHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [Expanded(child: CulinexBrandLockup())],
+    );
+  }
+}
+
+class CulinexBrandLockup extends StatelessWidget {
+  const CulinexBrandLockup({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -63,18 +82,13 @@ class _LogoLockup extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Culinex',
-                style: textTheme.displaySmall?.copyWith(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: colors.ink,
-                ),
-              ),
-            ],
+          child: Text(
+            'Culinex',
+            style: textTheme.displaySmall?.copyWith(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: colors.ink,
+            ),
           ),
         ),
       ],
@@ -82,11 +96,17 @@ class _LogoLockup extends StatelessWidget {
   }
 }
 
-class _ThemeModeButton extends StatelessWidget {
-  const _ThemeModeButton({required this.isDarkMode, required this.onPressed});
+class CulinexThemeIconButton extends StatelessWidget {
+  const CulinexThemeIconButton({
+    required this.isDarkMode,
+    required this.onPressed,
+    super.key,
+    this.buttonKey = const ValueKey<String>('theme-toggle-button'),
+  });
 
   final bool isDarkMode;
   final VoidCallback onPressed;
+  final Key buttonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +120,7 @@ class _ThemeModeButton extends StatelessWidget {
         border: Border.all(color: colors.border),
       ),
       child: IconButton(
-        key: const ValueKey<String>('theme-toggle-button'),
+        key: buttonKey,
         tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
         onPressed: onPressed,
         icon: Icon(
@@ -114,16 +134,23 @@ class _ThemeModeButton extends StatelessWidget {
   }
 }
 
-class _LanguageToggle extends StatelessWidget {
-  const _LanguageToggle({required this.locale, required this.onSelectLocale});
+class CulinexLanguageToggle extends StatelessWidget {
+  const CulinexLanguageToggle({
+    required this.locale,
+    required this.onSelectLocale,
+    super.key,
+    this.buttonKey,
+    this.width = 108,
+  });
 
   final Locale locale;
   final ValueChanged<Locale> onSelectLocale;
+  final Key? buttonKey;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
     final bool isUkrainian = AppLocale.isUkrainian(locale);
-    final CulinexPalette colors = CulinexColors.of(context);
     final l10n = context.l10n;
 
     return Semantics(
@@ -131,87 +158,161 @@ class _LanguageToggle extends StatelessWidget {
       value: isUkrainian
           ? l10n.languageUkrainianShort
           : l10n.languageEnglishShort,
-      child: Tooltip(
-        message: isUkrainian ? l10n.switchToEnglish : l10n.switchToUkrainian,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: const ValueKey<String>('language-toggle-button'),
+      child: CulinexSegmentedToggle(
+        leftLabel: l10n.languageEnglishShort,
+        rightLabel: l10n.languageUkrainianShort,
+        rightSelected: isUkrainian,
+        width: width,
+        tooltip: isUkrainian ? l10n.switchToEnglish : l10n.switchToUkrainian,
+        buttonKey: buttonKey,
+        onPressed: () {
+          onSelectLocale(isUkrainian ? AppLocale.english : AppLocale.ukrainian);
+        },
+      ),
+    );
+  }
+}
+
+class CulinexAppearanceToggle extends StatelessWidget {
+  const CulinexAppearanceToggle({
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    required this.lightLabel,
+    required this.darkLabel,
+    super.key,
+    this.buttonKey,
+    this.width = 156,
+  });
+
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  final String lightLabel;
+  final String darkLabel;
+  final Key? buttonKey;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Semantics(
+      button: true,
+      value: isDarkMode ? darkLabel : lightLabel,
+      child: CulinexSegmentedToggle(
+        leftLabel: lightLabel,
+        rightLabel: darkLabel,
+        rightSelected: isDarkMode,
+        width: width,
+        tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
+        buttonKey: buttonKey,
+        onPressed: onToggleTheme,
+      ),
+    );
+  }
+}
+
+class CulinexSegmentedToggle extends StatelessWidget {
+  const CulinexSegmentedToggle({
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.rightSelected,
+    required this.onPressed,
+    required this.width,
+    super.key,
+    this.tooltip,
+    this.buttonKey,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final bool rightSelected;
+  final VoidCallback onPressed;
+  final double width;
+  final String? tooltip;
+  final Key? buttonKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+    final Widget toggle = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: buttonKey,
+        borderRadius: BorderRadius.circular(999),
+        onTap: onPressed,
+        child: Ink(
+          width: width,
+          height: 48,
+          decoration: BoxDecoration(
+            color: colors.surface,
             borderRadius: BorderRadius.circular(999),
-            onTap: () {
-              onSelectLocale(
-                isUkrainian ? AppLocale.english : AppLocale.ukrainian,
-              );
-            },
-            child: Ink(
-              width: 108,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: colors.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Stack(
-                  fit: StackFit.expand,
+            border: Border.all(color: colors.border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedAlign(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  alignment: rightSelected
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    heightFactor: 1,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colors.elevatedSurface,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
                   children: [
-                    AnimatedAlign(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      alignment: isUkrainian
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: 0.5,
-                        heightFactor: 1,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: colors.elevatedSurface,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          leftLabel,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: rightSelected
+                                    ? colors.mutedInk
+                                    : colors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              l10n.languageEnglishShort,
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(
-                                    color: isUkrainian
-                                        ? colors.mutedInk
-                                        : colors.ink,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          rightLabel,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: rightSelected
+                                    ? colors.ink
+                                    : colors.mutedInk,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              l10n.languageUkrainianShort,
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(
-                                    color: isUkrainian
-                                        ? colors.ink
-                                        : colors.mutedInk,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         ),
       ),
     );
+
+    if (tooltip == null) {
+      return toggle;
+    }
+
+    return Tooltip(message: tooltip!, child: toggle);
   }
 }

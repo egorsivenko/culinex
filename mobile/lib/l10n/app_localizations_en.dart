@@ -30,6 +30,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
+  String get mainTabLabel => 'Main';
+
+  @override
+  String get settingsTabLabel => 'Settings';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsLanguageLabel => 'Language';
+
+  @override
+  String get settingsAppearanceLabel => 'Theme';
+
+  @override
+  String get settingsLightOption => 'Light';
+
+  @override
+  String get settingsDarkOption => 'Dark';
+
+  @override
   String get welcomePhrase1 => 'Turn ingredients into flavor.';
 
   @override

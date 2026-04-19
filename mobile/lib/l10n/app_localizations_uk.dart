@@ -30,6 +30,27 @@ class AppLocalizationsUk extends AppLocalizations {
   String get signOut => 'Вийти';
 
   @override
+  String get mainTabLabel => 'Головна';
+
+  @override
+  String get settingsTabLabel => 'Налаштування';
+
+  @override
+  String get settingsTitle => 'Налаштування';
+
+  @override
+  String get settingsLanguageLabel => 'Мова';
+
+  @override
+  String get settingsAppearanceLabel => 'Тема';
+
+  @override
+  String get settingsLightOption => 'Світла';
+
+  @override
+  String get settingsDarkOption => 'Темна';
+
+  @override
   String get welcomePhrase1 => 'Перетворюйте інгредієнти на смак.';
 
   @override

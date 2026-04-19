@@ -18,6 +18,7 @@ import '../features/ingredients/ingredient_review_screen.dart';
 import '../features/ingredients/scan_loading_screen.dart';
 import '../features/recipe/recipe_loading_screen.dart';
 import '../features/recipe/recipe_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/session/cook_session_controller.dart';
 import '../features/session/session_localizations.dart';
 import '../features/session/session_error_screen.dart';
@@ -162,7 +163,9 @@ class _CulinexAppState extends State<CulinexApp> {
   }
 }
 
-class CulinexFlowShell extends StatelessWidget {
+enum _RootTab { main, settings }
+
+class CulinexFlowShell extends StatefulWidget {
   const CulinexFlowShell({
     required this.controller,
     required this.authController,
@@ -181,9 +184,16 @@ class CulinexFlowShell extends StatelessWidget {
   final ValueChanged<Locale> onSelectLocale;
 
   @override
+  State<CulinexFlowShell> createState() => _CulinexFlowShellState();
+}
+
+class _CulinexFlowShellState extends State<CulinexFlowShell> {
+  _RootTab _selectedTab = _RootTab.main;
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, _) {
         final AppLocalizations l10n = context.l10n;
         return AnimatedSwitcher(
@@ -191,72 +201,130 @@ class CulinexFlowShell extends StatelessWidget {
           switchInCurve: Curves.easeOutCubic,
           switchOutCurve: Curves.easeInCubic,
           child: KeyedSubtree(
-            key: ValueKey(controller.stage),
-            child: switch (controller.stage) {
-              SessionStage.welcome => WelcomeScreen(
-                onStart: controller.openCamera,
-                onStartManualEntry: controller.startManualIngredientEntry,
-                onSignOut: () async {
-                  controller.resetSession();
-                  await authController.signOut();
-                },
-                isDarkMode: isDarkMode,
-                onToggleTheme: onToggleTheme,
-                locale: locale,
-                onSelectLocale: onSelectLocale,
+            key: ValueKey(widget.controller.stage),
+            child: switch (widget.controller.stage) {
+              SessionStage.welcome => Scaffold(
+                body: IndexedStack(
+                  index: _selectedTab.index,
+                  children: [
+                    WelcomeScreen(
+                      onStart: widget.controller.openCamera,
+                      onStartManualEntry:
+                          widget.controller.startManualIngredientEntry,
+                    ),
+                    SettingsScreen(
+                      isDarkMode: widget.isDarkMode,
+                      onToggleTheme: widget.onToggleTheme,
+                      locale: widget.locale,
+                      onSelectLocale: widget.onSelectLocale,
+                      onSignOut: () async {
+                        widget.controller.resetSession();
+                        await widget.authController.signOut();
+                      },
+                    ),
+                  ],
+                ),
+                bottomNavigationBar: _RootBottomNavigationBar(
+                  selectedTab: _selectedTab,
+                  onTabSelected: (_RootTab tab) {
+                    setState(() {
+                      _selectedTab = tab;
+                    });
+                  },
+                  mainLabel: l10n.mainTabLabel,
+                  settingsLabel: l10n.settingsTabLabel,
+                ),
               ),
               SessionStage.camera => CameraCaptureScreen(
-                onBack: controller.showWelcome,
-                onCapture: controller.extractIngredientsFromPhoto,
+                onBack: widget.controller.showWelcome,
+                onCapture: widget.controller.extractIngredientsFromPhoto,
               ),
               SessionStage.extracting => ScanLoadingScreen(
-                imagePath: controller.capturedImagePath,
+                imagePath: widget.controller.capturedImagePath,
               ),
               SessionStage.ingredients => IngredientReviewScreen(
-                imagePath: controller.capturedImagePath,
-                ingredients: controller.ingredients,
-                assumeBasicStaples: controller.assumeBasicStaples,
-                entryMode: controller.isManualIngredientEntry
+                imagePath: widget.controller.capturedImagePath,
+                ingredients: widget.controller.ingredients,
+                assumeBasicStaples: widget.controller.assumeBasicStaples,
+                entryMode: widget.controller.isManualIngredientEntry
                     ? IngredientReviewEntryMode.manual
                     : IngredientReviewEntryMode.scanned,
-                onBack: controller.leaveIngredientEntry,
-                onProceed: controller.generateRecipeFromIngredients,
-                onOpenRecipe: controller.recipe != null
-                    ? controller.showRecipe
+                onBack: widget.controller.leaveIngredientEntry,
+                onProceed: widget.controller.generateRecipeFromIngredients,
+                onOpenRecipe: widget.controller.recipe != null
+                    ? widget.controller.showRecipe
                     : null,
               ),
               SessionStage.generatingRecipe => RecipeLoadingScreen(
-                imagePath: controller.capturedImagePath,
+                imagePath: widget.controller.capturedImagePath,
               ),
               SessionStage.recipe => RecipeScreen(
-                recipe: controller.recipe!,
-                onBackToIngredients: controller.showIngredients,
-                onCookAnother: controller.resetSession,
+                recipe: widget.controller.recipe!,
+                onBackToIngredients: widget.controller.showIngredients,
+                onCookAnother: widget.controller.resetSession,
               ),
               SessionStage.error => SessionErrorScreen(
                 title: localizeSessionErrorTitle(
                   l10n,
-                  controller.lastOperation,
+                  widget.controller.lastOperation,
                 ),
                 message: localizeSessionErrorMessage(
                   l10n,
-                  controller.errorState,
+                  widget.controller.errorState,
                 ),
                 primaryActionLabel: localizeSessionPrimaryActionLabel(
                   l10n,
-                  controller.lastOperation,
+                  widget.controller.lastOperation,
                 ),
                 secondaryActionLabel: localizeSessionSecondaryActionLabel(
                   l10n,
-                  controller.lastOperation,
+                  widget.controller.lastOperation,
                 ),
-                onPrimaryAction: controller.performErrorPrimaryAction,
-                onSecondaryAction: controller.performErrorSecondaryAction,
+                onPrimaryAction: widget.controller.performErrorPrimaryAction,
+                onSecondaryAction:
+                    widget.controller.performErrorSecondaryAction,
               ),
             },
           ),
         );
       },
+    );
+  }
+}
+
+class _RootBottomNavigationBar extends StatelessWidget {
+  const _RootBottomNavigationBar({
+    required this.selectedTab,
+    required this.onTabSelected,
+    required this.mainLabel,
+    required this.settingsLabel,
+  });
+
+  final _RootTab selectedTab;
+  final ValueChanged<_RootTab> onTabSelected;
+  final String mainLabel;
+  final String settingsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      height: 68,
+      selectedIndex: selectedTab.index,
+      onDestinationSelected: (int index) {
+        onTabSelected(_RootTab.values[index]);
+      },
+      destinations: <NavigationDestination>[
+        NavigationDestination(
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home_rounded),
+          label: mainLabel,
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings_rounded),
+          label: settingsLabel,
+        ),
+      ],
     );
   }
 }

@@ -39,9 +39,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Culinex'), findsOneWidget);
+    expect(find.text('Main'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Use the camera'), findsOneWidget);
     expect(find.text('Type ingredients'), findsOneWidget);
     expect(find.text('Enter ingredients manually'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('language-toggle-button')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('theme-toggle-button')),
+      findsNothing,
+    );
     expect(find.text('Choose how to start your recipe'), findsNothing);
     expect(find.text('Take a photo or type ingredients'), findsNothing);
     expect(find.text('Take a photo of ingredients'), findsNothing);
@@ -84,7 +94,7 @@ void main() {
     authController.dispose();
   });
 
-  testWidgets('language toggle switches between English and Ukrainian', (
+  testWidgets('language dropdown switches between English and Ukrainian', (
     tester,
   ) async {
     final CookSessionController controller = CookSessionController(
@@ -102,16 +112,20 @@ void main() {
     expect(find.text('Use the camera'), findsOneWidget);
     expect(find.text('Використати камеру'), findsNothing);
 
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey<String>('language-toggle-button')),
+      find.byKey(const ValueKey<String>('settings-language-toggle-button')),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Українська').last);
     await tester.pumpAndSettle();
 
     app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.locale, const Locale('uk'));
-    expect(find.text('Use the camera'), findsNothing);
-    expect(find.text('Використати камеру'), findsOneWidget);
-    expect(find.text('Ввести інгредієнти'), findsOneWidget);
+    expect(find.text('Language'), findsNothing);
+    expect(find.text('Мова'), findsOneWidget);
+    expect(find.text('Налаштування'), findsWidgets);
 
     controller.dispose();
     authController.dispose();
@@ -132,19 +146,19 @@ void main() {
 
     MaterialApp app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.light);
-    expect(find.byIcon(Icons.wb_sunny_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.dark_mode_outlined), findsNothing);
     expect(find.text('Use the camera'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey<String>('theme-toggle-button')));
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-theme-toggle-button')),
+    );
     await tester.pumpAndSettle();
 
     app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
-    expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
-    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
-    expect(find.text('Use the camera'), findsOneWidget);
-    expect(find.text('Type ingredients'), findsOneWidget);
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Dark'), findsOneWidget);
 
     controller.dispose();
     authController.dispose();
@@ -171,8 +185,7 @@ void main() {
       find.byType(MaterialApp),
     );
     expect(app.themeMode, ThemeMode.dark);
-    expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
+    expect(find.text('Use the camera'), findsOneWidget);
 
     controller.dispose();
     authController.dispose();
@@ -223,7 +236,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey<String>('theme-toggle-button')));
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-theme-toggle-button')),
+    );
     await tester.pumpAndSettle();
 
     expect(themeModeStore.savedModes, <ThemeMode>[ThemeMode.dark]);
@@ -248,9 +265,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey<String>('language-toggle-button')),
+      find.byKey(const ValueKey<String>('settings-language-toggle-button')),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Українська').last);
     await tester.pumpAndSettle();
 
     expect(localeStore.savedLocales, <Locale>[const Locale('uk')]);
@@ -278,6 +299,33 @@ void main() {
     expect(find.text('Sign in'), findsWidgets);
     expect(find.text("Don't have an account?"), findsOneWidget);
     expect(find.text('Use the camera'), findsNothing);
+
+    controller.dispose();
+    authController.dispose();
+  });
+
+  testWidgets('bottom navigation is hidden during the cooking flow', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final AuthController authController = _buildAuthenticatedAuthController();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Main'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+
+    await tester.tap(find.text('Type ingredients'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Manual entry'), findsOneWidget);
+    expect(find.text('Main'), findsNothing);
+    expect(find.text('Settings'), findsNothing);
 
     controller.dispose();
     authController.dispose();

@@ -54,21 +54,11 @@ class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
     required this.onStart,
     required this.onStartManualEntry,
-    required this.isDarkMode,
-    required this.onToggleTheme,
-    required this.locale,
-    required this.onSelectLocale,
-    this.onSignOut,
     super.key,
   });
 
   final VoidCallback onStart;
   final VoidCallback onStartManualEntry;
-  final bool isDarkMode;
-  final VoidCallback onToggleTheme;
-  final Locale locale;
-  final ValueChanged<Locale> onSelectLocale;
-  final Future<void> Function()? onSignOut;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -81,59 +71,40 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     final List<String> welcomePhrases = localizedCulinexWelcomePhrases(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _WelcomeHeader(
-                isDarkMode: widget.isDarkMode,
-                onToggleTheme: widget.onToggleTheme,
-                locale: widget.locale,
-                onSelectLocale: widget.onSelectLocale,
-              ),
-              const SizedBox(height: 28),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final bool isWideLayout =
-                        constraints.maxWidth >= 720 ||
-                        constraints.maxWidth > constraints.maxHeight;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _WelcomeHeader(),
+            const SizedBox(height: 28),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final bool isWideLayout =
+                      constraints.maxWidth >= 720 ||
+                      constraints.maxWidth > constraints.maxHeight;
 
-                    return Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.center,
-                        child: SizedBox(
-                          width: isWideLayout ? 760 : 392,
-                          child: _WelcomeChoiceLayout(
-                            isWideLayout: isWideLayout,
-                            heroPhrase: welcomePhrases[_heroPhraseIndex],
-                            onStart: widget.onStart,
-                            onStartManualEntry: widget.onStartManualEntry,
-                          ),
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: isWideLayout ? 760 : 392,
+                        child: _WelcomeChoiceLayout(
+                          isWideLayout: isWideLayout,
+                          heroPhrase: welcomePhrases[_heroPhraseIndex],
+                          onStart: widget.onStart,
+                          onStartManualEntry: widget.onStartManualEntry,
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
-              if (widget.onSignOut != null) ...[
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.center,
-                  child: TextButton.icon(
-                    key: const ValueKey<String>('home-sign-out-button'),
-                    onPressed: widget.onSignOut,
-                    icon: const Icon(Icons.logout_rounded),
-                    label: Text(context.l10n.signOut),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -141,26 +112,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 }
 
 class _WelcomeHeader extends StatelessWidget {
-  const _WelcomeHeader({
-    required this.isDarkMode,
-    required this.onToggleTheme,
-    required this.locale,
-    required this.onSelectLocale,
-  });
-
-  final bool isDarkMode;
-  final VoidCallback onToggleTheme;
-  final Locale locale;
-  final ValueChanged<Locale> onSelectLocale;
+  const _WelcomeHeader();
 
   @override
   Widget build(BuildContext context) {
-    return CulinexHeader(
-      isDarkMode: isDarkMode,
-      onToggleTheme: onToggleTheme,
-      locale: locale,
-      onSelectLocale: onSelectLocale,
-    );
+    return const CulinexBrandHeader();
   }
 }
 
