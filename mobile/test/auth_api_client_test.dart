@@ -7,6 +7,28 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('check email accepts no-content response', () async {
+    final AuthApiClient client = AuthApiClient(
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/auth/check-email',
+        );
+        expect(request.method, 'POST');
+
+        final Map<String, dynamic> body =
+            jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['email'], 'ada@example.com');
+
+        return http.Response('', 204);
+      }),
+    );
+
+    await client.checkEmail(email: 'ada@example.com');
+    client.close();
+  });
+
   test('login decodes backend auth response', () async {
     final AuthApiClient client = AuthApiClient(
       apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),

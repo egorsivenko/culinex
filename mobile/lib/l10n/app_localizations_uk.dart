@@ -503,6 +503,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get authSwitchToSignInPrompt => 'Вже маєте акаунт?';
 
   @override
+  String get authBackToDetails => 'Назад';
+
+  @override
   String get authShowPassword => 'Показати пароль';
 
   @override

@@ -968,6 +968,12 @@ abstract class AppLocalizations {
   /// **'Already have an account?'**
   String get authSwitchToSignInPrompt;
 
+  /// No description provided for @authBackToDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get authBackToDetails;
+
   /// No description provided for @authShowPassword.
   ///
   /// In en, this message translates to:

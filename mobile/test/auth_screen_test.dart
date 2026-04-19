@@ -28,6 +28,28 @@ Future<void> _tapModeSwitch(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _continueSignUpToPasswordStep(
+  WidgetTester tester, {
+  required String fullName,
+  required String email,
+}) async {
+  await _tapModeSwitch(tester);
+  await tester.enterText(
+    find.byKey(const ValueKey<String>('auth-full-name')),
+    fullName,
+  );
+  await tester.enterText(
+    find.byKey(const ValueKey<String>('auth-email')),
+    email,
+  );
+  await tester.ensureVisible(
+    find.byKey(const ValueKey<String>('auth-submit-button')),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey<String>('auth-submit-button')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('auth screen starts in sign-in mode and switches to sign-up', (
     WidgetTester tester,
@@ -54,10 +76,13 @@ void main() {
       find.byKey(const ValueKey<String>('auth-full-name')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey<String>('auth-email')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('auth-password')), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('auth-confirm-password')),
-      findsOneWidget,
+      findsNothing,
     );
+    expect(find.text('Proceed'), findsOneWidget);
 
     controller.dispose();
   });
@@ -74,47 +99,18 @@ void main() {
       buildLocalizedApp(home: _buildAuthScreen(controller)),
     );
 
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('auth-email')),
-      'ada@example.com',
+    await _continueSignUpToPasswordStep(
+      tester,
+      fullName: 'Ada Lovelace',
+      email: 'ada@example.com',
     );
     await tester.enterText(
       find.byKey(const ValueKey<String>('auth-password')),
       'super-secret',
     );
-
-    await _tapModeSwitch(tester);
-
     await tester.enterText(
-      find.byKey(const ValueKey<String>('auth-full-name')),
-      'Ada Lovelace',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey<String>('auth-email')),
-          )
-          .controller
-          ?.text,
-      'ada@example.com',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey<String>('auth-password')),
-          )
-          .controller
-          ?.text,
-      '',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey<String>('auth-confirm-password')),
-          )
-          .controller
-          ?.text,
-      '',
+      find.byKey(const ValueKey<String>('auth-confirm-password')),
+      'super-secret',
     );
 
     await _tapModeSwitch(tester);
@@ -129,24 +125,6 @@ void main() {
           .controller
           ?.text,
       'ada@example.com',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey<String>('auth-password')),
-          )
-          .controller
-          ?.text,
-      '',
-    );
-    expect(
-      tester
-          .widget<TextFormField>(
-            find.byKey(const ValueKey<String>('auth-confirm-password')),
-          )
-          .controller
-          ?.text,
-      '',
     );
     expect(
       tester
@@ -157,6 +135,12 @@ void main() {
           ?.text,
       'Ada Lovelace',
     );
+    expect(find.byKey(const ValueKey<String>('auth-password')), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('auth-confirm-password')),
+      findsNothing,
+    );
+    expect(find.text('Proceed'), findsOneWidget);
 
     controller.dispose();
   });
@@ -184,10 +168,40 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('auth screen blocks sign-up when passwords do not match', (
+  testWidgets('sign-up details step checks email before advancing', (
     WidgetTester tester,
   ) async {
     final _FakeAuthClient authClient = _FakeAuthClient();
+    final AuthController controller = AuthController(
+      authClient: authClient,
+      sessionStore: _MemorySessionStore(),
+    );
+
+    await tester.pumpWidget(
+      buildLocalizedApp(home: _buildAuthScreen(controller)),
+    );
+
+    await _continueSignUpToPasswordStep(
+      tester,
+      fullName: 'Ada Lovelace',
+      email: 'ada@example.com',
+    );
+
+    expect(authClient.checkEmailCalls, 1);
+    expect(find.byKey(const ValueKey<String>('auth-password')), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('sign-up details step stays put when email is already used', (
+    WidgetTester tester,
+  ) async {
+    final _FakeAuthClient authClient = _FakeAuthClient(
+      checkEmailError: const AuthApiException(
+        AuthApiErrorCode.emailAlreadyInUse,
+      ),
+    );
     final AuthController controller = AuthController(
       authClient: authClient,
       sessionStore: _MemorySessionStore(),
@@ -205,6 +219,34 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey<String>('auth-email')),
       'ada@example.com',
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('auth-submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(authClient.checkEmailCalls, 1);
+    expect(find.byKey(const ValueKey<String>('auth-password')), findsNothing);
+    expect(find.text('This email is already in use.'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('auth screen blocks sign-up when passwords do not match', (
+    WidgetTester tester,
+  ) async {
+    final _FakeAuthClient authClient = _FakeAuthClient();
+    final AuthController controller = AuthController(
+      authClient: authClient,
+      sessionStore: _MemorySessionStore(),
+    );
+
+    await tester.pumpWidget(
+      buildLocalizedApp(home: _buildAuthScreen(controller)),
+    );
+
+    await _continueSignUpToPasswordStep(
+      tester,
+      fullName: 'Ada Lovelace',
+      email: 'ada@example.com',
     );
     await tester.enterText(
       find.byKey(const ValueKey<String>('auth-password')),
@@ -305,7 +347,11 @@ void main() {
         buildLocalizedApp(home: _buildAuthScreen(controller)),
       );
 
-      await _tapModeSwitch(tester);
+      await _continueSignUpToPasswordStep(
+        tester,
+        fullName: 'Ada Lovelace',
+        email: 'ada@example.com',
+      );
 
       EditableText passwordField = tester.widget<EditableText>(
         find.descendant(
@@ -405,23 +451,53 @@ void main() {
 
     await _tapModeSwitch(tester);
 
+    expect(find.text('Зареєструватися'), findsOneWidget);
+    expect(find.text('Продовжити'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('auth-password')), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('auth-confirm-password')),
+      findsNothing,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('auth-full-name')),
+      'Ада Лавлейс',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('auth-email')),
+      'ada@example.com',
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('auth-submit-button')));
+    await tester.pumpAndSettle();
+
     expect(find.text('Зареєструватися'), findsWidgets);
     expect(find.text('Вже маєте акаунт?'), findsOneWidget);
     expect(find.text('Підтвердження пароля'), findsOneWidget);
+    expect(find.text('Назад'), findsOneWidget);
 
     controller.dispose();
   });
 }
 
 class _FakeAuthClient implements AuthClient {
-  _FakeAuthClient({this.loginError});
+  _FakeAuthClient({this.loginError, this.checkEmailError});
 
+  int checkEmailCalls = 0;
   int loginCalls = 0;
   int signUpCalls = 0;
   final AuthApiException? loginError;
+  final AuthApiException? checkEmailError;
 
   @override
   void close() {}
+
+  @override
+  Future<void> checkEmail({required String email}) async {
+    checkEmailCalls += 1;
+    if (checkEmailError != null) {
+      throw checkEmailError!;
+    }
+  }
 
   @override
   Future<AuthSession> login({

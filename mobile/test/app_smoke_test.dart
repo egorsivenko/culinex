@@ -361,6 +361,9 @@ class _FakeAuthClient implements AuthClient {
   void close() {}
 
   @override
+  Future<void> checkEmail({required String email}) async {}
+
+  @override
   Future<AuthSession> login({
     required String email,
     required String password,

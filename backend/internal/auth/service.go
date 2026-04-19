@@ -37,6 +37,10 @@ type LoginInput struct {
 	Password string
 }
 
+type CheckEmailInput struct {
+	Email string
+}
+
 type RefreshInput struct {
 	RefreshToken string
 }
@@ -49,6 +53,29 @@ type AuthResult struct {
 	User      User
 	Email     string
 	TokenPair TokenPair
+}
+
+func CheckEmailAvailable(ctx context.Context, input CheckEmailInput) error {
+	normalizedInput, err := normalizeCheckEmailInput(input)
+	if err != nil {
+		return err
+	}
+
+	const checkEmailQuery = `
+		SELECT 1
+		FROM user_identities
+		WHERE provider = $1 AND email = $2
+	`
+
+	var marker int
+	if err := db.Pool.QueryRow(ctx, checkEmailQuery, ProviderLocal, normalizedInput.Email).Scan(&marker); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("check local identity email: %w", err)
+	}
+
+	return ErrEmailAlreadyInUse
 }
 
 func SignUp(ctx context.Context, input SignUpInput) (AuthResult, error) {
@@ -389,6 +416,17 @@ func normalizeLoginInput(input LoginInput) (LoginInput, error) {
 		return LoginInput{}, fmt.Errorf("%w: email is invalid", ErrValidation)
 	case input.Password == "":
 		return LoginInput{}, fmt.Errorf("%w: password is required", ErrValidation)
+	default:
+		return input, nil
+	}
+}
+
+func normalizeCheckEmailInput(input CheckEmailInput) (CheckEmailInput, error) {
+	input.Email = normalizeEmail(input.Email)
+
+	switch {
+	case !isValidEmail(input.Email):
+		return CheckEmailInput{}, fmt.Errorf("%w: email is invalid", ErrValidation)
 	default:
 		return input, nil
 	}

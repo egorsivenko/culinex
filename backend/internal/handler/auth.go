@@ -80,6 +80,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, buildAuthResponse(result))
 }
 
+func CheckEmail(w http.ResponseWriter, r *http.Request) {
+	var req authRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	if err := auth.CheckEmailAvailable(r.Context(), auth.CheckEmailInput{
+		Email: req.Email,
+	}); err != nil {
+		writeAuthServiceError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func Refresh(w http.ResponseWriter, r *http.Request) {
 	var req refreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

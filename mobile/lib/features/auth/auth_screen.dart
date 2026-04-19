@@ -10,6 +10,8 @@ import 'auth_controller.dart';
 
 enum AuthFormMode { signIn, signUp }
 
+enum _SignUpStep { details, password }
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
     required this.controller,
@@ -39,6 +41,7 @@ class _AuthScreenState extends State<AuthScreen> {
       TextEditingController();
 
   AuthFormMode _mode = AuthFormMode.signIn;
+  _SignUpStep _signUpStep = _SignUpStep.details;
   bool _isPasswordObscured = true;
   bool _isConfirmPasswordObscured = true;
 
@@ -60,6 +63,11 @@ class _AuthScreenState extends State<AuthScreen> {
         final CulinexPalette colors = CulinexColors.of(context);
         final TextTheme textTheme = Theme.of(context).textTheme;
         final l10n = context.l10n;
+        final bool isSignIn = _mode == AuthFormMode.signIn;
+        final bool showsSignUpDetails =
+            _mode == AuthFormMode.signUp && _signUpStep == _SignUpStep.details;
+        final bool showsSignUpPassword =
+            _mode == AuthFormMode.signUp && _signUpStep == _SignUpStep.password;
 
         return Scaffold(
           body: DecoratedBox(
@@ -97,7 +105,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
                                     Text(
-                                      _mode == AuthFormMode.signIn
+                                      isSignIn
                                           ? l10n.authModeSignIn
                                           : l10n.authModeSignUp,
                                       style: textTheme.headlineMedium?.copyWith(
@@ -106,6 +114,26 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 24),
+                                    if (showsSignUpPassword) ...<Widget>[
+                                      TextButton.icon(
+                                        key: const ValueKey<String>(
+                                          'auth-sign-up-back-button',
+                                        ),
+                                        onPressed: _goToSignUpDetails,
+                                        icon: const Icon(
+                                          Icons.arrow_back_rounded,
+                                        ),
+                                        label: Text(l10n.authBackToDetails),
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          foregroundColor: colors.mutedInk,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
                                     if (error != null) ...<Widget>[
                                       _AuthErrorBanner(
                                         message: _errorMessageFor(error.code),
@@ -113,8 +141,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       const SizedBox(height: 20),
                                     ],
-                                    if (_mode ==
-                                        AuthFormMode.signUp) ...<Widget>[
+                                    if (showsSignUpDetails) ...<Widget>[
                                       TextFormField(
                                         key: const ValueKey<String>(
                                           'auth-full-name',
@@ -128,7 +155,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           ),
                                         ),
                                         validator: (String? value) {
-                                          if (_mode != AuthFormMode.signUp) {
+                                          if (!showsSignUpDetails) {
                                             return null;
                                           }
                                           if (value == null ||
@@ -140,76 +167,97 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       const SizedBox(height: 16),
                                     ],
-                                    TextFormField(
-                                      key: const ValueKey<String>('auth-email'),
-                                      controller: _emailController,
-                                      keyboardType: TextInputType.emailAddress,
-                                      autofillHints: const <String>[
-                                        AutofillHints.email,
-                                      ],
-                                      textInputAction: TextInputAction.next,
-                                      decoration: InputDecoration(
-                                        labelText: l10n.authEmailLabel,
-                                        prefixIcon: const Icon(
-                                          Icons.mail_outline,
+                                    if (isSignIn ||
+                                        showsSignUpDetails) ...<Widget>[
+                                      TextFormField(
+                                        key: const ValueKey<String>(
+                                          'auth-email',
                                         ),
-                                      ),
-                                      validator: (String? value) {
-                                        final String email =
-                                            value?.trim() ?? '';
-                                        if (email.isEmpty) {
-                                          return l10n.authEnterEmail;
-                                        }
-                                        if (!EmailValidator.validate(email)) {
-                                          return l10n.authEnterValidEmail;
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      key: const ValueKey<String>(
-                                        'auth-password',
-                                      ),
-                                      controller: _passwordController,
-                                      obscureText: _isPasswordObscured,
-                                      autofillHints: const <String>[
-                                        AutofillHints.password,
-                                      ],
-                                      textInputAction: TextInputAction.done,
-                                      onFieldSubmitted: (_) => _submit(),
-                                      decoration: InputDecoration(
-                                        labelText: l10n.authPasswordLabel,
-                                        prefixIcon: const Icon(
-                                          Icons.lock_outline,
+                                        controller: _emailController,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        autofillHints: const <String>[
+                                          AutofillHints.email,
+                                        ],
+                                        textInputAction: isSignIn
+                                            ? TextInputAction.next
+                                            : TextInputAction.done,
+                                        onFieldSubmitted: isSignIn
+                                            ? null
+                                            : (_) => _submit(),
+                                        decoration: InputDecoration(
+                                          labelText: l10n.authEmailLabel,
+                                          prefixIcon: const Icon(
+                                            Icons.mail_outline,
+                                          ),
                                         ),
-                                        suffixIcon:
-                                            _buildPasswordVisibilityToggle(
-                                              key: const ValueKey<String>(
-                                                'auth-password-visibility-toggle',
+                                        validator: (String? value) {
+                                          if (!isSignIn &&
+                                              !showsSignUpDetails) {
+                                            return null;
+                                          }
+                                          final String email =
+                                              value?.trim() ?? '';
+                                          if (email.isEmpty) {
+                                            return l10n.authEnterEmail;
+                                          }
+                                          if (!EmailValidator.validate(email)) {
+                                            return l10n.authEnterValidEmail;
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                    if (isSignIn ||
+                                        showsSignUpPassword) ...<Widget>[
+                                      if (isSignIn) const SizedBox(height: 16),
+                                      TextFormField(
+                                        key: const ValueKey<String>(
+                                          'auth-password',
+                                        ),
+                                        controller: _passwordController,
+                                        obscureText: _isPasswordObscured,
+                                        autofillHints: const <String>[
+                                          AutofillHints.password,
+                                        ],
+                                        textInputAction: TextInputAction.done,
+                                        onFieldSubmitted: (_) => _submit(),
+                                        decoration: InputDecoration(
+                                          labelText: l10n.authPasswordLabel,
+                                          prefixIcon: const Icon(
+                                            Icons.lock_outline,
+                                          ),
+                                          suffixIcon:
+                                              _buildPasswordVisibilityToggle(
+                                                key: const ValueKey<String>(
+                                                  'auth-password-visibility-toggle',
+                                                ),
+                                                isObscured: _isPasswordObscured,
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _isPasswordObscured =
+                                                        !_isPasswordObscured;
+                                                  });
+                                                },
                                               ),
-                                              isObscured: _isPasswordObscured,
-                                              onPressed: () {
-                                                setState(() {
-                                                  _isPasswordObscured =
-                                                      !_isPasswordObscured;
-                                                });
-                                              },
-                                            ),
+                                        ),
+                                        validator: (String? value) {
+                                          if (!isSignIn &&
+                                              !showsSignUpPassword) {
+                                            return null;
+                                          }
+                                          final String password = value ?? '';
+                                          if (password.isEmpty) {
+                                            return l10n.authEnterPassword;
+                                          }
+                                          if (password.length < 8) {
+                                            return l10n.authPasswordMinLength;
+                                          }
+                                          return null;
+                                        },
                                       ),
-                                      validator: (String? value) {
-                                        final String password = value ?? '';
-                                        if (password.isEmpty) {
-                                          return l10n.authEnterPassword;
-                                        }
-                                        if (password.length < 8) {
-                                          return l10n.authPasswordMinLength;
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    if (_mode ==
-                                        AuthFormMode.signUp) ...<Widget>[
+                                    ],
+                                    if (showsSignUpPassword) ...<Widget>[
                                       const SizedBox(height: 16),
                                       TextFormField(
                                         key: const ValueKey<String>(
@@ -243,7 +291,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           ),
                                         ),
                                         validator: (String? value) {
-                                          if (_mode != AuthFormMode.signUp) {
+                                          if (!showsSignUpPassword) {
                                             return null;
                                           }
                                           final String confirmPassword =
@@ -266,8 +314,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       label: widget.controller.isSubmitting
                                           ? l10n.authSubmitLoading
-                                          : _mode == AuthFormMode.signIn
+                                          : isSignIn
                                           ? l10n.authModeSignIn
+                                          : showsSignUpDetails
+                                          ? l10n.proceed
                                           : l10n.authModeSignUp,
                                       onPressed: widget.controller.isSubmitting
                                           ? null
@@ -347,6 +397,18 @@ class _AuthScreenState extends State<AuthScreen> {
 
     setState(() {
       _mode = mode;
+      _signUpStep = _SignUpStep.details;
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _isPasswordObscured = true;
+      _isConfirmPasswordObscured = true;
+    });
+    widget.controller.clearError();
+  }
+
+  void _goToSignUpDetails() {
+    setState(() {
+      _signUpStep = _SignUpStep.details;
       _passwordController.clear();
       _confirmPasswordController.clear();
       _isPasswordObscured = true;
@@ -369,6 +431,20 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted && widget.controller.error != null) {
         _passwordController.clear();
       }
+      return;
+    }
+
+    if (_signUpStep == _SignUpStep.details) {
+      final bool isEmailAvailable = await widget.controller.checkEmailAvailable(
+        email: _emailController.text.trim(),
+      );
+      if (!mounted || !isEmailAvailable) {
+        return;
+      }
+
+      setState(() {
+        _signUpStep = _SignUpStep.password;
+      });
       return;
     }
 

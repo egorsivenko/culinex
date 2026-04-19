@@ -240,6 +240,7 @@
   "authFutureProvidersHint": "Google and Apple sign-in can be added later without changing this flow.",
   "authSwitchToSignUpPrompt": "Don't have an account?",
   "authSwitchToSignInPrompt": "Already have an account?",
+  "authBackToDetails": "Back",
   "authShowPassword": "Show password",
   "authHidePassword": "Hide password",
   "authDismissError": "Dismiss error",

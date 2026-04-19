@@ -62,6 +62,29 @@ void main() {
   });
 
   test(
+    'checkEmailAvailable returns false and exposes duplicate-email error',
+    () async {
+      final _FakeAuthClient authClient = _FakeAuthClient(
+        checkEmailError: const AuthApiException(
+          AuthApiErrorCode.emailAlreadyInUse,
+        ),
+      );
+      final AuthController controller = AuthController(
+        authClient: authClient,
+        sessionStore: _MemorySessionStore(),
+      );
+
+      final bool isAvailable = await controller.checkEmailAvailable(
+        email: 'ada@example.com',
+      );
+
+      expect(isAvailable, isFalse);
+      expect(controller.error?.code, AuthErrorCode.emailAlreadyInUse);
+      controller.dispose();
+    },
+  );
+
+  test(
     'signOut clears the local session even when remote logout fails',
     () async {
       final _FakeAuthClient authClient = _FakeAuthClient(
@@ -143,20 +166,14 @@ void main() {
 class _FakeAuthClient implements AuthClient {
   _FakeAuthClient({
     this.loginResult,
-    this.signUpResult,
     this.refreshResult,
-    this.loginError,
-    this.signUpError,
-    this.refreshError,
+    this.checkEmailError,
     this.logoutError,
   });
 
   final AuthSession? loginResult;
-  final AuthSession? signUpResult;
   final AuthSession? refreshResult;
-  final AuthApiException? loginError;
-  final AuthApiException? signUpError;
-  final AuthApiException? refreshError;
+  final AuthApiException? checkEmailError;
   final AuthApiException? logoutError;
 
   bool closed = false;
@@ -167,13 +184,17 @@ class _FakeAuthClient implements AuthClient {
   }
 
   @override
+  Future<void> checkEmail({required String email}) async {
+    if (checkEmailError != null) {
+      throw checkEmailError!;
+    }
+  }
+
+  @override
   Future<AuthSession> login({
     required String email,
     required String password,
   }) async {
-    if (loginError != null) {
-      throw loginError!;
-    }
     return loginResult ?? _session();
   }
 
@@ -186,9 +207,6 @@ class _FakeAuthClient implements AuthClient {
 
   @override
   Future<AuthSession> refresh({required String refreshToken}) async {
-    if (refreshError != null) {
-      throw refreshError!;
-    }
     return refreshResult ?? _session();
   }
 
@@ -198,10 +216,7 @@ class _FakeAuthClient implements AuthClient {
     required String email,
     required String password,
   }) async {
-    if (signUpError != null) {
-      throw signUpError!;
-    }
-    return signUpResult ?? _session();
+    return _session();
   }
 }
 

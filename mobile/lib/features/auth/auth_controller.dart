@@ -119,6 +119,27 @@ class AuthController extends ChangeNotifier implements AuthSessionCoordinator {
     await _submit(() => _authClient.login(email: email, password: password));
   }
 
+  Future<bool> checkEmailAvailable({required String email}) async {
+    _isSubmitting = true;
+    _error = null;
+    if (_stage != AuthStage.authenticated) {
+      _stage = AuthStage.signedOut;
+    }
+    _notifySafely();
+
+    try {
+      await _authClient.checkEmail(email: email);
+      _isSubmitting = false;
+      _notifySafely();
+      return true;
+    } on AuthApiException catch (error) {
+      _isSubmitting = false;
+      _error = AuthErrorState(code: _mapErrorCode(error.code));
+      _notifySafely();
+      return false;
+    }
+  }
+
   Future<void> signOut() async {
     final AuthSession? currentSession = _session;
     _isSubmitting = true;

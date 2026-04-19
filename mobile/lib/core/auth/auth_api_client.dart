@@ -8,6 +8,8 @@ import '../config/app_config.dart';
 import 'auth_models.dart';
 
 abstract interface class AuthClient {
+  Future<void> checkEmail({required String email});
+
   Future<AuthSession> signUp({
     required String fullName,
     required String email,
@@ -35,6 +37,14 @@ class AuthApiClient implements AuthClient {
 
   static const Duration _requestTimeout = Duration(seconds: 30);
 
+  @override
+  Future<void> checkEmail({required String email}) async {
+    await _postWithoutResponse('auth/check-email', <String, dynamic>{
+      'email': email,
+    });
+  }
+
+  @override
   Future<AuthSession> signUp({
     required String fullName,
     required String email,
@@ -47,6 +57,7 @@ class AuthApiClient implements AuthClient {
     });
   }
 
+  @override
   Future<AuthSession> login({required String email, required String password}) {
     return _postAuth('auth/login', <String, dynamic>{
       'email': email,
@@ -54,18 +65,21 @@ class AuthApiClient implements AuthClient {
     });
   }
 
+  @override
   Future<AuthSession> refresh({required String refreshToken}) {
     return _postAuth('auth/refresh', <String, dynamic>{
       'refresh_token': refreshToken,
     });
   }
 
+  @override
   Future<void> logout({required String refreshToken}) async {
     await _postWithoutResponse('auth/logout', <String, dynamic>{
       'refresh_token': refreshToken,
     });
   }
 
+  @override
   void close() {
     if (_ownsClient) {
       _client.close();

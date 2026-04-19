@@ -498,6 +498,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSwitchToSignInPrompt => 'Already have an account?';
 
   @override
+  String get authBackToDetails => 'Back';
+
+  @override
   String get authShowPassword => 'Show password';
 
   @override

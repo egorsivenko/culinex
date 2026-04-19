@@ -240,6 +240,7 @@
   "authFutureProvidersHint": "Вхід через Google та Apple можна буде додати пізніше без зміни цього сценарію.",
   "authSwitchToSignUpPrompt": "Ще не маєте акаунта?",
   "authSwitchToSignInPrompt": "Вже маєте акаунт?",
+  "authBackToDetails": "Назад",
   "authShowPassword": "Показати пароль",
   "authHidePassword": "Приховати пароль",
   "authDismissError": "Закрити помилку",
