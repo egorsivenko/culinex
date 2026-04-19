@@ -78,20 +78,16 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: 28),
                           Divider(color: colors.border, height: 1),
                           const SizedBox(height: 22),
-                          FilledButton.icon(
+                          OutlinedButton.icon(
                             key: const ValueKey<String>(
                               'settings-sign-out-button',
                             ),
                             onPressed: onSignOut,
                             icon: const Icon(Icons.logout_rounded),
                             label: Text(l10n.signOut),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.onError,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colors.ink,
+                              side: BorderSide(color: colors.border),
                               minimumSize: const Size(172, 48),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
