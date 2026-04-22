@@ -40,6 +40,7 @@ void main() {
                   isOpeningRecipe: false,
                   selectedRecipeActionId: selectedRecipeActionId,
                   deletingRecipeId: null,
+                  favoritingRecipeId: null,
                   onRetry: () {},
                   onOpenRecipe: (_) {},
                   onSelectRecipeActions: (String id) {
@@ -51,6 +52,19 @@ void main() {
                     setState(() {
                       selectedRecipeActionId = null;
                     });
+                  },
+                  onSetRecipeFavorite: (String id, bool isFavorite) async {
+                    setState(() {
+                      selectedRecipeActionId = null;
+                      recipes = recipes
+                          .map(
+                            (RecipeSummary recipe) => recipe.id == id
+                                ? recipe.copyWith(isFavorite: isFavorite)
+                                : recipe,
+                          )
+                          .toList(growable: false);
+                    });
+                    return true;
                   },
                   onDeleteRecipe: (String id) async {
                     setState(() {
@@ -88,6 +102,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Delete'), findsOneWidget);
+      expect(find.text('Favorite'), findsOneWidget);
       final Finder actionBox = find.byKey(
         const ValueKey<String>('recipe-action-box'),
       );
@@ -106,7 +121,21 @@ void main() {
       );
       expect(
         find.descendant(of: actionBox, matching: find.byType(TextButton)),
-        findsOneWidget,
+        findsNWidgets(2),
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey<String>('recipe-favorite-button')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey<String>('recipe-delete-button')),
+              )
+              .dy,
+        ),
       );
 
       await tester.tap(
@@ -135,4 +164,200 @@ void main() {
       );
     },
   );
+
+  testWidgets('favorite action marks row and moves it to the top', (
+    tester,
+  ) async {
+    List<RecipeSummary> recipes = const <RecipeSummary>[
+      RecipeSummary(
+        id: 'recipe-1',
+        dishName: 'Tomato Pasta',
+        dishDescription: 'Simple dinner',
+        difficulty: RecipeDifficulty.easy,
+        cookingTimeMinutes: 20,
+      ),
+      RecipeSummary(
+        id: 'recipe-2',
+        dishName: 'Egg Toast',
+        dishDescription: 'Fast breakfast',
+        difficulty: RecipeDifficulty.easy,
+        cookingTimeMinutes: 8,
+      ),
+    ];
+    String? selectedRecipeActionId;
+
+    await tester.pumpWidget(
+      buildLocalizedApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MyRecipesScreen(
+                status: RecipeHistoryStatus.loaded,
+                recipes: recipes,
+                isOpeningRecipe: false,
+                selectedRecipeActionId: selectedRecipeActionId,
+                deletingRecipeId: null,
+                favoritingRecipeId: null,
+                onRetry: () {},
+                onOpenRecipe: (_) {},
+                onSelectRecipeActions: (String id) {
+                  setState(() {
+                    selectedRecipeActionId = id;
+                  });
+                },
+                onClearRecipeActions: () {
+                  setState(() {
+                    selectedRecipeActionId = null;
+                  });
+                },
+                onSetRecipeFavorite: (String id, bool isFavorite) async {
+                  setState(() {
+                    selectedRecipeActionId = null;
+                    recipes =
+                        recipes
+                            .map(
+                              (RecipeSummary recipe) => recipe.id == id
+                                  ? recipe.copyWith(isFavorite: isFavorite)
+                                  : recipe,
+                            )
+                            .toList(growable: false)
+                          ..sort((RecipeSummary a, RecipeSummary b) {
+                            if (a.isFavorite != b.isFavorite) {
+                              return a.isFavorite ? -1 : 1;
+                            }
+                            return 0;
+                          });
+                  });
+                  return true;
+                },
+                onDeleteRecipe: (_) async => true,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder eggRow = find
+        .ancestor(of: find.text('Egg Toast'), matching: find.byType(InkWell))
+        .first;
+
+    await tester.longPress(eggRow);
+    await tester.pumpAndSettle();
+
+    final Finder actionBox = find.byKey(
+      const ValueKey<String>('recipe-action-box'),
+    );
+    expect(
+      tester
+          .getTopLeft(
+            find.byKey(const ValueKey<String>('recipe-favorite-button')),
+          )
+          .dy,
+      lessThan(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey<String>('recipe-delete-button')),
+            )
+            .dy,
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('recipe-favorite-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(actionBox, findsNothing);
+    expect(find.text('Unfavorite'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('recipe-favorite-indicator-recipe-2')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text('Egg Toast')).dy,
+      lessThan(tester.getTopLeft(find.text('Tomato Pasta')).dy),
+    );
+  });
+
+  testWidgets('recipe action block keeps Ukrainian labels and icons aligned', (
+    tester,
+  ) async {
+    String? selectedRecipeActionId;
+
+    await tester.pumpWidget(
+      buildLocalizedApp(
+        locale: const Locale('uk'),
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MyRecipesScreen(
+                status: RecipeHistoryStatus.loaded,
+                recipes: const <RecipeSummary>[
+                  RecipeSummary(
+                    id: 'recipe-1',
+                    dishName: 'Паста з томатами',
+                    dishDescription: 'Швидка вечеря',
+                    difficulty: RecipeDifficulty.easy,
+                    cookingTimeMinutes: 20,
+                  ),
+                ],
+                isOpeningRecipe: false,
+                selectedRecipeActionId: selectedRecipeActionId,
+                deletingRecipeId: null,
+                favoritingRecipeId: null,
+                onRetry: () {},
+                onOpenRecipe: (_) {},
+                onSelectRecipeActions: (String id) {
+                  setState(() {
+                    selectedRecipeActionId = id;
+                  });
+                },
+                onClearRecipeActions: () {
+                  setState(() {
+                    selectedRecipeActionId = null;
+                  });
+                },
+                onSetRecipeFavorite: (_, _) async => true,
+                onDeleteRecipe: (_) async => true,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder recipeRow = find
+        .ancestor(
+          of: find.text('Паста з томатами'),
+          matching: find.byType(InkWell),
+        )
+        .first;
+
+    await tester.longPress(recipeRow);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Додати в обране'), findsOneWidget);
+    expect(find.text('Видалити'), findsOneWidget);
+
+    final Finder favoriteIcon = find
+        .descendant(
+          of: find.byKey(const ValueKey<String>('recipe-favorite-button')),
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        )
+        .first;
+    final Finder deleteIcon = find
+        .descendant(
+          of: find.byKey(const ValueKey<String>('recipe-delete-button')),
+          matching: find.byIcon(Icons.delete_outline_rounded),
+        )
+        .first;
+
+    expect(
+      tester.getTopLeft(favoriteIcon).dx,
+      tester.getTopLeft(deleteIcon).dx,
+    );
+  });
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/culinex_theme.dart';
@@ -14,10 +16,12 @@ class MyRecipesScreen extends StatelessWidget {
     required this.isOpeningRecipe,
     required this.selectedRecipeActionId,
     required this.deletingRecipeId,
+    required this.favoritingRecipeId,
     required this.onRetry,
     required this.onOpenRecipe,
     required this.onSelectRecipeActions,
     required this.onClearRecipeActions,
+    required this.onSetRecipeFavorite,
     required this.onDeleteRecipe,
     super.key,
   });
@@ -27,10 +31,12 @@ class MyRecipesScreen extends StatelessWidget {
   final bool isOpeningRecipe;
   final String? selectedRecipeActionId;
   final String? deletingRecipeId;
+  final String? favoritingRecipeId;
   final VoidCallback onRetry;
   final ValueChanged<String> onOpenRecipe;
   final ValueChanged<String> onSelectRecipeActions;
   final VoidCallback onClearRecipeActions;
+  final Future<bool> Function(String id, bool isFavorite) onSetRecipeFavorite;
   final Future<bool> Function(String id) onDeleteRecipe;
 
   @override
@@ -122,7 +128,10 @@ class MyRecipesScreen extends StatelessWidget {
                   recipe: recipe,
                   isSelected: isSelected,
                   actionLayerLink: isSelected ? selectedRecipeLayerLink : null,
-                  enabled: !isOpeningRecipe && deletingRecipeId == null,
+                  enabled:
+                      !isOpeningRecipe &&
+                      deletingRecipeId == null &&
+                      favoritingRecipeId == null,
                   onTap: () => onOpenRecipe(recipe.id),
                   onLongPress: () => onSelectRecipeActions(recipe.id),
                 );
@@ -141,31 +150,42 @@ class MyRecipesScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.topCenter,
                 heightFactor: 1,
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey<String>(selectedRecipe.id),
-                  tween: Tween<double>(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 240),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    final double easedValue = Curves.easeOutBack.transform(
-                      value,
-                    );
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 6 * (1 - value)),
-                        child: Transform.scale(
-                          scale: 0.96 + (0.04 * easedValue),
-                          alignment: Alignment.topCenter,
-                          child: child,
+                widthFactor: 1,
+                child: UnconstrainedBox(
+                  alignment: Alignment.topCenter,
+                  child: TweenAnimationBuilder<double>(
+                    key: ValueKey<String>(selectedRecipe.id),
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      final double easedValue = Curves.easeOutBack.transform(
+                        value,
+                      );
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 6 * (1 - value)),
+                          child: Transform.scale(
+                            scale: 0.96 + (0.04 * easedValue),
+                            alignment: Alignment.topCenter,
+                            child: child,
+                          ),
                         ),
+                      );
+                    },
+                    child: _RecipeActionBox(
+                      isFavorite: selectedRecipe.isFavorite,
+                      isFavoriting: favoritingRecipeId == selectedRecipe.id,
+                      isDeleting: deletingRecipeId == selectedRecipe.id,
+                      onSetFavorite: () => _setRecipeFavorite(
+                        context,
+                        selectedRecipe.id,
+                        !selectedRecipe.isFavorite,
                       ),
-                    );
-                  },
-                  child: _RecipeActionBox(
-                    isDeleting: deletingRecipeId == selectedRecipe.id,
-                    onDelete: () =>
-                        _confirmAndDeleteRecipe(context, selectedRecipe),
+                      onDelete: () =>
+                          _confirmAndDeleteRecipe(context, selectedRecipe),
+                    ),
                   ),
                 ),
               ),
@@ -197,6 +217,23 @@ class MyRecipesScreen extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(context.l10n.deleteRecipeFailed)));
+  }
+
+  Future<void> _setRecipeFavorite(
+    BuildContext context,
+    String id,
+    bool isFavorite,
+  ) async {
+    final bool updated = await onSetRecipeFavorite(id, isFavorite);
+    if (!context.mounted || updated) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(context.l10n.favoriteRecipeFailed)),
+      );
   }
 }
 
@@ -324,6 +361,17 @@ class _RecipeHistoryRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    if (recipe.isFavorite) ...[
+                      Icon(
+                        Icons.favorite_rounded,
+                        key: ValueKey<String>(
+                          'recipe-favorite-indicator-${recipe.id}',
+                        ),
+                        size: 18,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     _RecipeMetric(
                       icon: Icons.restaurant_menu_rounded,
                       label: recipe.difficulty.label(l10n),
@@ -345,9 +393,18 @@ class _RecipeHistoryRow extends StatelessWidget {
 }
 
 class _RecipeActionBox extends StatelessWidget {
-  const _RecipeActionBox({required this.isDeleting, required this.onDelete});
+  const _RecipeActionBox({
+    required this.isFavorite,
+    required this.isFavoriting,
+    required this.isDeleting,
+    required this.onSetFavorite,
+    required this.onDelete,
+  });
 
+  final bool isFavorite;
+  final bool isFavoriting;
   final bool isDeleting;
+  final VoidCallback onSetFavorite;
   final VoidCallback onDelete;
 
   @override
@@ -355,36 +412,145 @@ class _RecipeActionBox extends StatelessWidget {
     final CulinexPalette colors = CulinexColors.of(context);
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final l10n = context.l10n;
+    final String favoriteLabel = isFavorite
+        ? l10n.unfavoriteRecipe
+        : l10n.favoriteRecipe;
+    final String deleteLabel = l10n.deleteRecipe;
+    final double contentWidth = _calculateActionContentWidth(context, <String>[
+      favoriteLabel,
+      deleteLabel,
+    ]);
 
     return Container(
       key: const ValueKey<String>('recipe-action-box'),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: colors.elevatedSurface.withValues(alpha: 0.96),
+        color: colors.elevatedSurface.withValues(alpha: 0.98),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.border),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextButton.icon(
-            key: const ValueKey<String>('recipe-delete-button'),
-            onPressed: isDeleting ? null : onDelete,
-            icon: isDeleting
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.error,
+      child: ConstrainedBox(
+        constraints: BoxConstraints.tightFor(width: contentWidth),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _RecipeActionButton(
+              key: const ValueKey<String>('recipe-favorite-button'),
+              onPressed: isFavoriting || isDeleting ? null : onSetFavorite,
+              icon: isFavoriting
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : Icon(
+                      isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                     ),
-                  )
-                : const Icon(Icons.delete_outline_rounded),
-            label: Text(l10n.deleteRecipe),
-            style: TextButton.styleFrom(
+              label: favoriteLabel,
+            ),
+            _RecipeActionButton(
+              key: const ValueKey<String>('recipe-delete-button'),
+              onPressed: isDeleting || isFavoriting ? null : onDelete,
+              icon: isDeleting
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.error,
+                      ),
+                    )
+                  : const Icon(Icons.delete_outline_rounded),
+              label: deleteLabel,
               foregroundColor: colorScheme.error,
-              minimumSize: const Size(132, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _calculateActionContentWidth(
+    BuildContext context,
+    List<String> labels,
+  ) {
+    final TextStyle textStyle =
+        Theme.of(context).textButtonTheme.style?.textStyle?.resolve({}) ??
+        Theme.of(context).textTheme.labelLarge ??
+        const TextStyle(fontSize: 14);
+    final TextScaler textScaler = MediaQuery.textScalerOf(context);
+    final TextDirection textDirection = Directionality.of(context);
+    double longestLabelWidth = 0;
+
+    for (final String label in labels) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: label, style: textStyle),
+        maxLines: 1,
+        textDirection: textDirection,
+        textScaler: textScaler,
+      )..layout();
+      longestLabelWidth = math.max(longestLabelWidth, painter.width);
+    }
+
+    final double preferredWidth =
+        _RecipeActionButton.horizontalPadding +
+        _RecipeActionButton.iconSlotWidth +
+        _RecipeActionButton.iconGap +
+        longestLabelWidth;
+    final double maxWidth = math.max(
+      _RecipeActionButton.minWidth,
+      MediaQuery.sizeOf(context).width - 96,
+    );
+
+    return preferredWidth.clamp(_RecipeActionButton.minWidth, maxWidth);
+  }
+}
+
+class _RecipeActionButton extends StatelessWidget {
+  const _RecipeActionButton({
+    required super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    this.foregroundColor,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final String label;
+  final Color? foregroundColor;
+
+  static const double minWidth = 180;
+  static const double horizontalPadding = 36;
+  static const double iconSlotWidth = 22;
+  static const double iconGap = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: foregroundColor,
+        minimumSize: const Size(minWidth, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: iconSlotWidth,
+            child: Center(child: icon),
+          ),
+          const SizedBox(width: iconGap),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(label, softWrap: true),
             ),
           ),
         ],

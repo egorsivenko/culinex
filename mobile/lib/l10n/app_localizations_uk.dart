@@ -61,6 +61,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get myRecipesRetry => 'Спробувати ще';
 
   @override
+  String get favoriteRecipe => 'Додати в обране';
+
+  @override
+  String get unfavoriteRecipe => 'Прибрати з обраного';
+
+  @override
+  String get favoriteRecipeFailed =>
+      'Не вдалося оновити статус обраного. Спробуйте ще раз.';
+
+  @override
   String get deleteRecipe => 'Видалити';
 
   @override

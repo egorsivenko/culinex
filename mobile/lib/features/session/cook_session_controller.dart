@@ -63,6 +63,7 @@ class CookSessionController extends ChangeNotifier {
   bool _recipeOpenedFromHistory = false;
   String? _selectedRecipeActionId;
   String? _deletingRecipeId;
+  String? _favoritingRecipeId;
   SessionErrorState? _errorState;
   Locale _locale = AppLocale.english;
   bool _isDisposed = false;
@@ -81,6 +82,7 @@ class CookSessionController extends ChangeNotifier {
   bool get recipeOpenedFromHistory => _recipeOpenedFromHistory;
   String? get selectedRecipeActionId => _selectedRecipeActionId;
   String? get deletingRecipeId => _deletingRecipeId;
+  String? get favoritingRecipeId => _favoritingRecipeId;
   SessionErrorState get errorState =>
       _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
 
@@ -153,6 +155,7 @@ class CookSessionController extends ChangeNotifier {
     _recipeOpenedFromHistory = false;
     _selectedRecipeActionId = null;
     _deletingRecipeId = null;
+    _favoritingRecipeId = null;
     _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.welcome;
@@ -340,7 +343,7 @@ class CookSessionController extends ChangeNotifier {
         return;
       }
 
-      _recipeSummaries = List<RecipeSummary>.unmodifiable(summaries);
+      _recipeSummaries = _sortRecipeSummaries(summaries);
       if (!_recipeSummaries.any(
         (summary) => summary.id == _selectedRecipeActionId,
       )) {
@@ -400,7 +403,9 @@ class CookSessionController extends ChangeNotifier {
   }
 
   void clearRecipeActions() {
-    if (_selectedRecipeActionId == null || _deletingRecipeId != null) {
+    if (_selectedRecipeActionId == null ||
+        _deletingRecipeId != null ||
+        _favoritingRecipeId != null) {
       return;
     }
 
@@ -408,8 +413,64 @@ class CookSessionController extends ChangeNotifier {
     _notifySafely();
   }
 
+  Future<bool> setRecipeFavorite(String id, bool isFavorite) async {
+    if (_favoritingRecipeId != null || _deletingRecipeId != null) {
+      return false;
+    }
+
+    final List<RecipeSummary> previousSummaries = _recipeSummaries;
+    final GeneratedRecipe? previousRecipe = _recipe;
+    final String? previousSelectedRecipeActionId = _selectedRecipeActionId;
+    final int summaryIndex = previousSummaries.indexWhere(
+      (summary) => summary.id == id,
+    );
+    if (summaryIndex == -1) {
+      return false;
+    }
+
+    _favoritingRecipeId = id;
+    _selectedRecipeActionId = null;
+    _recipeSummaries = _sortRecipeSummaries(
+      previousSummaries.map((summary) {
+        if (summary.id != id) {
+          return summary;
+        }
+        return summary.copyWith(isFavorite: isFavorite);
+      }),
+    );
+    if (_recipe?.id == id) {
+      _recipe = _recipe?.copyWith(isFavorite: isFavorite);
+    }
+    _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+    _notifySafely();
+
+    try {
+      await _repository.setRecipeFavorite(id, isFavorite);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _favoritingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeSummaries = previousSummaries;
+      _recipe = previousRecipe;
+      _selectedRecipeActionId = previousSelectedRecipeActionId;
+      _favoritingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return false;
+    }
+  }
+
   Future<bool> deleteRecipe(String id) async {
-    if (_deletingRecipeId != null) {
+    if (_deletingRecipeId != null || _favoritingRecipeId != null) {
       return false;
     }
 
@@ -447,6 +508,29 @@ class CookSessionController extends ChangeNotifier {
       _notifySafely();
       return false;
     }
+  }
+
+  List<RecipeSummary> _sortRecipeSummaries(Iterable<RecipeSummary> summaries) {
+    final List<RecipeSummary> sorted = summaries.toList(growable: false);
+    sorted.sort((RecipeSummary a, RecipeSummary b) {
+      if (a.isFavorite != b.isFavorite) {
+        return a.isFavorite ? -1 : 1;
+      }
+
+      final DateTime? aCreatedAt = a.createdAt;
+      final DateTime? bCreatedAt = b.createdAt;
+      if (aCreatedAt == null && bCreatedAt == null) {
+        return 0;
+      }
+      if (aCreatedAt == null) {
+        return 1;
+      }
+      if (bCreatedAt == null) {
+        return -1;
+      }
+      return bCreatedAt.compareTo(aCreatedAt);
+    });
+    return List<RecipeSummary>.unmodifiable(sorted);
   }
 
   Future<void> generateRecipeFromIngredients(

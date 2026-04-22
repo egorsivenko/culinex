@@ -61,6 +61,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myRecipesRetry => 'Retry';
 
   @override
+  String get favoriteRecipe => 'Favorite';
+
+  @override
+  String get unfavoriteRecipe => 'Unfavorite';
+
+  @override
+  String get favoriteRecipeFailed =>
+      'Favorite status could not be updated. Try again.';
+
+  @override
   String get deleteRecipe => 'Delete';
 
   @override

@@ -147,6 +147,7 @@ void main() {
                 'dish_description': 'Simple dinner',
                 'difficulty': 'easy',
                 'cooking_time_minutes': 20,
+                'is_favorite': true,
                 'created_at': '2026-04-21T12:00:00Z',
               },
             ],
@@ -162,6 +163,7 @@ void main() {
     expect(recipes, hasLength(1));
     expect(recipes.single.id, 'recipe-1');
     expect(recipes.single.dishName, 'Tomato Pasta');
+    expect(recipes.single.isFavorite, isTrue);
     expect(recipes.single.createdAt, DateTime.utc(2026, 4, 21, 12));
     client.close();
   });
@@ -190,6 +192,7 @@ void main() {
             'dish_description': 'Simple dinner',
             'difficulty': 'easy',
             'cooking_time_minutes': 20,
+            'is_favorite': true,
             'ingredients': <Map<String, dynamic>>[
               <String, dynamic>{'name': 'Tomatoes', 'quantity': '2'},
             ],
@@ -212,9 +215,55 @@ void main() {
 
     expect(recipe.id, 'recipe-1');
     expect(recipe.dishName, 'Tomato Pasta');
+    expect(recipe.isFavorite, isTrue);
     expect(recipe.createdAt, DateTime.utc(2026, 4, 21, 12));
     client.close();
   });
+
+  test(
+    'setRecipeFavorite sends authorized patch and refreshes once on 401',
+    () async {
+      final _FakeAuthSessionCoordinator authSessionCoordinator =
+          _FakeAuthSessionCoordinator(
+            accessToken: 'expired-access-token',
+            refreshedAccessToken: 'fresh-access-token',
+          );
+      int requestCount = 0;
+      final CulinexApiClient client = CulinexApiClient(
+        authSessionCoordinator: authSessionCoordinator,
+        apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+        client: MockClient((http.Request request) async {
+          requestCount += 1;
+          expect(request.method, 'PATCH');
+          expect(
+            request.url.toString(),
+            'http://127.0.0.1:8080/api/recipes/recipe-1/favorite',
+          );
+          expect(request.headers['Content-Type'], 'application/json');
+          expect(jsonDecode(request.body), <String, dynamic>{
+            'is_favorite': true,
+          });
+
+          if (requestCount == 1) {
+            expect(
+              request.headers['Authorization'],
+              'Bearer expired-access-token',
+            );
+            return http.Response('', 401);
+          }
+
+          expect(request.headers['Authorization'], 'Bearer fresh-access-token');
+          return http.Response('', 204);
+        }),
+      );
+
+      await client.setRecipeFavorite('recipe-1', true);
+
+      expect(requestCount, 2);
+      expect(authSessionCoordinator.refreshCalls, 1);
+      client.close();
+    },
+  );
 
   test(
     'deleteRecipe sends authorized delete and refreshes once on 401',

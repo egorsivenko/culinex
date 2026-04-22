@@ -491,6 +491,9 @@ class _NoopRepository implements CulinexRepository {
   }
 
   @override
+  Future<void> setRecipeFavorite(String id, bool isFavorite) async {}
+
+  @override
   Future<void> deleteRecipe(String id) async {
     deletedRecipeIds.add(id);
   }

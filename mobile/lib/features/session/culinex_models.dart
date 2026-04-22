@@ -143,6 +143,7 @@ class GeneratedRecipe {
     required this.ingredients,
     required this.steps,
     required this.macros,
+    this.isFavorite = false,
     this.createdAt,
   });
 
@@ -154,6 +155,7 @@ class GeneratedRecipe {
   final List<RecipeIngredient> ingredients;
   final List<String> steps;
   final NutritionMacros macros;
+  final bool isFavorite;
   final DateTime? createdAt;
 
   factory GeneratedRecipe.fromJson(Map<String, dynamic> json) {
@@ -176,7 +178,23 @@ class GeneratedRecipe {
       macros: NutritionMacros.fromJson(
         json['macros'] as Map<String, dynamic>? ?? const {},
       ),
+      isFavorite: json['is_favorite'] as bool? ?? false,
       createdAt: _parseDateTime(json['created_at']),
+    );
+  }
+
+  GeneratedRecipe copyWith({bool? isFavorite}) {
+    return GeneratedRecipe(
+      id: id,
+      dishName: dishName,
+      dishDescription: dishDescription,
+      difficulty: difficulty,
+      cookingTimeMinutes: cookingTimeMinutes,
+      ingredients: ingredients,
+      steps: steps,
+      macros: macros,
+      isFavorite: isFavorite ?? this.isFavorite,
+      createdAt: createdAt,
     );
   }
 }
@@ -188,6 +206,7 @@ class RecipeSummary {
     required this.dishDescription,
     required this.difficulty,
     required this.cookingTimeMinutes,
+    this.isFavorite = false,
     this.createdAt,
   });
 
@@ -196,6 +215,7 @@ class RecipeSummary {
   final String dishDescription;
   final RecipeDifficulty difficulty;
   final int cookingTimeMinutes;
+  final bool isFavorite;
   final DateTime? createdAt;
 
   factory RecipeSummary.fromJson(Map<String, dynamic> json) {
@@ -207,7 +227,20 @@ class RecipeSummary {
         json['difficulty'] as String? ?? 'medium',
       ),
       cookingTimeMinutes: json['cooking_time_minutes'] as int? ?? 0,
+      isFavorite: json['is_favorite'] as bool? ?? false,
       createdAt: _parseDateTime(json['created_at']),
+    );
+  }
+
+  RecipeSummary copyWith({bool? isFavorite}) {
+    return RecipeSummary(
+      id: id,
+      dishName: dishName,
+      dishDescription: dishDescription,
+      difficulty: difficulty,
+      cookingTimeMinutes: cookingTimeMinutes,
+      isFavorite: isFavorite ?? this.isFavorite,
+      createdAt: createdAt,
     );
   }
 }

@@ -29,6 +29,7 @@ type recipeResponse struct {
 	Ingredients        []ai.RecipeIngredient `json:"ingredients"`
 	Steps              []string              `json:"steps"`
 	Macros             ai.Macros             `json:"macros"`
+	IsFavorite         bool                  `json:"is_favorite"`
 	CreatedAt          string                `json:"created_at"`
 }
 
@@ -38,12 +39,19 @@ type recipeSummaryResponse struct {
 	DishDescription    string `json:"dish_description"`
 	Difficulty         string `json:"difficulty"`
 	CookingTimeMinutes int    `json:"cooking_time_minutes"`
+	IsFavorite         bool   `json:"is_favorite"`
 	CreatedAt          string `json:"created_at"`
 }
 
 type recipeListResponse struct {
 	Recipes []recipeSummaryResponse `json:"recipes"`
 }
+
+type setRecipeFavoriteRequest struct {
+	IsFavorite *bool `json:"is_favorite"`
+}
+
+var setRecipeFavorite = recipes.SetFavorite
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
@@ -113,6 +121,7 @@ func ListRecipes(w http.ResponseWriter, r *http.Request) {
 			DishDescription:    summary.DishDescription,
 			Difficulty:         summary.Difficulty,
 			CookingTimeMinutes: summary.CookingTimeMinutes,
+			IsFavorite:         summary.IsFavorite,
 			CreatedAt:          formatRecipeTime(summary.CreatedAt),
 		})
 	}
@@ -172,6 +181,41 @@ func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		return
+	}
+
+	var req setRecipeFavoriteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+	if req.IsFavorite == nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "is_favorite is required")
+		return
+	}
+
+	if err := setRecipeFavorite(r.Context(), claims.UserID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		return
+	} else if err != nil {
+		log.Printf("[%s] Error updating recipe favorite: %v", middleware.GetReqID(r.Context()), err)
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 	return recipeResponse{
 		ID:                 recipe.ID.String(),
@@ -182,6 +226,7 @@ func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 		Ingredients:        recipe.Ingredients,
 		Steps:              recipe.Steps,
 		Macros:             recipe.Macros,
+		IsFavorite:         recipe.IsFavorite,
 		CreatedAt:          formatRecipeTime(recipe.CreatedAt),
 	}
 }

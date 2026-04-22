@@ -105,6 +105,14 @@ class CulinexApiClient implements CulinexRepository {
   }
 
   @override
+  Future<void> setRecipeFavorite(String id, bool isFavorite) async {
+    await _sendAuthorizedPatchJson(
+      path: 'recipes/$id/favorite',
+      payload: <String, dynamic>{'is_favorite': isFavorite},
+    );
+  }
+
+  @override
   Future<void> deleteRecipe(String id) async {
     await _sendAuthorizedDelete(path: 'recipes/$id');
   }
@@ -160,6 +168,36 @@ class CulinexApiClient implements CulinexRepository {
                 headers: <String, String>{
                   'Authorization': 'Bearer $accessToken',
                 },
+              )
+              .timeout(_requestTimeout);
+        } on TimeoutException {
+          throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
+        } on SocketException {
+          throw const CulinexApiException(
+            CulinexApiErrorCode.networkUnavailable,
+          );
+        }
+      },
+    );
+  }
+
+  Future<http.Response> _sendAuthorizedPatchJson({
+    required String path,
+    required Map<String, dynamic> payload,
+  }) {
+    return _sendAuthorized(
+      send: (String accessToken) async {
+        final Uri uri = _apiBaseUri.resolve(path);
+
+        try {
+          return await _client
+              .patch(
+                uri,
+                headers: <String, String>{
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer $accessToken',
+                },
+                body: jsonEncode(payload),
               )
               .timeout(_requestTimeout);
         } on TimeoutException {

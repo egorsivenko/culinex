@@ -57,6 +57,7 @@ func main() {
 			r.Route("/recipes", func(r chi.Router) {
 				r.Get("/", handler.ListRecipes)
 				r.Get("/{id}", handler.GetRecipe)
+				r.Patch("/{id}/favorite", handler.SetRecipeFavorite)
 				r.Delete("/{id}", handler.DeleteRecipe)
 			})
 		})

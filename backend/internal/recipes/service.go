@@ -25,6 +25,7 @@ type SavedRecipe struct {
 	Ingredients        []ai.RecipeIngredient
 	Steps              []string
 	Macros             ai.Macros
+	IsFavorite         bool
 	CreatedAt          time.Time
 }
 
@@ -34,6 +35,7 @@ type RecipeSummary struct {
 	DishDescription    string
 	Difficulty         string
 	CookingTimeMinutes int
+	IsFavorite         bool
 	CreatedAt          time.Time
 }
 
@@ -66,7 +68,7 @@ func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeRespon
 		)
 		VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb)
 		RETURNING id, user_id, dish_name, dish_description, difficulty,
-			cooking_time_minutes, ingredients, steps, macros, created_at
+			cooking_time_minutes, ingredients, steps, macros, is_favorite, created_at
 	`
 
 	return scanSavedRecipe(db.Pool.QueryRow(
@@ -85,10 +87,11 @@ func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeRespon
 
 func ListByUser(ctx context.Context, userID uuid.UUID) ([]RecipeSummary, error) {
 	const query = `
-		SELECT id, dish_name, dish_description, difficulty, cooking_time_minutes, created_at
+		SELECT id, dish_name, dish_description, difficulty, cooking_time_minutes,
+			is_favorite, created_at
 		FROM recipes
 		WHERE user_id = $1
-		ORDER BY created_at DESC
+		ORDER BY is_favorite DESC, created_at DESC
 	`
 
 	rows, err := db.Pool.Query(ctx, query, userID)
@@ -106,6 +109,7 @@ func ListByUser(ctx context.Context, userID uuid.UUID) ([]RecipeSummary, error) 
 			&summary.DishDescription,
 			&summary.Difficulty,
 			&summary.CookingTimeMinutes,
+			&summary.IsFavorite,
 			&summary.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -122,7 +126,7 @@ func ListByUser(ctx context.Context, userID uuid.UUID) ([]RecipeSummary, error) 
 func GetByID(ctx context.Context, userID, recipeID uuid.UUID) (SavedRecipe, error) {
 	const query = `
 		SELECT id, user_id, dish_name, dish_description, difficulty,
-			cooking_time_minutes, ingredients, steps, macros, created_at
+			cooking_time_minutes, ingredients, steps, macros, is_favorite, created_at
 		FROM recipes
 		WHERE id = $1 AND user_id = $2
 	`
@@ -136,6 +140,24 @@ func GetByID(ctx context.Context, userID, recipeID uuid.UUID) (SavedRecipe, erro
 	}
 
 	return recipe, nil
+}
+
+func SetFavorite(ctx context.Context, userID, recipeID uuid.UUID, isFavorite bool) error {
+	const query = `
+		UPDATE recipes
+		SET is_favorite = $3
+		WHERE id = $1 AND user_id = $2
+	`
+
+	result, err := db.Pool.Exec(ctx, query, recipeID, userID, isFavorite)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func DeleteByID(ctx context.Context, userID, recipeID uuid.UUID) error {
@@ -175,6 +197,7 @@ func scanSavedRecipe(row recipeRow) (SavedRecipe, error) {
 		&ingredientsJSON,
 		&stepsJSON,
 		&macrosJSON,
+		&recipe.IsFavorite,
 		&recipe.CreatedAt,
 	); err != nil {
 		return SavedRecipe{}, err

@@ -348,13 +348,23 @@ void main() {
 
   test('loadRecipeHistory stores saved recipe summaries', () async {
     final FakeRepository repository = FakeRepository(
-      recipeSummaries: const [
+      recipeSummaries: [
         RecipeSummary(
           id: 'recipe-1',
           dishName: 'Tomato Pasta',
           dishDescription: 'Simple dinner',
           difficulty: RecipeDifficulty.easy,
           cookingTimeMinutes: 20,
+          createdAt: DateTime.utc(2026, 4, 21, 12),
+        ),
+        RecipeSummary(
+          id: 'recipe-2',
+          dishName: 'Egg Toast',
+          dishDescription: 'Fast breakfast',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 8,
+          isFavorite: true,
+          createdAt: DateTime.utc(2026, 4, 20, 12),
         ),
       ],
     );
@@ -365,9 +375,171 @@ void main() {
     await controller.loadRecipeHistory();
 
     expect(controller.recipeHistoryStatus, RecipeHistoryStatus.loaded);
-    expect(controller.recipeSummaries, hasLength(1));
-    expect(controller.recipeSummaries.single.dishName, 'Tomato Pasta');
+    expect(controller.recipeSummaries, hasLength(2));
+    expect(controller.recipeSummaries.first.dishName, 'Egg Toast');
     expect(repository.listRecipesCallCount, 1);
+
+    controller.dispose();
+  });
+
+  test(
+    'setRecipeFavorite optimistically favorites, reorders, deselects, and syncs open detail',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        recipeSummaries: [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+            createdAt: DateTime.utc(2026, 4, 20, 12),
+          ),
+          RecipeSummary(
+            id: 'recipe-2',
+            dishName: 'Egg Toast',
+            dishDescription: 'Fast breakfast',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 8,
+            createdAt: DateTime.utc(2026, 4, 21, 12),
+          ),
+        ],
+        savedRecipe: GeneratedRecipe(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+          ingredients: const [
+            RecipeIngredient(name: 'Tomatoes', quantity: '2 pieces'),
+            RecipeIngredient(name: 'Pasta', quantity: '90 g'),
+          ],
+          steps: const ['Boil pasta.', 'Add tomatoes.'],
+          macros: const NutritionMacros(
+            caloriesKcal: 320,
+            proteinG: 12,
+            carbsG: 54,
+            fatG: 8,
+          ),
+        ),
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      await controller.openSavedRecipe('recipe-1');
+      controller.selectRecipeActions('recipe-1');
+      final bool updated = await controller.setRecipeFavorite('recipe-1', true);
+
+      expect(updated, isTrue);
+      expect(repository.favoriteUpdates, <String, bool>{'recipe-1': true});
+      expect(controller.favoritingRecipeId, isNull);
+      expect(controller.selectedRecipeActionId, isNull);
+      expect(controller.recipe?.isFavorite, isTrue);
+      expect(controller.recipeSummaries.map((recipe) => recipe.id), <String>[
+        'recipe-1',
+        'recipe-2',
+      ]);
+      expect(controller.recipeSummaries.first.isFavorite, isTrue);
+
+      controller.dispose();
+    },
+  );
+
+  test(
+    'setRecipeFavorite optimistically unfavorites, reorders, and deselects',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        recipeSummaries: [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+            isFavorite: true,
+            createdAt: DateTime.utc(2026, 4, 20, 12),
+          ),
+          RecipeSummary(
+            id: 'recipe-2',
+            dishName: 'Egg Toast',
+            dishDescription: 'Fast breakfast',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 8,
+            createdAt: DateTime.utc(2026, 4, 21, 12),
+          ),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      controller.selectRecipeActions('recipe-1');
+      final bool updated = await controller.setRecipeFavorite(
+        'recipe-1',
+        false,
+      );
+
+      expect(updated, isTrue);
+      expect(repository.favoriteUpdates, <String, bool>{'recipe-1': false});
+      expect(controller.selectedRecipeActionId, isNull);
+      expect(controller.recipeSummaries.map((recipe) => recipe.id), <String>[
+        'recipe-2',
+        'recipe-1',
+      ]);
+      expect(controller.recipeSummaries.last.isFavorite, isFalse);
+
+      controller.dispose();
+    },
+  );
+
+  test('setRecipeFavorite rolls back on failure', () async {
+    final FakeRepository repository = FakeRepository(
+      setFavoriteError: const CulinexApiException(
+        CulinexApiErrorCode.serverFailure,
+      ),
+      recipeSummaries: [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+          createdAt: DateTime.utc(2026, 4, 20, 12),
+        ),
+        RecipeSummary(
+          id: 'recipe-2',
+          dishName: 'Egg Toast',
+          dishDescription: 'Fast breakfast',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 8,
+          createdAt: DateTime.utc(2026, 4, 21, 12),
+        ),
+      ],
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.loadRecipeHistory();
+    controller.selectRecipeActions('recipe-1');
+    final bool updated = await controller.setRecipeFavorite('recipe-1', true);
+
+    expect(updated, isFalse);
+    expect(controller.favoritingRecipeId, isNull);
+    expect(controller.selectedRecipeActionId, 'recipe-1');
+    expect(controller.recipeSummaries.map((recipe) => recipe.id), <String>[
+      'recipe-2',
+      'recipe-1',
+    ]);
+    expect(
+      controller.recipeSummaries
+          .firstWhere((recipe) => recipe.id == 'recipe-1')
+          .isFavorite,
+      isFalse,
+    );
 
     controller.dispose();
   });
@@ -543,6 +715,7 @@ class FakeRepository implements CulinexRepository {
     this.recipeSummaries = const [],
     GeneratedRecipe? generatedRecipe,
     GeneratedRecipe? savedRecipe,
+    this.setFavoriteError,
     this.deleteRecipeError,
   }) : _generatedRecipe =
            generatedRecipe ??
@@ -568,10 +741,12 @@ class FakeRepository implements CulinexRepository {
   final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe _generatedRecipe;
   final GeneratedRecipe? _savedRecipe;
+  final Object? setFavoriteError;
   final Object? deleteRecipeError;
 
   int extractCallCount = 0;
   int listRecipesCallCount = 0;
+  final Map<String, bool> favoriteUpdates = <String, bool>{};
   final List<String> deletedRecipeIds = <String>[];
   String? lastOpenedRecipeId;
   File? lastExtractedFile;
@@ -616,6 +791,15 @@ class FakeRepository implements CulinexRepository {
       throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
     }
     return savedRecipe;
+  }
+
+  @override
+  Future<void> setRecipeFavorite(String id, bool isFavorite) async {
+    final Object? error = setFavoriteError;
+    if (error != null) {
+      throw error;
+    }
+    favoriteUpdates[id] = isFavorite;
   }
 
   @override

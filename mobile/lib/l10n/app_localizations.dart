@@ -200,6 +200,24 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get myRecipesRetry;
 
+  /// No description provided for @favoriteRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get favoriteRecipe;
+
+  /// No description provided for @unfavoriteRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfavorite'**
+  String get unfavoriteRecipe;
+
+  /// No description provided for @favoriteRecipeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite status could not be updated. Try again.'**
+  String get favoriteRecipeFailed;
+
   /// No description provided for @deleteRecipe.
   ///
   /// In en, this message translates to:
