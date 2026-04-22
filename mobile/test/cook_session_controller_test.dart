@@ -372,6 +372,83 @@ void main() {
     controller.dispose();
   });
 
+  test(
+    'deleteRecipe removes the summary and clears the selected action',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+          RecipeSummary(
+            id: 'recipe-2',
+            dishName: 'Egg Toast',
+            dishDescription: 'Fast breakfast',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 8,
+          ),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      controller.selectRecipeActions('recipe-1');
+      final bool deleted = await controller.deleteRecipe('recipe-1');
+
+      expect(deleted, isTrue);
+      expect(repository.deletedRecipeIds, <String>['recipe-1']);
+      expect(controller.recipeHistoryStatus, RecipeHistoryStatus.loaded);
+      expect(controller.selectedRecipeActionId, isNull);
+      expect(controller.deletingRecipeId, isNull);
+      expect(controller.recipeSummaries.map((recipe) => recipe.id), <String>[
+        'recipe-2',
+      ]);
+
+      controller.dispose();
+    },
+  );
+
+  test(
+    'deleteRecipe keeps summaries visible and exposes history error on failure',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        deleteRecipeError: const CulinexApiException(
+          CulinexApiErrorCode.serverFailure,
+        ),
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      controller.selectRecipeActions('recipe-1');
+      final bool deleted = await controller.deleteRecipe('recipe-1');
+
+      expect(deleted, isFalse);
+      expect(controller.recipeHistoryStatus, RecipeHistoryStatus.error);
+      expect(controller.recipeSummaries, hasLength(1));
+      expect(controller.selectedRecipeActionId, 'recipe-1');
+      expect(controller.deletingRecipeId, isNull);
+
+      controller.dispose();
+    },
+  );
+
   test('openSavedRecipe opens history recipe detail', () async {
     final FakeRepository repository = FakeRepository(
       savedRecipe: GeneratedRecipe(
@@ -411,6 +488,53 @@ void main() {
 
     controller.dispose();
   });
+
+  test('deleteRecipe clears the open history detail when it matches', () async {
+    final FakeRepository repository = FakeRepository(
+      recipeSummaries: const [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+        ),
+      ],
+      savedRecipe: GeneratedRecipe(
+        id: 'recipe-1',
+        dishName: 'Tomato Pasta',
+        dishDescription: 'Simple dinner',
+        difficulty: RecipeDifficulty.easy,
+        cookingTimeMinutes: 20,
+        ingredients: const [
+          RecipeIngredient(name: 'Tomatoes', quantity: '2 pieces'),
+          RecipeIngredient(name: 'Pasta', quantity: '90 g'),
+        ],
+        steps: const ['Boil pasta.', 'Add tomatoes.'],
+        macros: const NutritionMacros(
+          caloriesKcal: 320,
+          proteinG: 12,
+          carbsG: 54,
+          fatG: 8,
+        ),
+      ),
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.loadRecipeHistory();
+    await controller.openSavedRecipe('recipe-1');
+    final bool deleted = await controller.deleteRecipe('recipe-1');
+
+    expect(deleted, isTrue);
+    expect(controller.stage, SessionStage.welcome);
+    expect(controller.recipe, isNull);
+    expect(controller.recipeOpenedFromHistory, isFalse);
+    expect(controller.recipeSummaries, isEmpty);
+
+    controller.dispose();
+  });
 }
 
 class FakeRepository implements CulinexRepository {
@@ -419,6 +543,7 @@ class FakeRepository implements CulinexRepository {
     this.recipeSummaries = const [],
     GeneratedRecipe? generatedRecipe,
     GeneratedRecipe? savedRecipe,
+    this.deleteRecipeError,
   }) : _generatedRecipe =
            generatedRecipe ??
            GeneratedRecipe(
@@ -443,9 +568,11 @@ class FakeRepository implements CulinexRepository {
   final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe _generatedRecipe;
   final GeneratedRecipe? _savedRecipe;
+  final Object? deleteRecipeError;
 
   int extractCallCount = 0;
   int listRecipesCallCount = 0;
+  final List<String> deletedRecipeIds = <String>[];
   String? lastOpenedRecipeId;
   File? lastExtractedFile;
   Locale? lastExtractLocale;
@@ -489,6 +616,15 @@ class FakeRepository implements CulinexRepository {
       throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
     }
     return savedRecipe;
+  }
+
+  @override
+  Future<void> deleteRecipe(String id) async {
+    final Object? error = deleteRecipeError;
+    if (error != null) {
+      throw error;
+    }
+    deletedRecipeIds.add(id);
   }
 
   @override

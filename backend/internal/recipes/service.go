@@ -138,6 +138,23 @@ func GetByID(ctx context.Context, userID, recipeID uuid.UUID) (SavedRecipe, erro
 	return recipe, nil
 }
 
+func DeleteByID(ctx context.Context, userID, recipeID uuid.UUID) error {
+	const query = `
+		DELETE FROM recipes
+		WHERE id = $1 AND user_id = $2
+	`
+
+	result, err := db.Pool.Exec(ctx, query, recipeID, userID)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 type recipeRow interface {
 	Scan(dest ...any) error
 }

@@ -200,6 +200,36 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get myRecipesRetry;
 
+  /// No description provided for @deleteRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteRecipe;
+
+  /// No description provided for @deleteRecipeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recipe?'**
+  String get deleteRecipeDialogTitle;
+
+  /// No description provided for @deleteRecipeDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This recipe will be permanently deleted.'**
+  String get deleteRecipeDialogMessage;
+
+  /// No description provided for @deleteRecipeDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recipe'**
+  String get deleteRecipeDialogConfirm;
+
+  /// No description provided for @deleteRecipeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe could not be deleted. Try again.'**
+  String get deleteRecipeFailed;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

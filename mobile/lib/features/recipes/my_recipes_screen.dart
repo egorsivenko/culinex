@@ -12,16 +12,26 @@ class MyRecipesScreen extends StatelessWidget {
     required this.status,
     required this.recipes,
     required this.isOpeningRecipe,
+    required this.selectedRecipeActionId,
+    required this.deletingRecipeId,
     required this.onRetry,
     required this.onOpenRecipe,
+    required this.onSelectRecipeActions,
+    required this.onClearRecipeActions,
+    required this.onDeleteRecipe,
     super.key,
   });
 
   final RecipeHistoryStatus status;
   final List<RecipeSummary> recipes;
   final bool isOpeningRecipe;
+  final String? selectedRecipeActionId;
+  final String? deletingRecipeId;
   final VoidCallback onRetry;
   final ValueChanged<String> onOpenRecipe;
+  final ValueChanged<String> onSelectRecipeActions;
+  final VoidCallback onClearRecipeActions;
+  final Future<bool> Function(String id) onDeleteRecipe;
 
   @override
   Widget build(BuildContext context) {
@@ -84,17 +94,138 @@ class MyRecipesScreen extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
-      itemCount: recipes.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final RecipeSummary recipe = recipes[index];
-        return _RecipeHistoryRow(
-          recipe: recipe,
-          enabled: !isOpeningRecipe,
-          onTap: () => onOpenRecipe(recipe.id),
-        );
+    final int selectedRecipeIndex = recipes.indexWhere(
+      (recipe) => recipe.id == selectedRecipeActionId,
+    );
+    final RecipeSummary? selectedRecipe = selectedRecipeIndex == -1
+        ? null
+        : recipes[selectedRecipeIndex];
+    final LayerLink? selectedRecipeLayerLink = selectedRecipe == null
+        ? null
+        : LayerLink();
+
+    return Stack(
+      fit: StackFit.expand,
+      alignment: Alignment.topCenter,
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: onClearRecipeActions,
+            child: ListView.separated(
+              itemCount: recipes.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final RecipeSummary recipe = recipes[index];
+                final bool isSelected = selectedRecipeActionId == recipe.id;
+                return _RecipeActionItem(
+                  recipe: recipe,
+                  isSelected: isSelected,
+                  actionLayerLink: isSelected ? selectedRecipeLayerLink : null,
+                  enabled: !isOpeningRecipe && deletingRecipeId == null,
+                  onTap: () => onOpenRecipe(recipe.id),
+                  onLongPress: () => onSelectRecipeActions(recipe.id),
+                );
+              },
+            ),
+          ),
+        ),
+        if (selectedRecipe != null && selectedRecipeLayerLink != null)
+          Positioned.fill(
+            child: CompositedTransformFollower(
+              link: selectedRecipeLayerLink,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.bottomCenter,
+              followerAnchor: Alignment.topCenter,
+              offset: const Offset(0, 8),
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: 1,
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey<String>(selectedRecipe.id),
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    final double easedValue = Curves.easeOutBack.transform(
+                      value,
+                    );
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 6 * (1 - value)),
+                        child: Transform.scale(
+                          scale: 0.96 + (0.04 * easedValue),
+                          alignment: Alignment.topCenter,
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _RecipeActionBox(
+                    isDeleting: deletingRecipeId == selectedRecipe.id,
+                    onDelete: () =>
+                        _confirmAndDeleteRecipe(context, selectedRecipe),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _confirmAndDeleteRecipe(
+    BuildContext context,
+    RecipeSummary recipe,
+  ) async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const _DeleteRecipeDialog();
       },
+    );
+    if (shouldDelete != true) {
+      return;
+    }
+
+    final bool deleted = await onDeleteRecipe(recipe.id);
+    if (!context.mounted || deleted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(context.l10n.deleteRecipeFailed)));
+  }
+}
+
+class _RecipeActionItem extends StatelessWidget {
+  const _RecipeActionItem({
+    required this.recipe,
+    required this.isSelected,
+    required this.actionLayerLink,
+    required this.enabled,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final RecipeSummary recipe;
+  final bool isSelected;
+  final LayerLink? actionLayerLink;
+  final bool enabled;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return _RecipeHistoryRow(
+      recipe: recipe,
+      enabled: enabled,
+      isSelected: isSelected,
+      actionLayerLink: actionLayerLink,
+      onTap: onTap,
+      onLongPress: onLongPress,
     );
   }
 }
@@ -103,12 +234,18 @@ class _RecipeHistoryRow extends StatelessWidget {
   const _RecipeHistoryRow({
     required this.recipe,
     required this.enabled,
+    required this.isSelected,
+    required this.actionLayerLink,
     required this.onTap,
+    required this.onLongPress,
   });
 
   final RecipeSummary recipe;
   final bool enabled;
+  final bool isSelected;
+  final LayerLink? actionLayerLink;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -116,16 +253,44 @@ class _RecipeHistoryRow extends StatelessWidget {
     final CulinexPalette colors = CulinexColors.of(context);
     final l10n = context.l10n;
 
-    return Material(
-      color: Colors.transparent,
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: isSelected ? 1 : 0),
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        Widget elevatedChild = Material(
+          color: Colors.transparent,
+          elevation: 11 * value,
+          shadowColor: colors.shadow,
+          borderRadius: BorderRadius.circular(24),
+          child: child,
+        );
+        final LayerLink? link = actionLayerLink;
+        if (link != null) {
+          elevatedChild = CompositedTransformTarget(
+            link: link,
+            child: elevatedChild,
+          );
+        }
+
+        return Transform.translate(
+          offset: Offset(0, -7 * value),
+          child: elevatedChild,
+        );
+      },
       child: InkWell(
         onTap: enabled ? onTap : null,
+        onLongPress: enabled ? onLongPress : null,
         borderRadius: BorderRadius.circular(24),
         child: Ink(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: colors.border),
+            border: Border.all(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : colors.border,
+            ),
             borderRadius: BorderRadius.circular(24),
             color: colors.surface.withValues(alpha: 0.72),
           ),
@@ -175,6 +340,95 @@ class _RecipeHistoryRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RecipeActionBox extends StatelessWidget {
+  const _RecipeActionBox({required this.isDeleting, required this.onDelete});
+
+  final bool isDeleting;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+
+    return Container(
+      key: const ValueKey<String>('recipe-action-box'),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: colors.elevatedSurface.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton.icon(
+            key: const ValueKey<String>('recipe-delete-button'),
+            onPressed: isDeleting ? null : onDelete,
+            icon: isDeleting
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.error,
+                    ),
+                  )
+                : const Icon(Icons.delete_outline_rounded),
+            label: Text(l10n.deleteRecipe),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+              minimumSize: const Size(132, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteRecipeDialog extends StatelessWidget {
+  const _DeleteRecipeDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      constraints: const BoxConstraints(maxWidth: 520),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 12, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+      title: Row(
+        children: <Widget>[
+          Expanded(child: Text(l10n.deleteRecipeDialogTitle)),
+          IconButton(
+            key: const ValueKey<String>('delete-recipe-close-button'),
+            onPressed: () => Navigator.of(context).pop(false),
+            icon: const Icon(Icons.close_rounded),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          ),
+        ],
+      ),
+      content: Text(l10n.deleteRecipeDialogMessage),
+      actions: <Widget>[
+        FilledButton(
+          key: const ValueKey<String>('delete-recipe-confirm-button'),
+          onPressed: () => Navigator.of(context).pop(true),
+          style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.error,
+            foregroundColor: colorScheme.onError,
+          ),
+          child: Text(l10n.deleteRecipeDialogConfirm),
+        ),
+      ],
     );
   }
 }

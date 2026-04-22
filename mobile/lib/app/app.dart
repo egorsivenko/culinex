@@ -218,12 +218,20 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       status: widget.controller.recipeHistoryStatus,
                       recipes: widget.controller.recipeSummaries,
                       isOpeningRecipe: widget.controller.isOpeningSavedRecipe,
+                      selectedRecipeActionId:
+                          widget.controller.selectedRecipeActionId,
+                      deletingRecipeId: widget.controller.deletingRecipeId,
                       onRetry: () {
                         unawaited(
                           widget.controller.loadRecipeHistory(force: true),
                         );
                       },
                       onOpenRecipe: widget.controller.openSavedRecipe,
+                      onSelectRecipeActions:
+                          widget.controller.selectRecipeActions,
+                      onClearRecipeActions:
+                          widget.controller.clearRecipeActions,
+                      onDeleteRecipe: widget.controller.deleteRecipe,
                     ),
                     SettingsScreen(
                       isDarkMode: widget.isDarkMode,

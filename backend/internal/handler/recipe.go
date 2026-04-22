@@ -147,6 +147,31 @@ func GetRecipe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, buildRecipeResponse(recipe))
 }
 
+func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		return
+	}
+
+	if err := recipes.DeleteByID(r.Context(), claims.UserID, recipeID); errors.Is(err, recipes.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		return
+	} else if err != nil {
+		log.Printf("[%s] Error deleting recipe: %v", middleware.GetReqID(r.Context()), err)
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 	return recipeResponse{
 		ID:                 recipe.ID.String(),

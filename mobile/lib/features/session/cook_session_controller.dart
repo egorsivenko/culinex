@@ -61,6 +61,8 @@ class CookSessionController extends ChangeNotifier {
   RecipeHistoryStatus _recipeHistoryStatus = RecipeHistoryStatus.initial;
   bool _isOpeningSavedRecipe = false;
   bool _recipeOpenedFromHistory = false;
+  String? _selectedRecipeActionId;
+  String? _deletingRecipeId;
   SessionErrorState? _errorState;
   Locale _locale = AppLocale.english;
   bool _isDisposed = false;
@@ -77,6 +79,8 @@ class CookSessionController extends ChangeNotifier {
   RecipeHistoryStatus get recipeHistoryStatus => _recipeHistoryStatus;
   bool get isOpeningSavedRecipe => _isOpeningSavedRecipe;
   bool get recipeOpenedFromHistory => _recipeOpenedFromHistory;
+  String? get selectedRecipeActionId => _selectedRecipeActionId;
+  String? get deletingRecipeId => _deletingRecipeId;
   SessionErrorState get errorState =>
       _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
 
@@ -87,6 +91,7 @@ class CookSessionController extends ChangeNotifier {
   void showWelcome() {
     _stage = SessionStage.welcome;
     _errorState = null;
+    _selectedRecipeActionId = null;
     _notifySafely();
   }
 
@@ -135,6 +140,7 @@ class CookSessionController extends ChangeNotifier {
     _stage = SessionStage.welcome;
     _errorState = null;
     _recipeOpenedFromHistory = false;
+    _selectedRecipeActionId = null;
     _notifySafely();
   }
 
@@ -145,6 +151,8 @@ class CookSessionController extends ChangeNotifier {
     _assumeBasicStaples = true;
     _recipe = null;
     _recipeOpenedFromHistory = false;
+    _selectedRecipeActionId = null;
+    _deletingRecipeId = null;
     _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.welcome;
@@ -333,6 +341,11 @@ class CookSessionController extends ChangeNotifier {
       }
 
       _recipeSummaries = List<RecipeSummary>.unmodifiable(summaries);
+      if (!_recipeSummaries.any(
+        (summary) => summary.id == _selectedRecipeActionId,
+      )) {
+        _selectedRecipeActionId = null;
+      }
       _recipeHistoryStatus = RecipeHistoryStatus.loaded;
       _notifySafely();
     } catch (_) {
@@ -346,11 +359,12 @@ class CookSessionController extends ChangeNotifier {
   }
 
   Future<void> openSavedRecipe(String id) async {
-    if (_isOpeningSavedRecipe) {
+    if (_isOpeningSavedRecipe || _deletingRecipeId != null) {
       return;
     }
 
     _isOpeningSavedRecipe = true;
+    _selectedRecipeActionId = null;
     _notifySafely();
 
     try {
@@ -373,6 +387,65 @@ class CookSessionController extends ChangeNotifier {
       _isOpeningSavedRecipe = false;
       _recipeHistoryStatus = RecipeHistoryStatus.error;
       _notifySafely();
+    }
+  }
+
+  void selectRecipeActions(String id) {
+    if (_deletingRecipeId != null) {
+      return;
+    }
+
+    _selectedRecipeActionId = id;
+    _notifySafely();
+  }
+
+  void clearRecipeActions() {
+    if (_selectedRecipeActionId == null || _deletingRecipeId != null) {
+      return;
+    }
+
+    _selectedRecipeActionId = null;
+    _notifySafely();
+  }
+
+  Future<bool> deleteRecipe(String id) async {
+    if (_deletingRecipeId != null) {
+      return false;
+    }
+
+    _deletingRecipeId = id;
+    _notifySafely();
+
+    try {
+      await _repository.deleteRecipe(id);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeSummaries = List<RecipeSummary>.unmodifiable(
+        _recipeSummaries.where((summary) => summary.id != id),
+      );
+      _selectedRecipeActionId = null;
+      _deletingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+
+      if (_recipeOpenedFromHistory && _recipe?.id == id) {
+        _recipe = null;
+        _recipeOpenedFromHistory = false;
+        _stage = SessionStage.welcome;
+      }
+
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _deletingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.error;
+      _notifySafely();
+      return false;
     }
   }
 

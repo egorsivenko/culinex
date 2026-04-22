@@ -455,6 +455,7 @@ class _NoopRepository implements CulinexRepository {
 
   final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe? savedRecipe;
+  final List<String> deletedRecipeIds = <String>[];
 
   @override
   void close() {}
@@ -487,6 +488,11 @@ class _NoopRepository implements CulinexRepository {
       throw UnimplementedError();
     }
     return recipe;
+  }
+
+  @override
+  Future<void> deleteRecipe(String id) async {
+    deletedRecipeIds.add(id);
   }
 }
 

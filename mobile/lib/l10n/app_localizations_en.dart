@@ -61,6 +61,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myRecipesRetry => 'Retry';
 
   @override
+  String get deleteRecipe => 'Delete';
+
+  @override
+  String get deleteRecipeDialogTitle => 'Delete recipe?';
+
+  @override
+  String get deleteRecipeDialogMessage =>
+      'This recipe will be permanently deleted.';
+
+  @override
+  String get deleteRecipeDialogConfirm => 'Delete recipe';
+
+  @override
+  String get deleteRecipeFailed => 'Recipe could not be deleted. Try again.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

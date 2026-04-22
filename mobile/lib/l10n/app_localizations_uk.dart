@@ -61,6 +61,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get myRecipesRetry => 'Спробувати ще';
 
   @override
+  String get deleteRecipe => 'Видалити';
+
+  @override
+  String get deleteRecipeDialogTitle => 'Видалити рецепт?';
+
+  @override
+  String get deleteRecipeDialogMessage => 'Цей рецепт буде видалено назавжди.';
+
+  @override
+  String get deleteRecipeDialogConfirm => 'Видалити рецепт';
+
+  @override
+  String get deleteRecipeFailed =>
+      'Не вдалося видалити рецепт. Спробуйте ще раз.';
+
+  @override
   String get settingsTitle => 'Налаштування';
 
   @override
