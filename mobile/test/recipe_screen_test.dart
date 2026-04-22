@@ -36,7 +36,8 @@ void main() {
               fatG: 19.6,
             ),
           ),
-          onBackToIngredients: () {
+          backTooltip: 'Back to ingredients',
+          onBack: () {
             wentBackToIngredients = true;
           },
           onCookAnother: () {

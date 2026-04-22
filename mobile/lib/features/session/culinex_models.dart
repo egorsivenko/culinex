@@ -135,6 +135,7 @@ class NutritionMacros {
 
 class GeneratedRecipe {
   const GeneratedRecipe({
+    this.id,
     required this.dishName,
     required this.dishDescription,
     required this.difficulty,
@@ -142,8 +143,10 @@ class GeneratedRecipe {
     required this.ingredients,
     required this.steps,
     required this.macros,
+    this.createdAt,
   });
 
+  final String? id;
   final String dishName;
   final String dishDescription;
   final RecipeDifficulty difficulty;
@@ -151,9 +154,11 @@ class GeneratedRecipe {
   final List<RecipeIngredient> ingredients;
   final List<String> steps;
   final NutritionMacros macros;
+  final DateTime? createdAt;
 
   factory GeneratedRecipe.fromJson(Map<String, dynamic> json) {
     return GeneratedRecipe(
+      id: json['id'] as String?,
       dishName: json['dish_name'] as String? ?? '',
       dishDescription: json['dish_description'] as String? ?? '',
       difficulty: RecipeDifficulty.fromJson(
@@ -171,6 +176,46 @@ class GeneratedRecipe {
       macros: NutritionMacros.fromJson(
         json['macros'] as Map<String, dynamic>? ?? const {},
       ),
+      createdAt: _parseDateTime(json['created_at']),
     );
   }
+}
+
+class RecipeSummary {
+  const RecipeSummary({
+    required this.id,
+    required this.dishName,
+    required this.dishDescription,
+    required this.difficulty,
+    required this.cookingTimeMinutes,
+    this.createdAt,
+  });
+
+  final String id;
+  final String dishName;
+  final String dishDescription;
+  final RecipeDifficulty difficulty;
+  final int cookingTimeMinutes;
+  final DateTime? createdAt;
+
+  factory RecipeSummary.fromJson(Map<String, dynamic> json) {
+    return RecipeSummary(
+      id: json['id'] as String? ?? '',
+      dishName: json['dish_name'] as String? ?? '',
+      dishDescription: json['dish_description'] as String? ?? '',
+      difficulty: RecipeDifficulty.fromJson(
+        json['difficulty'] as String? ?? 'medium',
+      ),
+      cookingTimeMinutes: json['cooking_time_minutes'] as int? ?? 0,
+      createdAt: _parseDateTime(json['created_at']),
+    );
+  }
+}
+
+DateTime? _parseDateTime(Object? value) {
+  if (value is! String || value.isEmpty) {
+    return null;
+  }
+
+  return DateTime.tryParse(value);
 }

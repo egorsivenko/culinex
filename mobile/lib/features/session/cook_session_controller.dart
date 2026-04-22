@@ -21,6 +21,8 @@ enum SessionOperation { none, extractIngredients, generateRecipe }
 
 enum IngredientEntryMethod { photo, manual }
 
+enum RecipeHistoryStatus { initial, loading, loaded, error }
+
 enum SessionErrorCode {
   unknown,
   noClearIngredientsDetected,
@@ -55,6 +57,10 @@ class CookSessionController extends ChangeNotifier {
   List<ExtractedIngredient> _ingredients = const [];
   bool _assumeBasicStaples = true;
   GeneratedRecipe? _recipe;
+  List<RecipeSummary> _recipeSummaries = const [];
+  RecipeHistoryStatus _recipeHistoryStatus = RecipeHistoryStatus.initial;
+  bool _isOpeningSavedRecipe = false;
+  bool _recipeOpenedFromHistory = false;
   SessionErrorState? _errorState;
   Locale _locale = AppLocale.english;
   bool _isDisposed = false;
@@ -67,6 +73,10 @@ class CookSessionController extends ChangeNotifier {
   bool get isManualIngredientEntry =>
       _ingredientEntryMethod == IngredientEntryMethod.manual;
   GeneratedRecipe? get recipe => _recipe;
+  List<RecipeSummary> get recipeSummaries => _recipeSummaries;
+  RecipeHistoryStatus get recipeHistoryStatus => _recipeHistoryStatus;
+  bool get isOpeningSavedRecipe => _isOpeningSavedRecipe;
+  bool get recipeOpenedFromHistory => _recipeOpenedFromHistory;
   SessionErrorState get errorState =>
       _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
 
@@ -121,12 +131,20 @@ class CookSessionController extends ChangeNotifier {
     _notifySafely();
   }
 
+  void showRecipeHistory() {
+    _stage = SessionStage.welcome;
+    _errorState = null;
+    _recipeOpenedFromHistory = false;
+    _notifySafely();
+  }
+
   void resetSession() {
     _ingredientEntryMethod = IngredientEntryMethod.photo;
     _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
+    _recipeOpenedFromHistory = false;
     _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.welcome;
@@ -139,6 +157,7 @@ class CookSessionController extends ChangeNotifier {
     _ingredients = const [];
     _assumeBasicStaples = true;
     _recipe = null;
+    _recipeOpenedFromHistory = false;
     _errorState = null;
     _stage = SessionStage.camera;
     _notifySafely();
@@ -279,6 +298,7 @@ class CookSessionController extends ChangeNotifier {
       }
 
       _recipe = nextRecipe;
+      _recipeOpenedFromHistory = false;
       _stage = SessionStage.recipe;
       _notifySafely();
     } catch (error) {
@@ -292,6 +312,67 @@ class CookSessionController extends ChangeNotifier {
           SessionErrorCode.recipeGenerationFailed,
         ),
       );
+    }
+  }
+
+  Future<void> loadRecipeHistory({bool force = false}) async {
+    if (_recipeHistoryStatus == RecipeHistoryStatus.loading) {
+      return;
+    }
+    if (!force && _recipeHistoryStatus == RecipeHistoryStatus.loaded) {
+      return;
+    }
+
+    _recipeHistoryStatus = RecipeHistoryStatus.loading;
+    _notifySafely();
+
+    try {
+      final List<RecipeSummary> summaries = await _repository.listRecipes();
+      if (_isDisposed) {
+        return;
+      }
+
+      _recipeSummaries = List<RecipeSummary>.unmodifiable(summaries);
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+    } catch (_) {
+      if (_isDisposed) {
+        return;
+      }
+
+      _recipeHistoryStatus = RecipeHistoryStatus.error;
+      _notifySafely();
+    }
+  }
+
+  Future<void> openSavedRecipe(String id) async {
+    if (_isOpeningSavedRecipe) {
+      return;
+    }
+
+    _isOpeningSavedRecipe = true;
+    _notifySafely();
+
+    try {
+      final GeneratedRecipe savedRecipe = await _repository.getRecipe(id);
+      if (_isDisposed) {
+        return;
+      }
+
+      _recipe = savedRecipe;
+      _recipeOpenedFromHistory = true;
+      _isOpeningSavedRecipe = false;
+      _errorState = null;
+      _stage = SessionStage.recipe;
+      _notifySafely();
+    } catch (_) {
+      if (_isDisposed) {
+        return;
+      }
+
+      _isOpeningSavedRecipe = false;
+      _recipeHistoryStatus = RecipeHistoryStatus.error;
+      _notifySafely();
     }
   }
 

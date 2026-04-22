@@ -152,11 +152,53 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get mainTabLabel;
 
+  /// No description provided for @myRecipesTabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'My recipes'**
+  String get myRecipesTabLabel;
+
   /// No description provided for @settingsTabLabel.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsTabLabel;
+
+  /// No description provided for @myRecipesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My recipes'**
+  String get myRecipesTitle;
+
+  /// No description provided for @myRecipesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved recipes yet'**
+  String get myRecipesEmptyTitle;
+
+  /// No description provided for @myRecipesEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated recipes will appear here.'**
+  String get myRecipesEmptyMessage;
+
+  /// No description provided for @myRecipesLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes could not be loaded'**
+  String get myRecipesLoadFailedTitle;
+
+  /// No description provided for @myRecipesLoadFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get myRecipesLoadFailedMessage;
+
+  /// No description provided for @myRecipesRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get myRecipesRetry;
 
   /// No description provided for @settingsTitle.
   ///
@@ -757,6 +799,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to ingredients'**
   String get backToIngredientsTooltip;
+
+  /// No description provided for @backToRecipesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to recipes'**
+  String get backToRecipesTooltip;
 
   /// No description provided for @backToHomeTooltip.
   ///

@@ -19,6 +19,7 @@ import '../features/ingredients/ingredient_review_screen.dart';
 import '../features/ingredients/scan_loading_screen.dart';
 import '../features/recipe/recipe_loading_screen.dart';
 import '../features/recipe/recipe_screen.dart';
+import '../features/recipes/my_recipes_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/session/cook_session_controller.dart';
 import '../features/session/session_localizations.dart';
@@ -164,7 +165,7 @@ class _CulinexAppState extends State<CulinexApp> {
   }
 }
 
-enum _RootTab { main, settings }
+enum _RootTab { main, recipes, settings }
 
 class CulinexFlowShell extends StatefulWidget {
   const CulinexFlowShell({
@@ -213,6 +214,17 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onStartManualEntry:
                           widget.controller.startManualIngredientEntry,
                     ),
+                    MyRecipesScreen(
+                      status: widget.controller.recipeHistoryStatus,
+                      recipes: widget.controller.recipeSummaries,
+                      isOpeningRecipe: widget.controller.isOpeningSavedRecipe,
+                      onRetry: () {
+                        unawaited(
+                          widget.controller.loadRecipeHistory(force: true),
+                        );
+                      },
+                      onOpenRecipe: widget.controller.openSavedRecipe,
+                    ),
                     SettingsScreen(
                       isDarkMode: widget.isDarkMode,
                       onToggleTheme: widget.onToggleTheme,
@@ -238,8 +250,14 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                     setState(() {
                       _selectedTab = tab;
                     });
+                    if (tab == _RootTab.recipes) {
+                      unawaited(
+                        widget.controller.loadRecipeHistory(force: true),
+                      );
+                    }
                   },
                   mainLabel: l10n.mainTabLabel,
+                  recipesLabel: l10n.myRecipesTabLabel,
                   settingsLabel: l10n.settingsTabLabel,
                 ),
               ),
@@ -268,8 +286,18 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
               ),
               SessionStage.recipe => RecipeScreen(
                 recipe: widget.controller.recipe!,
-                onBackToIngredients: widget.controller.showIngredients,
-                onCookAnother: widget.controller.resetSession,
+                backTooltip: widget.controller.recipeOpenedFromHistory
+                    ? l10n.backToRecipesTooltip
+                    : l10n.backToIngredientsTooltip,
+                onBack: widget.controller.recipeOpenedFromHistory
+                    ? widget.controller.showRecipeHistory
+                    : widget.controller.showIngredients,
+                onCookAnother: () {
+                  widget.controller.resetSession();
+                  setState(() {
+                    _selectedTab = _RootTab.main;
+                  });
+                },
               ),
               SessionStage.error => SessionErrorScreen(
                 title: localizeSessionErrorTitle(
@@ -305,12 +333,14 @@ class _RootBottomNavigationBar extends StatefulWidget {
     required this.selectedTab,
     required this.onTabSelected,
     required this.mainLabel,
+    required this.recipesLabel,
     required this.settingsLabel,
   });
 
   final _RootTab selectedTab;
   final ValueChanged<_RootTab> onTabSelected;
   final String mainLabel;
+  final String recipesLabel;
   final String settingsLabel;
 
   @override
@@ -381,7 +411,7 @@ class _RootBottomNavigationBarState extends State<_RootBottomNavigationBar>
               height: 68,
               child: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
-                  final double segmentWidth = constraints.maxWidth / 2;
+                  final double segmentWidth = constraints.maxWidth / 3;
                   final double animatedIndex =
                       _fromIndex + ((_toIndex - _fromIndex) * progress);
                   final double stretch = math.sin(progress * math.pi);
@@ -414,6 +444,17 @@ class _RootBottomNavigationBarState extends State<_RootBottomNavigationBar>
                               isSelected: widget.selectedTab == _RootTab.main,
                               onPressed: () =>
                                   widget.onTabSelected(_RootTab.main),
+                            ),
+                          ),
+                          Expanded(
+                            child: _RootBottomNavDestination(
+                              label: widget.recipesLabel,
+                              icon: Icons.menu_book_outlined,
+                              selectedIcon: Icons.menu_book_rounded,
+                              isSelected:
+                                  widget.selectedTab == _RootTab.recipes,
+                              onPressed: () =>
+                                  widget.onTabSelected(_RootTab.recipes),
                             ),
                           ),
                           Expanded(
@@ -496,7 +537,12 @@ class _RootBottomNavDestination extends StatelessWidget {
                 color: isSelected ? selectedColor : unselectedColor,
               ),
               const SizedBox(height: 6),
-              Text(label, style: labelStyle),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: labelStyle,
+              ),
             ],
           ),
         ),

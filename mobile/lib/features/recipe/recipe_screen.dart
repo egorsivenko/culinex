@@ -10,13 +10,15 @@ import '../session/session_localizations.dart';
 class RecipeScreen extends StatefulWidget {
   const RecipeScreen({
     required this.recipe,
-    required this.onBackToIngredients,
+    required this.backTooltip,
+    required this.onBack,
     required this.onCookAnother,
     super.key,
   });
 
   final GeneratedRecipe recipe;
-  final VoidCallback onBackToIngredients;
+  final String backTooltip;
+  final VoidCallback onBack;
   final VoidCallback onCookAnother;
 
   @override
@@ -45,7 +47,8 @@ class _RecipeScreenState extends State<RecipeScreen> {
             children: [
               _RecipeHeader(
                 recipe: recipe,
-                onBackToIngredients: widget.onBackToIngredients,
+                backTooltip: widget.backTooltip,
+                onBack: widget.onBack,
                 onCookAnother: widget.onCookAnother,
               ),
               const SizedBox(height: 20),
@@ -185,12 +188,14 @@ class _RecipeScreenState extends State<RecipeScreen> {
 class _RecipeHeader extends StatelessWidget {
   const _RecipeHeader({
     required this.recipe,
-    required this.onBackToIngredients,
+    required this.backTooltip,
+    required this.onBack,
     required this.onCookAnother,
   });
 
   final GeneratedRecipe recipe;
-  final VoidCallback onBackToIngredients;
+  final String backTooltip;
+  final VoidCallback onBack;
   final VoidCallback onCookAnother;
 
   @override
@@ -226,9 +231,9 @@ class _RecipeHeader extends StatelessWidget {
               ),
               const Spacer(),
               _HeaderActionButton(
-                tooltip: l10n.backToIngredientsTooltip,
+                tooltip: backTooltip,
                 icon: Icons.arrow_back_ios_new_rounded,
-                onPressed: onBackToIngredients,
+                onPressed: onBack,
               ),
               const SizedBox(width: 10),
               _HeaderActionButton(

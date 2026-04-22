@@ -123,6 +123,98 @@ void main() {
       await imageFile.parent.delete(recursive: true);
     },
   );
+
+  test('listRecipes decodes recipe summaries', () async {
+    final _FakeAuthSessionCoordinator authSessionCoordinator =
+        _FakeAuthSessionCoordinator(
+          accessToken: 'access-token',
+          refreshedAccessToken: 'fresh-access-token',
+        );
+    final CulinexApiClient client = CulinexApiClient(
+      authSessionCoordinator: authSessionCoordinator,
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(request.method, 'GET');
+        expect(request.url.toString(), 'http://127.0.0.1:8080/api/recipes');
+        expect(request.headers['Authorization'], 'Bearer access-token');
+
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'recipes': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 'recipe-1',
+                'dish_name': 'Tomato Pasta',
+                'dish_description': 'Simple dinner',
+                'difficulty': 'easy',
+                'cooking_time_minutes': 20,
+                'created_at': '2026-04-21T12:00:00Z',
+              },
+            ],
+          }),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final List<RecipeSummary> recipes = await client.listRecipes();
+
+    expect(recipes, hasLength(1));
+    expect(recipes.single.id, 'recipe-1');
+    expect(recipes.single.dishName, 'Tomato Pasta');
+    expect(recipes.single.createdAt, DateTime.utc(2026, 4, 21, 12));
+    client.close();
+  });
+
+  test('getRecipe decodes a saved recipe', () async {
+    final _FakeAuthSessionCoordinator authSessionCoordinator =
+        _FakeAuthSessionCoordinator(
+          accessToken: 'access-token',
+          refreshedAccessToken: 'fresh-access-token',
+        );
+    final CulinexApiClient client = CulinexApiClient(
+      authSessionCoordinator: authSessionCoordinator,
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(request.method, 'GET');
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/recipes/recipe-1',
+        );
+        expect(request.headers['Authorization'], 'Bearer access-token');
+
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'id': 'recipe-1',
+            'dish_name': 'Tomato Pasta',
+            'dish_description': 'Simple dinner',
+            'difficulty': 'easy',
+            'cooking_time_minutes': 20,
+            'ingredients': <Map<String, dynamic>>[
+              <String, dynamic>{'name': 'Tomatoes', 'quantity': '2'},
+            ],
+            'steps': <String>['Boil pasta', 'Add tomatoes'],
+            'macros': <String, dynamic>{
+              'calories_kcal': 320,
+              'protein_g': 12,
+              'carbs_g': 54,
+              'fat_g': 8,
+            },
+            'created_at': '2026-04-21T12:00:00Z',
+          }),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final GeneratedRecipe recipe = await client.getRecipe('recipe-1');
+
+    expect(recipe.id, 'recipe-1');
+    expect(recipe.dishName, 'Tomato Pasta');
+    expect(recipe.createdAt, DateTime.utc(2026, 4, 21, 12));
+    client.close();
+  });
 }
 
 class _FakeAuthSessionCoordinator implements AuthSessionCoordinator {

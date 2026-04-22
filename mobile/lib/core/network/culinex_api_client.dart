@@ -85,6 +85,26 @@ class CulinexApiClient implements CulinexRepository {
   }
 
   @override
+  Future<List<RecipeSummary>> listRecipes() async {
+    final http.Response response = await _sendAuthorizedGet(path: 'recipes');
+    final Map<String, dynamic> payload = _decodeJson(response.body);
+    final List<dynamic> items = payload['recipes'] as List<dynamic>? ?? [];
+
+    return items
+        .map((item) => RecipeSummary.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<GeneratedRecipe> getRecipe(String id) async {
+    final http.Response response = await _sendAuthorizedGet(
+      path: 'recipes/$id',
+    );
+    final Map<String, dynamic> payload = _decodeJson(response.body);
+    return GeneratedRecipe.fromJson(payload);
+  }
+
+  @override
   void close() {
     if (_ownsClient) {
       _client.close();
@@ -110,6 +130,31 @@ class CulinexApiClient implements CulinexRepository {
                   'Authorization': 'Bearer $accessToken',
                 },
                 body: jsonEncode(payload),
+              )
+              .timeout(_requestTimeout);
+        } on TimeoutException {
+          throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
+        } on SocketException {
+          throw const CulinexApiException(
+            CulinexApiErrorCode.networkUnavailable,
+          );
+        }
+      },
+    );
+  }
+
+  Future<http.Response> _sendAuthorizedGet({required String path}) {
+    return _sendAuthorized(
+      send: (String accessToken) async {
+        final Uri uri = _apiBaseUri.resolve(path);
+
+        try {
+          return await _client
+              .get(
+                uri,
+                headers: <String, String>{
+                  'Authorization': 'Bearer $accessToken',
+                },
               )
               .timeout(_requestTimeout);
         } on TimeoutException {

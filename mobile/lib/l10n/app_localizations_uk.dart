@@ -36,7 +36,29 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mainTabLabel => 'Головна';
 
   @override
+  String get myRecipesTabLabel => 'Мої рецепти';
+
+  @override
   String get settingsTabLabel => 'Налаштування';
+
+  @override
+  String get myRecipesTitle => 'Мої рецепти';
+
+  @override
+  String get myRecipesEmptyTitle => 'Збережених рецептів ще немає';
+
+  @override
+  String get myRecipesEmptyMessage => 'Згенеровані рецепти з\'являться тут.';
+
+  @override
+  String get myRecipesLoadFailedTitle => 'Не вдалося завантажити рецепти';
+
+  @override
+  String get myRecipesLoadFailedMessage =>
+      'Перевірте з\'єднання та спробуйте ще раз.';
+
+  @override
+  String get myRecipesRetry => 'Спробувати ще';
 
   @override
   String get settingsTitle => 'Налаштування';
@@ -377,6 +399,9 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get backToIngredientsTooltip => 'Назад до інгредієнтів';
+
+  @override
+  String get backToRecipesTooltip => 'Назад до рецептів';
 
   @override
   String get backToHomeTooltip => 'Назад на головну';

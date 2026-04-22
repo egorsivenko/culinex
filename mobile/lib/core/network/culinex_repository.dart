@@ -14,5 +14,9 @@ abstract interface class CulinexRepository {
     required Locale locale,
   });
 
+  Future<List<RecipeSummary>> listRecipes();
+
+  Future<GeneratedRecipe> getRecipe(String id);
+
   void close();
 }

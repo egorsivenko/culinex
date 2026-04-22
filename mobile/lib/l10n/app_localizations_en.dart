@@ -36,7 +36,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainTabLabel => 'Home';
 
   @override
+  String get myRecipesTabLabel => 'My recipes';
+
+  @override
   String get settingsTabLabel => 'Settings';
+
+  @override
+  String get myRecipesTitle => 'My recipes';
+
+  @override
+  String get myRecipesEmptyTitle => 'No saved recipes yet';
+
+  @override
+  String get myRecipesEmptyMessage => 'Generated recipes will appear here.';
+
+  @override
+  String get myRecipesLoadFailedTitle => 'Recipes could not be loaded';
+
+  @override
+  String get myRecipesLoadFailedMessage =>
+      'Check your connection and try again.';
+
+  @override
+  String get myRecipesRetry => 'Retry';
 
   @override
   String get settingsTitle => 'Settings';
@@ -376,6 +398,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToIngredientsTooltip => 'Back to ingredients';
+
+  @override
+  String get backToRecipesTooltip => 'Back to recipes';
 
   @override
   String get backToHomeTooltip => 'Back to home';

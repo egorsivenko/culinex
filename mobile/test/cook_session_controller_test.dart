@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:culinex/core/network/culinex_api_client.dart';
 import 'package:culinex/core/network/culinex_repository.dart';
 import 'package:culinex/features/session/culinex_models.dart';
 import 'package:culinex/features/session/cook_session_controller.dart';
@@ -344,12 +345,80 @@ void main() {
 
     controller.dispose();
   });
+
+  test('loadRecipeHistory stores saved recipe summaries', () async {
+    final FakeRepository repository = FakeRepository(
+      recipeSummaries: const [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+        ),
+      ],
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.loadRecipeHistory();
+
+    expect(controller.recipeHistoryStatus, RecipeHistoryStatus.loaded);
+    expect(controller.recipeSummaries, hasLength(1));
+    expect(controller.recipeSummaries.single.dishName, 'Tomato Pasta');
+    expect(repository.listRecipesCallCount, 1);
+
+    controller.dispose();
+  });
+
+  test('openSavedRecipe opens history recipe detail', () async {
+    final FakeRepository repository = FakeRepository(
+      savedRecipe: GeneratedRecipe(
+        id: 'recipe-1',
+        dishName: 'Tomato Pasta',
+        dishDescription: 'Simple dinner',
+        difficulty: RecipeDifficulty.easy,
+        cookingTimeMinutes: 20,
+        ingredients: const [
+          RecipeIngredient(name: 'Tomatoes', quantity: '2 pieces'),
+          RecipeIngredient(name: 'Pasta', quantity: '90 g'),
+        ],
+        steps: const ['Boil pasta.', 'Add tomatoes.'],
+        macros: const NutritionMacros(
+          caloriesKcal: 320,
+          proteinG: 12,
+          carbsG: 54,
+          fatG: 8,
+        ),
+      ),
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.openSavedRecipe('recipe-1');
+
+    expect(controller.stage, SessionStage.recipe);
+    expect(controller.recipeOpenedFromHistory, isTrue);
+    expect(controller.recipe?.dishName, 'Tomato Pasta');
+    expect(repository.lastOpenedRecipeId, 'recipe-1');
+
+    controller.showRecipeHistory();
+
+    expect(controller.stage, SessionStage.welcome);
+    expect(controller.recipeOpenedFromHistory, isFalse);
+
+    controller.dispose();
+  });
 }
 
 class FakeRepository implements CulinexRepository {
   FakeRepository({
     this.extractedIngredients = const [],
+    this.recipeSummaries = const [],
     GeneratedRecipe? generatedRecipe,
+    GeneratedRecipe? savedRecipe,
   }) : _generatedRecipe =
            generatedRecipe ??
            GeneratedRecipe(
@@ -367,12 +436,17 @@ class FakeRepository implements CulinexRepository {
                carbsG: 10,
                fatG: 3,
              ),
-           );
+           ),
+       _savedRecipe = savedRecipe;
 
   final List<ExtractedIngredient> extractedIngredients;
+  final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe _generatedRecipe;
+  final GeneratedRecipe? _savedRecipe;
 
   int extractCallCount = 0;
+  int listRecipesCallCount = 0;
+  String? lastOpenedRecipeId;
   File? lastExtractedFile;
   Locale? lastExtractLocale;
   List<RecipeIngredient>? lastRecipeIngredients;
@@ -399,6 +473,22 @@ class FakeRepository implements CulinexRepository {
     lastAssumeBasicStaples = request.assumeBasicStaples;
     lastGenerateLocale = locale;
     return _generatedRecipe;
+  }
+
+  @override
+  Future<List<RecipeSummary>> listRecipes() async {
+    listRecipesCallCount += 1;
+    return recipeSummaries;
+  }
+
+  @override
+  Future<GeneratedRecipe> getRecipe(String id) async {
+    lastOpenedRecipeId = id;
+    final GeneratedRecipe? savedRecipe = _savedRecipe;
+    if (savedRecipe == null) {
+      throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
+    }
+    return savedRecipe;
   }
 
   @override

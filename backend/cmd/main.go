@@ -53,6 +53,11 @@ func main() {
 			r.Post("/extract-ingredients", handler.ExtractIngredients)
 			r.Post("/generate-recipe", handler.GenerateRecipe)
 			r.Delete("/account", handler.DeleteAccount)
+
+			r.Route("/recipes", func(r chi.Router) {
+				r.Get("/", handler.ListRecipes)
+				r.Get("/{id}", handler.GetRecipe)
+			})
 		})
 	})
 

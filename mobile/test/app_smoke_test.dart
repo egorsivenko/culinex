@@ -44,6 +44,7 @@ void main() {
 
     expect(find.text('Culinex'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
+    expect(find.text('My recipes'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Use the camera'), findsOneWidget);
     expect(find.text('Type ingredients'), findsWidgets);
@@ -375,7 +376,74 @@ void main() {
 
     expect(find.text('Manual entry'), findsOneWidget);
     expect(find.text('Home'), findsNothing);
+    expect(find.text('My recipes'), findsNothing);
     expect(find.text('Settings'), findsNothing);
+
+    controller.dispose();
+    authController.dispose();
+  });
+
+  testWidgets('my recipes tab lists saved recipes and opens detail', (
+    tester,
+  ) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+        ],
+        savedRecipe: GeneratedRecipe(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+          ingredients: const [
+            RecipeIngredient(name: 'Tomatoes', quantity: '2 pieces'),
+            RecipeIngredient(name: 'Pasta', quantity: '90 g'),
+          ],
+          steps: const ['Boil pasta.', 'Add tomatoes.'],
+          macros: const NutritionMacros(
+            caloriesKcal: 320,
+            proteinG: 12,
+            carbsG: 54,
+            fatG: 8,
+          ),
+        ),
+      ),
+    );
+    final AuthController authController = _buildAuthenticatedAuthController();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('My recipes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tomato Pasta'), findsOneWidget);
+    expect(find.text('Simple dinner'), findsOneWidget);
+    expect(find.text('Easy'), findsOneWidget);
+    expect(find.text('20 min'), findsOneWidget);
+
+    await tester.tap(find.text('Tomato Pasta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recipe ready'), findsOneWidget);
+    expect(find.text('Home'), findsNothing);
+    expect(find.text('My recipes'), findsNothing);
+
+    await tester.tap(find.byTooltip('Back to recipes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('My recipes'), findsWidgets);
+    expect(find.text('Tomato Pasta'), findsOneWidget);
 
     controller.dispose();
     authController.dispose();
@@ -383,6 +451,11 @@ void main() {
 }
 
 class _NoopRepository implements CulinexRepository {
+  _NoopRepository({this.recipeSummaries = const [], this.savedRecipe});
+
+  final List<RecipeSummary> recipeSummaries;
+  final GeneratedRecipe? savedRecipe;
+
   @override
   void close() {}
 
@@ -400,6 +473,20 @@ class _NoopRepository implements CulinexRepository {
     required Locale locale,
   }) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<RecipeSummary>> listRecipes() async {
+    return recipeSummaries;
+  }
+
+  @override
+  Future<GeneratedRecipe> getRecipe(String id) async {
+    final GeneratedRecipe? recipe = savedRecipe;
+    if (recipe == null) {
+      throw UnimplementedError();
+    }
+    return recipe;
   }
 }
 
