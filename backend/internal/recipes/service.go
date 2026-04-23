@@ -177,6 +177,16 @@ func DeleteByID(ctx context.Context, userID, recipeID uuid.UUID) error {
 	return nil
 }
 
+func DeleteAllByUser(ctx context.Context, userID uuid.UUID) error {
+	const query = `
+		DELETE FROM recipes
+		WHERE user_id = $1
+	`
+
+	_, err := db.Pool.Exec(ctx, query, userID)
+	return err
+}
+
 type recipeRow interface {
 	Scan(dest ...any) error
 }

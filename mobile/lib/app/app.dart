@@ -240,6 +240,9 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onToggleTheme: widget.onToggleTheme,
                       locale: widget.locale,
                       onSelectLocale: widget.onSelectLocale,
+                      onDeleteAllRecipes: widget.controller.deleteAllRecipes,
+                      isDeletingAllRecipes:
+                          widget.controller.isDeletingAllRecipes,
                       isSubmitting: widget.authController.isSubmitting,
                       errorCode: widget.authController.error?.code,
                       onClearError: widget.authController.clearError,

@@ -102,6 +102,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsDarkOption => 'Темна';
 
   @override
+  String get deleteAllRecipes => 'Видалити всі рецепти';
+
+  @override
+  String get deleteAllRecipesDialogTitle => 'Видалити всі рецепти?';
+
+  @override
+  String get deleteAllRecipesDialogMessage =>
+      'Усі збережені рецепти буде видалено назавжди.';
+
+  @override
+  String get deleteAllRecipesDialogConfirm => 'Видалити всі рецепти';
+
+  @override
+  String get deleteAllRecipesFailed =>
+      'Не вдалося видалити рецепти. Спробуйте ще раз.';
+
+  @override
   String get deleteAccountDialogTitle => 'Видалити акаунт?';
 
   @override

@@ -278,6 +278,36 @@ abstract class AppLocalizations {
   /// **'Dark'**
   String get settingsDarkOption;
 
+  /// No description provided for @deleteAllRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all recipes'**
+  String get deleteAllRecipes;
+
+  /// No description provided for @deleteAllRecipesDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all recipes?'**
+  String get deleteAllRecipesDialogTitle;
+
+  /// No description provided for @deleteAllRecipesDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All saved recipes will be permanently deleted.'**
+  String get deleteAllRecipesDialogMessage;
+
+  /// No description provided for @deleteAllRecipesDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all recipes'**
+  String get deleteAllRecipesDialogConfirm;
+
+  /// No description provided for @deleteAllRecipesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes could not be deleted. Try again.'**
+  String get deleteAllRecipesFailed;
+
   /// No description provided for @deleteAccountDialogTitle.
   ///
   /// In en, this message translates to:

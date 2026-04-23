@@ -113,6 +113,11 @@ class CulinexApiClient implements CulinexRepository {
   }
 
   @override
+  Future<void> deleteAllRecipes() async {
+    await _sendAuthorizedDelete(path: 'recipes');
+  }
+
+  @override
   Future<void> deleteRecipe(String id) async {
     await _sendAuthorizedDelete(path: 'recipes/$id');
   }

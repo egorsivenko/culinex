@@ -3,6 +3,7 @@ import 'package:culinex/core/auth/auth_api_client.dart';
 import 'package:culinex/core/auth/auth_models.dart';
 import 'package:culinex/core/auth/auth_session_store.dart';
 import 'package:culinex/core/localization/locale_store.dart';
+import 'package:culinex/core/network/culinex_api_client.dart';
 import 'package:culinex/core/network/culinex_repository.dart';
 import 'package:culinex/features/auth/auth_controller.dart';
 import 'package:culinex/features/session/culinex_models.dart';
@@ -327,6 +328,10 @@ void main() {
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('settings-delete-account-button')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('settings-delete-account-button')),
     );
@@ -350,6 +355,113 @@ void main() {
 
     expect(find.text('Sign in'), findsWidgets);
     expect(authClient.deletedAccountAccessToken, 'access-token');
+
+    controller.dispose();
+    authController.dispose();
+  });
+
+  testWidgets('delete all recipes confirms and clears recipe history', (
+    tester,
+  ) async {
+    final _NoopRepository repository = _NoopRepository(
+      recipeSummaries: const [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+        ),
+      ],
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+    final AuthController authController = _buildAuthenticatedAuthController();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    final Finder signOutButton = find.byKey(
+      const ValueKey<String>('settings-sign-out-button'),
+    );
+    final Finder deleteAllButton = find.byKey(
+      const ValueKey<String>('settings-delete-all-recipes-button'),
+    );
+    final Finder deleteAccountButton = find.byKey(
+      const ValueKey<String>('settings-delete-account-button'),
+    );
+
+    expect(
+      tester.getTopLeft(signOutButton).dy,
+      lessThan(tester.getTopLeft(deleteAllButton).dy),
+    );
+    expect(
+      tester.getTopLeft(deleteAllButton).dy,
+      lessThan(tester.getTopLeft(deleteAccountButton).dy),
+    );
+
+    await tester.ensureVisible(deleteAllButton);
+    await tester.pumpAndSettle();
+    await tester.tap(deleteAllButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete all recipes?'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('delete-all-recipes-confirm-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.deleteAllRecipesCallCount, 1);
+
+    await tester.tap(find.text('My recipes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No saved recipes yet'), findsOneWidget);
+
+    controller.dispose();
+    authController.dispose();
+  });
+
+  testWidgets('delete all recipes failure shows snackbar', (tester) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(
+        deleteAllRecipesError: const CulinexApiException(
+          CulinexApiErrorCode.serverFailure,
+        ),
+      ),
+    );
+    final AuthController authController = _buildAuthenticatedAuthController();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('settings-delete-all-recipes-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-delete-all-recipes-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('delete-all-recipes-confirm-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Recipes could not be deleted. Try again.'),
+      findsOneWidget,
+    );
 
     controller.dispose();
     authController.dispose();
@@ -451,11 +563,17 @@ void main() {
 }
 
 class _NoopRepository implements CulinexRepository {
-  _NoopRepository({this.recipeSummaries = const [], this.savedRecipe});
+  _NoopRepository({
+    List<RecipeSummary> recipeSummaries = const [],
+    this.savedRecipe,
+    this.deleteAllRecipesError,
+  }) : recipeSummaries = List<RecipeSummary>.of(recipeSummaries);
 
   final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe? savedRecipe;
   final List<String> deletedRecipeIds = <String>[];
+  final Object? deleteAllRecipesError;
+  int deleteAllRecipesCallCount = 0;
 
   @override
   void close() {}
@@ -496,6 +614,16 @@ class _NoopRepository implements CulinexRepository {
   @override
   Future<void> deleteRecipe(String id) async {
     deletedRecipeIds.add(id);
+  }
+
+  @override
+  Future<void> deleteAllRecipes() async {
+    deleteAllRecipesCallCount += 1;
+    final Object? error = deleteAllRecipesError;
+    if (error != null) {
+      throw error;
+    }
+    recipeSummaries.clear();
   }
 }
 

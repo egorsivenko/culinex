@@ -52,6 +52,7 @@ type setRecipeFavoriteRequest struct {
 }
 
 var setRecipeFavorite = recipes.SetFavorite
+var deleteAllRecipes = recipes.DeleteAllByUser
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
@@ -174,6 +175,22 @@ func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		log.Printf("[%s] Error deleting recipe: %v", middleware.GetReqID(r.Context()), err)
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func DeleteAllRecipes(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	if err := deleteAllRecipes(r.Context(), claims.UserID); err != nil {
+		log.Printf("[%s] Error deleting all recipes: %v", middleware.GetReqID(r.Context()), err)
 		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}

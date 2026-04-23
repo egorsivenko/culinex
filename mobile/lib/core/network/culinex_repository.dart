@@ -20,6 +20,8 @@ abstract interface class CulinexRepository {
 
   Future<void> setRecipeFavorite(String id, bool isFavorite);
 
+  Future<void> deleteAllRecipes();
+
   Future<void> deleteRecipe(String id);
 
   void close();

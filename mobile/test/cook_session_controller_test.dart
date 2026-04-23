@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:culinex/core/network/culinex_api_client.dart';
@@ -544,6 +545,130 @@ void main() {
     controller.dispose();
   });
 
+  test('deleteAllRecipes clears summaries and saved history detail', () async {
+    final FakeRepository repository = FakeRepository(
+      recipeSummaries: const [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+        ),
+        RecipeSummary(
+          id: 'recipe-2',
+          dishName: 'Egg Toast',
+          dishDescription: 'Fast breakfast',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 8,
+        ),
+      ],
+      savedRecipe: GeneratedRecipe(
+        id: 'recipe-1',
+        dishName: 'Tomato Pasta',
+        dishDescription: 'Simple dinner',
+        difficulty: RecipeDifficulty.easy,
+        cookingTimeMinutes: 20,
+        ingredients: const [
+          RecipeIngredient(name: 'Tomatoes', quantity: '2 pieces'),
+        ],
+        steps: const ['Cook.'],
+        macros: const NutritionMacros(
+          caloriesKcal: 320,
+          proteinG: 12,
+          carbsG: 54,
+          fatG: 8,
+        ),
+      ),
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.loadRecipeHistory();
+    await controller.openSavedRecipe('recipe-1');
+    controller.showRecipeHistory();
+    final bool deleted = await controller.deleteAllRecipes();
+
+    expect(deleted, isTrue);
+    expect(repository.deleteAllRecipesCallCount, 1);
+    expect(controller.isDeletingAllRecipes, isFalse);
+    expect(controller.recipeHistoryStatus, RecipeHistoryStatus.loaded);
+    expect(controller.recipeSummaries, isEmpty);
+    expect(controller.recipe, isNull);
+    expect(controller.recipeOpenedFromHistory, isFalse);
+    expect(controller.selectedRecipeActionId, isNull);
+
+    controller.dispose();
+  });
+
+  test('deleteAllRecipes preserves state on failure', () async {
+    final FakeRepository repository = FakeRepository(
+      deleteAllRecipesError: const CulinexApiException(
+        CulinexApiErrorCode.serverFailure,
+      ),
+      recipeSummaries: const [
+        RecipeSummary(
+          id: 'recipe-1',
+          dishName: 'Tomato Pasta',
+          dishDescription: 'Simple dinner',
+          difficulty: RecipeDifficulty.easy,
+          cookingTimeMinutes: 20,
+        ),
+      ],
+    );
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.loadRecipeHistory();
+    controller.selectRecipeActions('recipe-1');
+    final bool deleted = await controller.deleteAllRecipes();
+
+    expect(deleted, isFalse);
+    expect(controller.isDeletingAllRecipes, isFalse);
+    expect(controller.recipeHistoryStatus, RecipeHistoryStatus.loaded);
+    expect(controller.recipeSummaries, hasLength(1));
+    expect(controller.selectedRecipeActionId, 'recipe-1');
+
+    controller.dispose();
+  });
+
+  test(
+    'deleteAllRecipes is blocked while another recipe mutation is running',
+    () async {
+      final Completer<void> pendingDelete = Completer<void>();
+      final FakeRepository repository = FakeRepository(
+        deleteRecipeCompleter: pendingDelete,
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      final Future<bool> deleteFuture = controller.deleteRecipe('recipe-1');
+      await Future<void>.delayed(Duration.zero);
+
+      final bool deletedAll = await controller.deleteAllRecipes();
+      expect(deletedAll, isFalse);
+      expect(repository.deleteAllRecipesCallCount, 0);
+
+      pendingDelete.complete();
+      expect(await deleteFuture, isTrue);
+
+      controller.dispose();
+    },
+  );
+
   test(
     'deleteRecipe removes the summary and clears the selected action',
     () async {
@@ -716,6 +841,8 @@ class FakeRepository implements CulinexRepository {
     GeneratedRecipe? generatedRecipe,
     GeneratedRecipe? savedRecipe,
     this.setFavoriteError,
+    this.deleteAllRecipesError,
+    this.deleteRecipeCompleter,
     this.deleteRecipeError,
   }) : _generatedRecipe =
            generatedRecipe ??
@@ -742,10 +869,13 @@ class FakeRepository implements CulinexRepository {
   final GeneratedRecipe _generatedRecipe;
   final GeneratedRecipe? _savedRecipe;
   final Object? setFavoriteError;
+  final Object? deleteAllRecipesError;
+  final Completer<void>? deleteRecipeCompleter;
   final Object? deleteRecipeError;
 
   int extractCallCount = 0;
   int listRecipesCallCount = 0;
+  int deleteAllRecipesCallCount = 0;
   final Map<String, bool> favoriteUpdates = <String, bool>{};
   final List<String> deletedRecipeIds = <String>[];
   String? lastOpenedRecipeId;
@@ -804,11 +934,24 @@ class FakeRepository implements CulinexRepository {
 
   @override
   Future<void> deleteRecipe(String id) async {
+    final Completer<void>? completer = deleteRecipeCompleter;
+    if (completer != null) {
+      await completer.future;
+    }
     final Object? error = deleteRecipeError;
     if (error != null) {
       throw error;
     }
     deletedRecipeIds.add(id);
+  }
+
+  @override
+  Future<void> deleteAllRecipes() async {
+    deleteAllRecipesCallCount += 1;
+    final Object? error = deleteAllRecipesError;
+    if (error != null) {
+      throw error;
+    }
   }
 
   @override

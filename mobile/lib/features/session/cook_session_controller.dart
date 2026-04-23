@@ -64,6 +64,7 @@ class CookSessionController extends ChangeNotifier {
   String? _selectedRecipeActionId;
   String? _deletingRecipeId;
   String? _favoritingRecipeId;
+  bool _isDeletingAllRecipes = false;
   SessionErrorState? _errorState;
   Locale _locale = AppLocale.english;
   bool _isDisposed = false;
@@ -83,6 +84,7 @@ class CookSessionController extends ChangeNotifier {
   String? get selectedRecipeActionId => _selectedRecipeActionId;
   String? get deletingRecipeId => _deletingRecipeId;
   String? get favoritingRecipeId => _favoritingRecipeId;
+  bool get isDeletingAllRecipes => _isDeletingAllRecipes;
   SessionErrorState get errorState =>
       _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
 
@@ -156,6 +158,7 @@ class CookSessionController extends ChangeNotifier {
     _selectedRecipeActionId = null;
     _deletingRecipeId = null;
     _favoritingRecipeId = null;
+    _isDeletingAllRecipes = false;
     _errorState = null;
     _lastOperation = SessionOperation.none;
     _stage = SessionStage.welcome;
@@ -470,7 +473,9 @@ class CookSessionController extends ChangeNotifier {
   }
 
   Future<bool> deleteRecipe(String id) async {
-    if (_deletingRecipeId != null || _favoritingRecipeId != null) {
+    if (_deletingRecipeId != null ||
+        _favoritingRecipeId != null ||
+        _isDeletingAllRecipes) {
       return false;
     }
 
@@ -505,6 +510,60 @@ class CookSessionController extends ChangeNotifier {
 
       _deletingRecipeId = null;
       _recipeHistoryStatus = RecipeHistoryStatus.error;
+      _notifySafely();
+      return false;
+    }
+  }
+
+  Future<bool> deleteAllRecipes() async {
+    if (_deletingRecipeId != null ||
+        _favoritingRecipeId != null ||
+        _isDeletingAllRecipes) {
+      return false;
+    }
+
+    final List<RecipeSummary> previousSummaries = _recipeSummaries;
+    final GeneratedRecipe? previousRecipe = _recipe;
+    final bool previousRecipeOpenedFromHistory = _recipeOpenedFromHistory;
+    final String? previousSelectedRecipeActionId = _selectedRecipeActionId;
+    final RecipeHistoryStatus previousRecipeHistoryStatus =
+        _recipeHistoryStatus;
+    final SessionStage previousStage = _stage;
+
+    _isDeletingAllRecipes = true;
+    _notifySafely();
+
+    try {
+      await _repository.deleteAllRecipes();
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeSummaries = const [];
+      _selectedRecipeActionId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      if (_recipe?.id != null) {
+        _recipe = null;
+        _recipeOpenedFromHistory = false;
+        if (_stage == SessionStage.recipe) {
+          _stage = SessionStage.welcome;
+        }
+      }
+      _isDeletingAllRecipes = false;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeSummaries = previousSummaries;
+      _recipe = previousRecipe;
+      _recipeOpenedFromHistory = previousRecipeOpenedFromHistory;
+      _selectedRecipeActionId = previousSelectedRecipeActionId;
+      _recipeHistoryStatus = previousRecipeHistoryStatus;
+      _stage = previousStage;
+      _isDeletingAllRecipes = false;
       _notifySafely();
       return false;
     }

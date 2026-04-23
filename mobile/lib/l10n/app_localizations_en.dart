@@ -102,6 +102,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDarkOption => 'Dark';
 
   @override
+  String get deleteAllRecipes => 'Delete all recipes';
+
+  @override
+  String get deleteAllRecipesDialogTitle => 'Delete all recipes?';
+
+  @override
+  String get deleteAllRecipesDialogMessage =>
+      'All saved recipes will be permanently deleted.';
+
+  @override
+  String get deleteAllRecipesDialogConfirm => 'Delete all recipes';
+
+  @override
+  String get deleteAllRecipesFailed =>
+      'Recipes could not be deleted. Try again.';
+
+  @override
   String get deleteAccountDialogTitle => 'Delete account?';
 
   @override

@@ -266,6 +266,44 @@ void main() {
   );
 
   test(
+    'deleteAllRecipes sends authorized delete and refreshes once on 401',
+    () async {
+      final _FakeAuthSessionCoordinator authSessionCoordinator =
+          _FakeAuthSessionCoordinator(
+            accessToken: 'expired-access-token',
+            refreshedAccessToken: 'fresh-access-token',
+          );
+      int requestCount = 0;
+      final CulinexApiClient client = CulinexApiClient(
+        authSessionCoordinator: authSessionCoordinator,
+        apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+        client: MockClient((http.Request request) async {
+          requestCount += 1;
+          expect(request.method, 'DELETE');
+          expect(request.url.toString(), 'http://127.0.0.1:8080/api/recipes');
+
+          if (requestCount == 1) {
+            expect(
+              request.headers['Authorization'],
+              'Bearer expired-access-token',
+            );
+            return http.Response('', 401);
+          }
+
+          expect(request.headers['Authorization'], 'Bearer fresh-access-token');
+          return http.Response('', 204);
+        }),
+      );
+
+      await client.deleteAllRecipes();
+
+      expect(requestCount, 2);
+      expect(authSessionCoordinator.refreshCalls, 1);
+      client.close();
+    },
+  );
+
+  test(
     'deleteRecipe sends authorized delete and refreshes once on 401',
     () async {
       final _FakeAuthSessionCoordinator authSessionCoordinator =

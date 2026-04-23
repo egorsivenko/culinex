@@ -58,6 +58,7 @@ func main() {
 				r.Get("/", handler.ListRecipes)
 				r.Get("/{id}", handler.GetRecipe)
 				r.Patch("/{id}/favorite", handler.SetRecipeFavorite)
+				r.Delete("/", handler.DeleteAllRecipes)
 				r.Delete("/{id}", handler.DeleteRecipe)
 			})
 		})

@@ -14,7 +14,9 @@ class SettingsScreen extends StatelessWidget {
     required this.locale,
     required this.onSelectLocale,
     required this.onSignOut,
+    required this.onDeleteAllRecipes,
     required this.onDeleteAccount,
+    required this.isDeletingAllRecipes,
     required this.isSubmitting,
     required this.errorCode,
     required this.onClearError,
@@ -26,7 +28,9 @@ class SettingsScreen extends StatelessWidget {
   final Locale locale;
   final ValueChanged<Locale> onSelectLocale;
   final Future<void> Function() onSignOut;
+  final Future<bool> Function() onDeleteAllRecipes;
   final Future<void> Function() onDeleteAccount;
+  final bool isDeletingAllRecipes;
   final bool isSubmitting;
   final AuthErrorCode? errorCode;
   final VoidCallback onClearError;
@@ -99,7 +103,9 @@ class SettingsScreen extends StatelessWidget {
                             key: const ValueKey<String>(
                               'settings-sign-out-button',
                             ),
-                            onPressed: isSubmitting ? null : onSignOut,
+                            onPressed: isSubmitting || isDeletingAllRecipes
+                                ? null
+                                : onSignOut,
                             icon: const Icon(Icons.logout_rounded),
                             label: Text(l10n.signOut),
                             style: OutlinedButton.styleFrom(
@@ -115,9 +121,38 @@ class SettingsScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           OutlinedButton.icon(
                             key: const ValueKey<String>(
+                              'settings-delete-all-recipes-button',
+                            ),
+                            onPressed: isSubmitting || isDeletingAllRecipes
+                                ? null
+                                : () => _confirmDeleteAllRecipes(context),
+                            icon: isDeletingAllRecipes
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.error,
+                                    ),
+                                  )
+                                : const Icon(Icons.delete_sweep_rounded),
+                            label: Text(l10n.deleteAllRecipes),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colorScheme.error,
+                              side: BorderSide(color: colorScheme.error),
+                              minimumSize: const Size(196, 48),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            key: const ValueKey<String>(
                               'settings-delete-account-button',
                             ),
-                            onPressed: isSubmitting
+                            onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
                                 : () => _confirmDeleteAccount(context),
                             icon: const Icon(Icons.delete_outline_rounded),
@@ -158,6 +193,29 @@ class SettingsScreen extends StatelessWidget {
     }
 
     await onDeleteAccount();
+  }
+
+  Future<void> _confirmDeleteAllRecipes(BuildContext context) async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const _DeleteAllRecipesDialog();
+      },
+    );
+    if (shouldDelete != true) {
+      return;
+    }
+
+    final bool deleted = await onDeleteAllRecipes();
+    if (!context.mounted || deleted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(context.l10n.deleteAllRecipesFailed)),
+      );
   }
 
   String _errorMessageFor(BuildContext context, AuthErrorCode code) {
@@ -379,6 +437,46 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             foregroundColor: Theme.of(context).colorScheme.onError,
           ),
           child: Text(l10n.deleteAccountDialogConfirm),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeleteAllRecipesDialog extends StatelessWidget {
+  const _DeleteAllRecipesDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      constraints: const BoxConstraints(maxWidth: 520),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 12, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+      title: Row(
+        children: <Widget>[
+          Expanded(child: Text(l10n.deleteAllRecipesDialogTitle)),
+          IconButton(
+            key: const ValueKey<String>('delete-all-recipes-close-button'),
+            onPressed: () => Navigator.of(context).pop(false),
+            icon: const Icon(Icons.close_rounded),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          ),
+        ],
+      ),
+      content: Text(l10n.deleteAllRecipesDialogMessage),
+      actions: <Widget>[
+        FilledButton(
+          key: const ValueKey<String>('delete-all-recipes-confirm-button'),
+          onPressed: () => Navigator.of(context).pop(true),
+          style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.error,
+            foregroundColor: colorScheme.onError,
+          ),
+          child: Text(l10n.deleteAllRecipesDialogConfirm),
         ),
       ],
     );
