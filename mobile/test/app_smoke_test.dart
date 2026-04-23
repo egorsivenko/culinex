@@ -360,6 +360,40 @@ void main() {
     authController.dispose();
   });
 
+  testWidgets('sign out requires confirmation and signs out', (tester) async {
+    final CookSessionController controller = CookSessionController(
+      repository: _NoopRepository(),
+    );
+    final AuthController authController = _buildAuthenticatedAuthController();
+
+    await tester.pumpWidget(
+      CulinexApp(controller: controller, authController: authController),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('settings-sign-out-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-sign-out-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign out?'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('sign-out-confirm-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in'), findsWidgets);
+
+    controller.dispose();
+    authController.dispose();
+  });
+
   testWidgets('delete all recipes confirms and clears recipe history', (
     tester,
   ) async {

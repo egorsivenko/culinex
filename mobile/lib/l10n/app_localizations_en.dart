@@ -30,6 +30,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
+  String get signOutDialogTitle => 'Sign out?';
+
+  @override
+  String get signOutDialogMessage =>
+      'You will need to sign in again to access your saved recipes and settings.';
+
+  @override
+  String get signOutDialogConfirm => 'Sign out';
+
+  @override
   String get deleteAccount => 'Delete account';
 
   @override

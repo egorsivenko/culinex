@@ -30,6 +30,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get signOut => 'Вийти';
 
   @override
+  String get signOutDialogTitle => 'Вийти?';
+
+  @override
+  String get signOutDialogMessage =>
+      'Вам потрібно буде знову увійти, щоб отримати доступ до збережених рецептів і налаштувань.';
+
+  @override
+  String get signOutDialogConfirm => 'Вийти';
+
+  @override
   String get deleteAccount => 'Видалити акаунт';
 
   @override

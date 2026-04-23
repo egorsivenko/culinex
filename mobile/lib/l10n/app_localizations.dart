@@ -140,6 +140,24 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get signOut;
 
+  /// No description provided for @signOutDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get signOutDialogTitle;
+
+  /// No description provided for @signOutDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will need to sign in again to access your saved recipes and settings.'**
+  String get signOutDialogMessage;
+
+  /// No description provided for @signOutDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOutDialogConfirm;
+
   /// No description provided for @deleteAccount.
   ///
   /// In en, this message translates to:

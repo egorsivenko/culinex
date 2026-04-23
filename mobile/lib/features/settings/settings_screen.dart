@@ -105,7 +105,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
-                                : onSignOut,
+                                : () => _confirmSignOut(context),
                             icon: const Icon(Icons.logout_rounded),
                             label: Text(l10n.signOut),
                             style: OutlinedButton.styleFrom(
@@ -193,6 +193,20 @@ class SettingsScreen extends StatelessWidget {
     }
 
     await onDeleteAccount();
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final bool? shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const _SignOutDialog();
+      },
+    );
+    if (shouldSignOut != true) {
+      return;
+    }
+
+    await onSignOut();
   }
 
   Future<void> _confirmDeleteAllRecipes(BuildContext context) async {
@@ -477,6 +491,41 @@ class _DeleteAllRecipesDialog extends StatelessWidget {
             foregroundColor: colorScheme.onError,
           ),
           child: Text(l10n.deleteAllRecipesDialogConfirm),
+        ),
+      ],
+    );
+  }
+}
+
+class _SignOutDialog extends StatelessWidget {
+  const _SignOutDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      constraints: const BoxConstraints(maxWidth: 520),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 12, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+      title: Row(
+        children: <Widget>[
+          Expanded(child: Text(l10n.signOutDialogTitle)),
+          IconButton(
+            key: const ValueKey<String>('sign-out-close-button'),
+            onPressed: () => Navigator.of(context).pop(false),
+            icon: const Icon(Icons.close_rounded),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          ),
+        ],
+      ),
+      content: Text(l10n.signOutDialogMessage),
+      actions: <Widget>[
+        FilledButton(
+          key: const ValueKey<String>('sign-out-confirm-button'),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l10n.signOutDialogConfirm),
         ),
       ],
     );
