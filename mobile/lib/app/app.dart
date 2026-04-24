@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_api_client.dart';
 import '../core/auth/auth_session_store.dart';
 import '../core/feedback/app_haptics.dart';
+import '../core/feedback/app_sounds.dart';
 import '../core/feedback/haptics_store.dart';
+import '../core/feedback/sounds_store.dart';
 import '../core/localization/app_locale.dart';
 import '../core/localization/locale_store.dart';
 import '../core/network/culinex_api_client.dart';
@@ -40,6 +42,8 @@ class CulinexApp extends StatefulWidget {
     this.localeStore,
     this.initialHapticsEnabled = true,
     this.hapticsStore,
+    this.initialSoundsEnabled = true,
+    this.soundsStore,
   });
 
   final CookSessionController? controller;
@@ -50,6 +54,8 @@ class CulinexApp extends StatefulWidget {
   final LocaleStore? localeStore;
   final bool initialHapticsEnabled;
   final HapticsStore? hapticsStore;
+  final bool initialSoundsEnabled;
+  final SoundsStore? soundsStore;
 
   @override
   State<CulinexApp> createState() => _CulinexAppState();
@@ -63,6 +69,7 @@ class _CulinexAppState extends State<CulinexApp> {
   ThemeMode _themeMode = ThemeMode.light;
   Locale _locale = AppLocale.english;
   bool _isHapticsEnabled = true;
+  bool _isSoundsEnabled = true;
 
   @override
   void initState() {
@@ -74,7 +81,9 @@ class _CulinexAppState extends State<CulinexApp> {
     _themeMode = widget.initialThemeMode;
     _locale = AppLocale.normalize(widget.initialLocale);
     _isHapticsEnabled = widget.initialHapticsEnabled;
+    _isSoundsEnabled = widget.initialSoundsEnabled;
     AppHaptics.setEnabled(_isHapticsEnabled);
+    AppSounds.setEnabled(_isSoundsEnabled);
     _controller.setLocale(_locale);
     unawaited(_authController.restoreSession());
   }
@@ -87,6 +96,7 @@ class _CulinexAppState extends State<CulinexApp> {
     if (_ownsAuthController) {
       _authController.dispose();
     }
+    unawaited(AppSounds.dispose());
     super.dispose();
   }
 
@@ -122,6 +132,8 @@ class _CulinexAppState extends State<CulinexApp> {
               onSelectLocale: _selectLocale,
               isHapticsEnabled: _isHapticsEnabled,
               onToggleHaptics: _toggleHaptics,
+              isSoundsEnabled: _isSoundsEnabled,
+              onToggleSounds: _toggleSounds,
             ),
           };
         },
@@ -178,6 +190,7 @@ class _CulinexAppState extends State<CulinexApp> {
   void _toggleHaptics() {
     final bool nextIsHapticsEnabled = !_isHapticsEnabled;
 
+    AppSounds.click();
     if (nextIsHapticsEnabled) {
       AppHaptics.setEnabled(true);
       AppHaptics.selection();
@@ -195,6 +208,27 @@ class _CulinexAppState extends State<CulinexApp> {
       unawaited(hapticsStore.saveHapticsEnabled(nextIsHapticsEnabled));
     }
   }
+
+  void _toggleSounds() {
+    final bool nextIsSoundsEnabled = !_isSoundsEnabled;
+
+    if (nextIsSoundsEnabled) {
+      AppSounds.setEnabled(true);
+      AppSounds.click();
+    } else {
+      AppSounds.click();
+      AppSounds.setEnabled(false);
+    }
+
+    setState(() {
+      _isSoundsEnabled = nextIsSoundsEnabled;
+    });
+
+    final SoundsStore? soundsStore = widget.soundsStore;
+    if (soundsStore != null) {
+      unawaited(soundsStore.saveSoundsEnabled(nextIsSoundsEnabled));
+    }
+  }
 }
 
 enum _RootTab { main, recipes, settings }
@@ -209,6 +243,8 @@ class CulinexFlowShell extends StatefulWidget {
     required this.onSelectLocale,
     required this.isHapticsEnabled,
     required this.onToggleHaptics,
+    required this.isSoundsEnabled,
+    required this.onToggleSounds,
     super.key,
   });
 
@@ -220,6 +256,8 @@ class CulinexFlowShell extends StatefulWidget {
   final ValueChanged<Locale> onSelectLocale;
   final bool isHapticsEnabled;
   final VoidCallback onToggleHaptics;
+  final bool isSoundsEnabled;
+  final VoidCallback onToggleSounds;
 
   @override
   State<CulinexFlowShell> createState() => _CulinexFlowShellState();
@@ -278,6 +316,8 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onSelectLocale: widget.onSelectLocale,
                       isHapticsEnabled: widget.isHapticsEnabled,
                       onToggleHaptics: widget.onToggleHaptics,
+                      isSoundsEnabled: widget.isSoundsEnabled,
+                      onToggleSounds: widget.onToggleSounds,
                       onDeleteAllRecipes: widget.controller.deleteAllRecipes,
                       isDeletingAllRecipes:
                           widget.controller.isDeletingAllRecipes,
@@ -298,6 +338,7 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                 bottomNavigationBar: _RootBottomNavigationBar(
                   selectedTab: _selectedTab,
                   onTabSelected: (_RootTab tab) {
+                    AppSounds.click();
                     AppHaptics.selection();
                     setState(() {
                       _selectedTab = tab;

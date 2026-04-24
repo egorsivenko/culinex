@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/feedback/app_haptics.dart';
+import '../../core/feedback/app_sounds.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/primary_action_button.dart';
 import '../../l10n/l10n.dart';
@@ -155,6 +156,7 @@ class _WelcomeChoiceLayout extends StatelessWidget {
         width: double.infinity,
         child: OutlinedButton.icon(
           onPressed: () {
+            AppSounds.click();
             AppHaptics.tap();
             onStartManualEntry();
           },

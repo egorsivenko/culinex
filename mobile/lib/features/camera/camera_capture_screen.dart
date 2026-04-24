@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/feedback/app_haptics.dart';
+import '../../core/feedback/app_sounds.dart';
 import '../../core/widgets/pulse_dots_indicator.dart';
 import '../../l10n/l10n.dart';
 
@@ -163,6 +164,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
 
     try {
       await controller.setFlashMode(nextFlashMode);
+      AppSounds.click();
       AppHaptics.selection();
       if (!mounted) {
         return;
@@ -192,6 +194,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       return;
     }
 
+    AppSounds.click();
     AppHaptics.commit();
 
     setState(() {
@@ -228,6 +231,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
       return;
     }
 
+    AppSounds.click();
     AppHaptics.tap();
 
     setState(() {
@@ -335,6 +339,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
                           _OverlayIconButton(
                             icon: Icons.arrow_back_ios_new_rounded,
                             onPressed: () {
+                              AppSounds.click();
                               AppHaptics.tap();
                               widget.onBack();
                             },
@@ -344,6 +349,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen>
                             icon: Icons.info_outline_rounded,
                             tooltip: l10n.cameraShowFrameHintTooltip,
                             onPressed: () {
+                              AppSounds.click();
                               AppHaptics.selection();
                               _showInfoPopup();
                             },

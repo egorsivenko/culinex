@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/feedback/app_haptics.dart';
+import '../../core/feedback/app_sounds.dart';
 import '../../core/localization/app_locale.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
@@ -16,6 +17,8 @@ class SettingsScreen extends StatelessWidget {
     required this.onSelectLocale,
     required this.isHapticsEnabled,
     required this.onToggleHaptics,
+    required this.isSoundsEnabled,
+    required this.onToggleSounds,
     required this.onSignOut,
     required this.onDeleteAllRecipes,
     required this.onDeleteAccount,
@@ -32,6 +35,8 @@ class SettingsScreen extends StatelessWidget {
   final ValueChanged<Locale> onSelectLocale;
   final bool isHapticsEnabled;
   final VoidCallback onToggleHaptics;
+  final bool isSoundsEnabled;
+  final VoidCallback onToggleSounds;
   final Future<void> Function() onSignOut;
   final Future<bool> Function() onDeleteAllRecipes;
   final Future<void> Function() onDeleteAccount;
@@ -49,19 +54,20 @@ class SettingsScreen extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const CulinexBrandHeader(),
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: GlassPanel(
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -73,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 22),
                           _SettingsRow(
                             label: l10n.settingsLanguageLabel,
                             control: _SettingsLanguageDropdown(
@@ -81,12 +87,15 @@ class SettingsScreen extends StatelessWidget {
                               onSelectLocale: onSelectLocale,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 12),
                           _SettingsRow(
                             label: l10n.settingsAppearanceLabel,
                             control: CulinexAppearanceToggle(
                               isDarkMode: isDarkMode,
-                              onToggleTheme: onToggleTheme,
+                              onToggleTheme: () {
+                                AppSounds.click();
+                                onToggleTheme();
+                              },
                               lightLabel: l10n.settingsLightOption,
                               darkLabel: l10n.settingsDarkOption,
                               buttonKey: const ValueKey<String>(
@@ -94,7 +103,15 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 12),
+                          _SettingsRow(
+                            label: l10n.settingsSoundsLabel,
+                            control: Switch.adaptive(
+                              value: isSoundsEnabled,
+                              onChanged: (_) => onToggleSounds(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           _SettingsRow(
                             label: l10n.settingsVibrationsLabel,
                             control: Switch.adaptive(
@@ -103,15 +120,15 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ),
                           if (errorCode != null) ...<Widget>[
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 18),
                             _SettingsErrorBanner(
                               message: _errorMessageFor(context, errorCode!),
                               onDismiss: onClearError,
                             ),
                           ],
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 18),
                           Divider(color: colors.border, height: 1),
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 14),
                           OutlinedButton.icon(
                             key: const ValueKey<String>(
                               'settings-sign-out-button',
@@ -119,6 +136,7 @@ class SettingsScreen extends StatelessWidget {
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
                                 : () {
+                                    AppSounds.click();
                                     AppHaptics.tap();
                                     _confirmSignOut(context);
                                   },
@@ -127,14 +145,14 @@ class SettingsScreen extends StatelessWidget {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.ink,
                               side: BorderSide(color: colors.border),
-                              minimumSize: const Size(172, 48),
+                              minimumSize: const Size(172, 44),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
-                                vertical: 12,
+                                vertical: 10,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           OutlinedButton.icon(
                             key: const ValueKey<String>(
                               'settings-delete-all-recipes-button',
@@ -142,6 +160,7 @@ class SettingsScreen extends StatelessWidget {
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
                                 : () {
+                                    AppSounds.click();
                                     AppHaptics.tap();
                                     _confirmDeleteAllRecipes(context);
                                   },
@@ -159,14 +178,14 @@ class SettingsScreen extends StatelessWidget {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colorScheme.error,
                               side: BorderSide(color: colorScheme.error),
-                              minimumSize: const Size(196, 48),
+                              minimumSize: const Size(196, 44),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
-                                vertical: 12,
+                                vertical: 10,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           OutlinedButton.icon(
                             key: const ValueKey<String>(
                               'settings-delete-account-button',
@@ -174,6 +193,7 @@ class SettingsScreen extends StatelessWidget {
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
                                 : () {
+                                    AppSounds.click();
                                     AppHaptics.tap();
                                     _confirmDeleteAccount(context);
                                   },
@@ -182,10 +202,10 @@ class SettingsScreen extends StatelessWidget {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colorScheme.error,
                               side: BorderSide(color: colorScheme.error),
-                              minimumSize: const Size(188, 48),
+                              minimumSize: const Size(188, 44),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
-                                vertical: 12,
+                                vertical: 10,
                               ),
                             ),
                           ),
@@ -356,6 +376,7 @@ class _SettingsLanguageDropdown extends StatelessWidget {
                 if (nextLocale == null || nextLocale == selectedLocale) {
                   return;
                 }
+                AppSounds.click();
                 AppHaptics.selection();
                 onSelectLocale(nextLocale);
               },

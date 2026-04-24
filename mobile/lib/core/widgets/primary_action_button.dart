@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../feedback/app_haptics.dart';
+import '../feedback/app_sounds.dart';
 
 class PrimaryActionButton extends StatelessWidget {
   const PrimaryActionButton({
@@ -19,6 +20,7 @@ class PrimaryActionButton extends StatelessWidget {
     final VoidCallback? effectiveOnPressed = onPressed == null
         ? null
         : () {
+            AppSounds.click();
             AppHaptics.tap();
             onPressed!();
           };

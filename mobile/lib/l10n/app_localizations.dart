@@ -290,6 +290,12 @@ abstract class AppLocalizations {
   /// **'Vibrations'**
   String get settingsVibrationsLabel;
 
+  /// No description provided for @settingsSoundsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sounds'**
+  String get settingsSoundsLabel;
+
   /// No description provided for @settingsLightOption.
   ///
   /// In en, this message translates to:

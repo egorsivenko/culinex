@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/feedback/app_haptics.dart';
+import '../../core/feedback/app_sounds.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../l10n/l10n.dart';
 import '../home/culinex_header.dart';
@@ -87,6 +88,7 @@ class MyRecipesScreen extends StatelessWidget {
         message: l10n.myRecipesLoadFailedMessage,
         action: OutlinedButton.icon(
           onPressed: () {
+            AppSounds.click();
             AppHaptics.tap();
             onRetry();
           },
@@ -137,10 +139,12 @@ class MyRecipesScreen extends StatelessWidget {
                       deletingRecipeId == null &&
                       favoritingRecipeId == null,
                   onTap: () {
+                    AppSounds.click();
                     AppHaptics.tap();
                     onOpenRecipe(recipe.id);
                   },
                   onLongPress: () {
+                    AppSounds.click();
                     AppHaptics.selection();
                     onSelectRecipeActions(recipe.id);
                   },
@@ -219,6 +223,7 @@ class MyRecipesScreen extends StatelessWidget {
       return;
     }
 
+    AppSounds.click();
     AppHaptics.destructive();
 
     final bool deleted = await onDeleteRecipe(recipe.id);
@@ -236,6 +241,7 @@ class MyRecipesScreen extends StatelessWidget {
     String id,
     bool isFavorite,
   ) async {
+    AppSounds.click();
     AppHaptics.commit();
 
     final bool updated = await onSetRecipeFavorite(id, isFavorite);
@@ -332,6 +338,7 @@ class _RecipeHistoryRow extends StatelessWidget {
       child: InkWell(
         onTap: enabled ? onTap : null,
         onLongPress: enabled ? onLongPress : null,
+        enableFeedback: false,
         borderRadius: BorderRadius.circular(24),
         child: Ink(
           width: double.infinity,

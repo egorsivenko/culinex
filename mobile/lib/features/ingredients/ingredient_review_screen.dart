@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/feedback/app_haptics.dart';
+import '../../core/feedback/app_sounds.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/primary_action_button.dart';
@@ -171,7 +172,10 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                         Row(
                           children: [
                             IconButton(
-                              onPressed: widget.onBack,
+                              onPressed: () {
+                                AppSounds.click();
+                                widget.onBack();
+                              },
                               icon: const Icon(
                                 Icons.arrow_back_ios_new_rounded,
                               ),
@@ -268,6 +272,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                       onChanged: _isSubmitting
                                           ? null
                                           : (value) {
+                                              AppSounds.click();
                                               AppHaptics.selection();
                                               setState(() {
                                                 _assumeBasicStaples = value;
@@ -585,6 +590,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return;
     }
 
+    AppSounds.click();
     AppHaptics.tap();
 
     final _IngredientDraft? draft = await _showIngredientEditor();
@@ -592,6 +598,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return;
     }
 
+    AppSounds.click();
     AppHaptics.commit();
 
     setState(() {
@@ -607,6 +614,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Future<void> _handleEditIngredient(int index) async {
+    AppSounds.click();
     AppHaptics.tap();
 
     final _IngredientRowState ingredientRow = _ingredientRows[index];
@@ -634,6 +642,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return;
     }
 
+    AppSounds.click();
     AppHaptics.commit();
 
     setState(() {
@@ -654,6 +663,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return false;
     }
 
+    AppSounds.click();
     AppHaptics.destructive();
 
     setState(() {
@@ -719,6 +729,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _showPreview() {
+    AppSounds.click();
     AppHaptics.selection();
     setState(() {
       _isPreviewVisible = true;
@@ -726,6 +737,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _toggleBasicStaplesInfo() {
+    AppSounds.click();
     AppHaptics.selection();
     if (_isBasicStaplesInfoVisible) {
       _hideBasicStaplesInfo();
@@ -751,6 +763,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _hidePreview() {
+    AppSounds.click();
     AppHaptics.selection();
     setState(() {
       _isPreviewVisible = false;
@@ -1144,6 +1157,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
     });
 
     if (shouldOpen) {
+      AppSounds.click();
       AppHaptics.selection();
       _scheduleDeleteActionEnable();
     }
