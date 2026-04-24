@@ -11,9 +11,10 @@ dependencies:
   email_validator: ^3.0.0
   flutter:
     sdk: flutter
+  flutter_dotenv: ^6.0.1
   flutter_localizations:
     sdk: flutter
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
   http: ^1.5.0
   http_parser: ^4.1.2
   image_picker: ^1.2.0
@@ -32,6 +33,7 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
+    - .env
     - assets/icon/
 
 flutter_launcher_icons:
