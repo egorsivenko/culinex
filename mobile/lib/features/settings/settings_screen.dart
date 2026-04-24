@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/feedback/app_haptics.dart';
 import '../../core/localization/app_locale.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
@@ -13,6 +14,8 @@ class SettingsScreen extends StatelessWidget {
     required this.onToggleTheme,
     required this.locale,
     required this.onSelectLocale,
+    required this.isHapticsEnabled,
+    required this.onToggleHaptics,
     required this.onSignOut,
     required this.onDeleteAllRecipes,
     required this.onDeleteAccount,
@@ -27,6 +30,8 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final Locale locale;
   final ValueChanged<Locale> onSelectLocale;
+  final bool isHapticsEnabled;
+  final VoidCallback onToggleHaptics;
   final Future<void> Function() onSignOut;
   final Future<bool> Function() onDeleteAllRecipes;
   final Future<void> Function() onDeleteAccount;
@@ -89,6 +94,14 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 18),
+                          _SettingsRow(
+                            label: l10n.settingsVibrationsLabel,
+                            control: Switch.adaptive(
+                              value: isHapticsEnabled,
+                              onChanged: (_) => onToggleHaptics(),
+                            ),
+                          ),
                           if (errorCode != null) ...<Widget>[
                             const SizedBox(height: 24),
                             _SettingsErrorBanner(
@@ -105,7 +118,10 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
-                                : () => _confirmSignOut(context),
+                                : () {
+                                    AppHaptics.tap();
+                                    _confirmSignOut(context);
+                                  },
                             icon: const Icon(Icons.logout_rounded),
                             label: Text(l10n.signOut),
                             style: OutlinedButton.styleFrom(
@@ -125,7 +141,10 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
-                                : () => _confirmDeleteAllRecipes(context),
+                                : () {
+                                    AppHaptics.tap();
+                                    _confirmDeleteAllRecipes(context);
+                                  },
                             icon: isDeletingAllRecipes
                                 ? SizedBox(
                                     width: 18,
@@ -154,7 +173,10 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             onPressed: isSubmitting || isDeletingAllRecipes
                                 ? null
-                                : () => _confirmDeleteAccount(context),
+                                : () {
+                                    AppHaptics.tap();
+                                    _confirmDeleteAccount(context);
+                                  },
                             icon: const Icon(Icons.delete_outline_rounded),
                             label: Text(l10n.deleteAccount),
                             style: OutlinedButton.styleFrom(
@@ -192,6 +214,8 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
+    AppHaptics.destructive();
+
     await onDeleteAccount();
   }
 
@@ -206,6 +230,8 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
+    AppHaptics.commit();
+
     await onSignOut();
   }
 
@@ -219,6 +245,8 @@ class SettingsScreen extends StatelessWidget {
     if (shouldDelete != true) {
       return;
     }
+
+    AppHaptics.destructive();
 
     final bool deleted = await onDeleteAllRecipes();
     if (!context.mounted || deleted) {
@@ -328,6 +356,7 @@ class _SettingsLanguageDropdown extends StatelessWidget {
                 if (nextLocale == null || nextLocale == selectedLocale) {
                   return;
                 }
+                AppHaptics.selection();
                 onSelectLocale(nextLocale);
               },
             ),

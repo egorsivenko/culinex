@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/feedback/app_haptics.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/primary_action_button.dart';
 import '../../l10n/l10n.dart';
@@ -153,7 +154,10 @@ class _WelcomeChoiceLayout extends StatelessWidget {
       button: SizedBox(
         width: double.infinity,
         child: OutlinedButton.icon(
-          onPressed: onStartManualEntry,
+          onPressed: () {
+            AppHaptics.tap();
+            onStartManualEntry();
+          },
           icon: const Icon(Icons.edit_note_rounded),
           label: Text(l10n.typeIngredients),
         ),

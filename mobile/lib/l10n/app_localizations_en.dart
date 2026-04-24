@@ -106,6 +106,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearanceLabel => 'Theme';
 
   @override
+  String get settingsVibrationsLabel => 'Vibrations';
+
+  @override
   String get settingsLightOption => 'Light';
 
   @override

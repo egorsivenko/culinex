@@ -106,6 +106,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsAppearanceLabel => 'Тема';
 
   @override
+  String get settingsVibrationsLabel => 'Вібрації';
+
+  @override
   String get settingsLightOption => 'Світла';
 
   @override

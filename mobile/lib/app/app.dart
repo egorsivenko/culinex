@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import '../core/auth/auth_api_client.dart';
 import '../core/auth/auth_session_store.dart';
+import '../core/feedback/app_haptics.dart';
+import '../core/feedback/haptics_store.dart';
 import '../core/localization/app_locale.dart';
 import '../core/localization/locale_store.dart';
 import '../core/network/culinex_api_client.dart';
@@ -36,6 +38,8 @@ class CulinexApp extends StatefulWidget {
     this.themeModeStore,
     this.initialLocale = AppLocale.english,
     this.localeStore,
+    this.initialHapticsEnabled = true,
+    this.hapticsStore,
   });
 
   final CookSessionController? controller;
@@ -44,6 +48,8 @@ class CulinexApp extends StatefulWidget {
   final ThemeModeStore? themeModeStore;
   final Locale initialLocale;
   final LocaleStore? localeStore;
+  final bool initialHapticsEnabled;
+  final HapticsStore? hapticsStore;
 
   @override
   State<CulinexApp> createState() => _CulinexAppState();
@@ -56,6 +62,7 @@ class _CulinexAppState extends State<CulinexApp> {
   late final AuthController _authController;
   ThemeMode _themeMode = ThemeMode.light;
   Locale _locale = AppLocale.english;
+  bool _isHapticsEnabled = true;
 
   @override
   void initState() {
@@ -66,6 +73,8 @@ class _CulinexAppState extends State<CulinexApp> {
     _controller = widget.controller ?? _buildController(_authController);
     _themeMode = widget.initialThemeMode;
     _locale = AppLocale.normalize(widget.initialLocale);
+    _isHapticsEnabled = widget.initialHapticsEnabled;
+    AppHaptics.setEnabled(_isHapticsEnabled);
     _controller.setLocale(_locale);
     unawaited(_authController.restoreSession());
   }
@@ -111,6 +120,8 @@ class _CulinexAppState extends State<CulinexApp> {
               onToggleTheme: _toggleTheme,
               locale: _locale,
               onSelectLocale: _selectLocale,
+              isHapticsEnabled: _isHapticsEnabled,
+              onToggleHaptics: _toggleHaptics,
             ),
           };
         },
@@ -163,6 +174,27 @@ class _CulinexAppState extends State<CulinexApp> {
       unawaited(localeStore.saveLocale(normalizedLocale));
     }
   }
+
+  void _toggleHaptics() {
+    final bool nextIsHapticsEnabled = !_isHapticsEnabled;
+
+    if (nextIsHapticsEnabled) {
+      AppHaptics.setEnabled(true);
+      AppHaptics.selection();
+    } else {
+      AppHaptics.selection();
+      AppHaptics.setEnabled(false);
+    }
+
+    setState(() {
+      _isHapticsEnabled = nextIsHapticsEnabled;
+    });
+
+    final HapticsStore? hapticsStore = widget.hapticsStore;
+    if (hapticsStore != null) {
+      unawaited(hapticsStore.saveHapticsEnabled(nextIsHapticsEnabled));
+    }
+  }
 }
 
 enum _RootTab { main, recipes, settings }
@@ -175,6 +207,8 @@ class CulinexFlowShell extends StatefulWidget {
     required this.onToggleTheme,
     required this.locale,
     required this.onSelectLocale,
+    required this.isHapticsEnabled,
+    required this.onToggleHaptics,
     super.key,
   });
 
@@ -184,6 +218,8 @@ class CulinexFlowShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final Locale locale;
   final ValueChanged<Locale> onSelectLocale;
+  final bool isHapticsEnabled;
+  final VoidCallback onToggleHaptics;
 
   @override
   State<CulinexFlowShell> createState() => _CulinexFlowShellState();
@@ -240,6 +276,8 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onToggleTheme: widget.onToggleTheme,
                       locale: widget.locale,
                       onSelectLocale: widget.onSelectLocale,
+                      isHapticsEnabled: widget.isHapticsEnabled,
+                      onToggleHaptics: widget.onToggleHaptics,
                       onDeleteAllRecipes: widget.controller.deleteAllRecipes,
                       isDeletingAllRecipes:
                           widget.controller.isDeletingAllRecipes,
@@ -260,6 +298,7 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                 bottomNavigationBar: _RootBottomNavigationBar(
                   selectedTab: _selectedTab,
                   onTabSelected: (_RootTab tab) {
+                    AppHaptics.selection();
                     setState(() {
                       _selectedTab = tab;
                     });

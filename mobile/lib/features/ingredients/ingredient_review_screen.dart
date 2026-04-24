@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/feedback/app_haptics.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/primary_action_button.dart';
@@ -267,6 +268,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                                       onChanged: _isSubmitting
                                           ? null
                                           : (value) {
+                                              AppHaptics.selection();
                                               setState(() {
                                                 _assumeBasicStaples = value;
                                               });
@@ -583,10 +585,14 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return;
     }
 
+    AppHaptics.tap();
+
     final _IngredientDraft? draft = await _showIngredientEditor();
     if (draft == null) {
       return;
     }
+
+    AppHaptics.commit();
 
     setState(() {
       final ExtractedIngredient ingredient = ExtractedIngredient(
@@ -601,6 +607,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   Future<void> _handleEditIngredient(int index) async {
+    AppHaptics.tap();
+
     final _IngredientRowState ingredientRow = _ingredientRows[index];
     final ExtractedIngredient current = ingredientRow.ingredient;
     final _IngredientDraft? draft = await _showIngredientEditor(
@@ -626,6 +634,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       return;
     }
 
+    AppHaptics.commit();
+
     setState(() {
       _ingredientRows[index] = ingredientRow.copyWith(
         ingredient: updatedIngredient.copyWith(
@@ -643,6 +653,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
       _showSnack(l10n.keepAtLeastIngredients(minRecipeIngredientCount));
       return false;
     }
+
+    AppHaptics.destructive();
 
     setState(() {
       _removingIngredientIds.add(ingredientId);
@@ -707,12 +719,14 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _showPreview() {
+    AppHaptics.selection();
     setState(() {
       _isPreviewVisible = true;
     });
   }
 
   void _toggleBasicStaplesInfo() {
+    AppHaptics.selection();
     if (_isBasicStaplesInfoVisible) {
       _hideBasicStaplesInfo();
       return;
@@ -737,6 +751,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   }
 
   void _hidePreview() {
+    AppHaptics.selection();
     setState(() {
       _isPreviewVisible = false;
     });
@@ -1129,6 +1144,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
     });
 
     if (shouldOpen) {
+      AppHaptics.selection();
       _scheduleDeleteActionEnable();
     }
   }

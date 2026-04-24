@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/feedback/app_haptics.dart';
 import '../../core/localization/app_locale.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../l10n/l10n.dart';
@@ -122,7 +123,10 @@ class CulinexThemeIconButton extends StatelessWidget {
       child: IconButton(
         key: buttonKey,
         tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
-        onPressed: onPressed,
+        onPressed: () {
+          AppHaptics.selection();
+          onPressed();
+        },
         style: const ButtonStyle(
           overlayColor: WidgetStatePropertyAll<Color>(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
@@ -170,6 +174,7 @@ class CulinexLanguageToggle extends StatelessWidget {
         tooltip: isUkrainian ? l10n.switchToEnglish : l10n.switchToUkrainian,
         buttonKey: buttonKey,
         onPressed: () {
+          AppHaptics.selection();
           onSelectLocale(isUkrainian ? AppLocale.english : AppLocale.ukrainian);
         },
       ),
@@ -209,7 +214,10 @@ class CulinexAppearanceToggle extends StatelessWidget {
         width: width,
         tooltip: isDarkMode ? l10n.switchToLightMode : l10n.switchToDarkMode,
         buttonKey: buttonKey,
-        onPressed: onToggleTheme,
+        onPressed: () {
+          AppHaptics.selection();
+          onToggleTheme();
+        },
       ),
     );
   }

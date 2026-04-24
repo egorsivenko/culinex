@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/feedback/app_haptics.dart';
 import '../../core/theme/culinex_theme.dart';
 import '../../l10n/l10n.dart';
 import '../home/culinex_header.dart';
@@ -85,7 +86,10 @@ class MyRecipesScreen extends StatelessWidget {
         title: l10n.myRecipesLoadFailedTitle,
         message: l10n.myRecipesLoadFailedMessage,
         action: OutlinedButton.icon(
-          onPressed: onRetry,
+          onPressed: () {
+            AppHaptics.tap();
+            onRetry();
+          },
           icon: const Icon(Icons.refresh_rounded),
           label: Text(l10n.myRecipesRetry),
         ),
@@ -132,8 +136,14 @@ class MyRecipesScreen extends StatelessWidget {
                       !isOpeningRecipe &&
                       deletingRecipeId == null &&
                       favoritingRecipeId == null,
-                  onTap: () => onOpenRecipe(recipe.id),
-                  onLongPress: () => onSelectRecipeActions(recipe.id),
+                  onTap: () {
+                    AppHaptics.tap();
+                    onOpenRecipe(recipe.id);
+                  },
+                  onLongPress: () {
+                    AppHaptics.selection();
+                    onSelectRecipeActions(recipe.id);
+                  },
                 );
               },
             ),
@@ -209,6 +219,8 @@ class MyRecipesScreen extends StatelessWidget {
       return;
     }
 
+    AppHaptics.destructive();
+
     final bool deleted = await onDeleteRecipe(recipe.id);
     if (!context.mounted || deleted) {
       return;
@@ -224,6 +236,8 @@ class MyRecipesScreen extends StatelessWidget {
     String id,
     bool isFavorite,
   ) async {
+    AppHaptics.commit();
+
     final bool updated = await onSetRecipeFavorite(id, isFavorite);
     if (!context.mounted || updated) {
       return;
