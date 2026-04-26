@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/egorsivenko/culinex/internal/ai"
@@ -66,6 +69,33 @@ func main() {
 		})
 	})
 
-	log.Println("HTTP server listening on :8080")
-	http.ListenAndServe(":8080", r)
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	go func() {
+		log.Println("HTTP server listening on", srv.Addr)
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server failed: %v", err)
+		}
+	}()
+
+	shutdownSignal, stop := signal.NotifyContext(
+		ctx,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+
+	<-shutdownSignal.Done()
+	log.Println("Shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("HTTP server forced to shutdown: %v", err)
+	}
+	log.Println("HTTP server stopped")
 }
