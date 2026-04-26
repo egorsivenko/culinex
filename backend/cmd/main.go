@@ -39,6 +39,8 @@ func main() {
 	r.Use(middleware.Compress(5))
 	r.Use(middleware.Heartbeat("/ping"))
 
+	r.Get("/health", handler.Health().HandlerFunc)
+
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/check-email", handler.CheckEmail)
