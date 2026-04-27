@@ -510,8 +510,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get sessionErrorActionRetakePhoto => 'Зробити фото ще раз';
 
   @override
-  String get sessionErrorActionTryGeneratingAgain =>
-      'Спробувати згенерувати ще раз';
+  String get sessionErrorActionTryGeneratingAgain => 'Спробувати ще раз';
 
   @override
   String get sessionErrorActionReturnHome => 'Повернутися на головну';
@@ -543,6 +542,10 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get sessionErrorRecipeGenerationMessage =>
       'Не вдалося згенерувати рецепт. Спробуйте ще раз.';
+
+  @override
+  String get sessionErrorInvalidIngredients =>
+      'Не вдалося створити рецепт із цих інгредієнтів. Перевірте назви й кількості та спробуйте ще раз.';
 
   @override
   String get sessionErrorNetworkUnavailable =>

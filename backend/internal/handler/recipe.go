@@ -51,9 +51,6 @@ type setRecipeFavoriteRequest struct {
 	IsFavorite *bool `json:"is_favorite"`
 }
 
-var setRecipeFavorite = recipes.SetFavorite
-var deleteAllRecipes = recipes.DeleteAllByUser
-
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
@@ -86,6 +83,11 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[%s] Error generating recipe: %v", requestID, err)
 		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
+		return
+	}
+	if ai.IsEmptyRecipeResponse(resp) {
+		log.Printf("[%s] Recipe generation refused: no usable ingredients", requestID)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_ingredients", "No usable ingredients were provided")
 		return
 	}
 
@@ -189,7 +191,7 @@ func DeleteAllRecipes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := deleteAllRecipes(r.Context(), claims.UserID); err != nil {
+	if err := recipes.DeleteAllByUser(r.Context(), claims.UserID); err != nil {
 		log.Printf("[%s] Error deleting all recipes: %v", middleware.GetReqID(r.Context()), err)
 		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
@@ -221,7 +223,7 @@ func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := setRecipeFavorite(r.Context(), claims.UserID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
+	if err := recipes.SetFavorite(r.Context(), claims.UserID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if err != nil {

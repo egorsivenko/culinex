@@ -78,6 +78,58 @@ void main() {
     },
   );
 
+  test('generateRecipe maps invalid ingredients response', () async {
+    final _FakeAuthSessionCoordinator authSessionCoordinator =
+        _FakeAuthSessionCoordinator(
+          accessToken: 'access-token',
+          refreshedAccessToken: 'fresh-access-token',
+        );
+    final CulinexApiClient client = CulinexApiClient(
+      authSessionCoordinator: authSessionCoordinator,
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(request.method, 'POST');
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/generate-recipe',
+        );
+
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'error': <String, dynamic>{
+              'code': 'invalid_ingredients',
+              'message': 'No usable ingredients were provided',
+            },
+          }),
+          422,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    expect(
+      () => client.generateRecipe(
+        RecipeGenerationRequest(
+          ingredients: const <RecipeIngredient>[
+            RecipeIngredient(name: 'adadsa', quantity: 'adadad'),
+            RecipeIngredient(name: 'qweqwe', quantity: 'zxczxc'),
+          ],
+          assumeBasicStaples: true,
+        ),
+        locale: const Locale('en'),
+      ),
+      throwsA(
+        isA<CulinexApiException>().having(
+          (error) => error.code,
+          'code',
+          CulinexApiErrorCode.invalidIngredients,
+        ),
+      ),
+    );
+
+    client.close();
+  });
+
   test(
     'extractIngredients attaches bearer token to multipart requests',
     () async {

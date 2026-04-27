@@ -29,6 +29,7 @@ enum SessionErrorCode {
   couldNotRecognizePhoto,
   tooFewIngredients,
   tooManyIngredients,
+  invalidIngredients,
   recipeGenerationFailed,
   networkUnavailable,
   requestTimedOut,
@@ -673,6 +674,9 @@ class CookSessionController extends ChangeNotifier {
     return switch (error.code) {
       CulinexApiErrorCode.invalidImageFile => const SessionErrorState(
         SessionErrorCode.invalidImageFile,
+      ),
+      CulinexApiErrorCode.invalidIngredients => const SessionErrorState(
+        SessionErrorCode.invalidIngredients,
       ),
       CulinexApiErrorCode.requestTimedOut => SessionErrorState(
         SessionErrorCode.requestTimedOut,

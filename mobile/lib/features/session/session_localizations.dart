@@ -68,6 +68,7 @@ String localizeSessionErrorMessage(
     SessionErrorCode.tooManyIngredients => l10n.sessionErrorTooManyIngredients(
       error.count ?? maxRecipeIngredientCount,
     ),
+    SessionErrorCode.invalidIngredients => l10n.sessionErrorInvalidIngredients,
     SessionErrorCode.recipeGenerationFailed =>
       l10n.sessionErrorRecipeGenerationMessage,
     SessionErrorCode.networkUnavailable => l10n.sessionErrorNetworkUnavailable,

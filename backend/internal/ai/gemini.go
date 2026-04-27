@@ -44,6 +44,7 @@ type RecipeResponse struct {
 type RecipeIngredient struct {
 	Name     string `json:"name"`
 	Quantity string `json:"quantity"`
+	Source   string `json:"source,omitempty"`
 }
 
 type Macros struct {
@@ -57,9 +58,11 @@ const (
 	model            = "gemini-3-flash-preview"
 	responseMIMEType = "application/json"
 
-	ingredientPrompt         = "What food products are displayed in the image?"
-	recipePrompt             = "Generate a dish recipe using the provided ingredients:"
-	assumeBasicStaplesPrompt = "Assume basic staples are available - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil - but still list them explicitly in the ingredients."
+	ingredientPrompt         = "Identify only the clear food products and cooking ingredients displayed in the image."
+	recipePrompt             = "Validate and filter the provided ingredient list, then generate a dish recipe only if enough usable ingredients remain:"
+	assumeBasicStaplesPrompt = `Basic staples are available as optional supporting ingredients only - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.
+Do not treat staples as primary ingredients, and do not generate a recipe if the provided ingredient list is otherwise invalid.
+If you use any staple, list the amount explicitly in the ingredients and mark its source as "staple".`
 
 	ingredientSystemInstruction = `You are a helpful culinary assistant.
 Your job is to identify food products and cooking ingredients from user-provided photos so recipes can be generated based on what's available.
@@ -67,8 +70,9 @@ Always respond in %s, regardless of the language the user writes in.
 
 Rules:
 * Only include items that are actually visible in the image. Do NOT invent ingredients that are not clearly present.
-* If an item is ambiguous, you may include it, but mark it with lower confidence.
-* Ignore non-food objects (plates, utensils, table surface). Mention packaging only if it clearly identifies a food product.
+* Return an empty ingredients list if the image has no clear food products, only non-food objects, only unreadable/ambiguous packaging, or a prepared meal whose ingredients cannot be identified reliably.
+* If an item is ambiguous but probably edible, you may include it only with low confidence. Omit items that are too vague to name as a cookable ingredient.
+* Ignore non-food objects (plates, utensils, table surface). Mention packaging only if it clearly identifies a food product inside.
 * The "quantity" field must always include a unit or descriptor. For count-based items where the unit is unknown, default to "pieces".
 * Prefer generic ingredient names over brands.`
 
@@ -77,13 +81,21 @@ Your job is to generate a practical recipe based on the provided ingredients.
 Always respond in %s, regardless of the language the user writes in.
 
 Rules:
-* Use the provided ingredients as the primary ones.
-* Ignore entries that are clearly irrelevant, non-food, duplicated, contradictory, or unusable for a practical recipe.
-* If an entry looks nonsensical, too vague to cook with, or obviously not edible, filter it out silently.
+* Before creating a recipe, validate every provided entry. A usable entry must have a recognizable edible ingredient name and a quantity that is meaningful enough to cook with.
+* Ignore entries that are clearly irrelevant, non-food, duplicated, contradictory, unsafe, inedible, joke text, or unusable for a practical recipe.
+* If an entry looks nonsensical, random, too vague to cook with, or has a gibberish name or quantity, filter it out silently.
 * If the list contains near-duplicates or repeated items, consolidate them internally and use the clearest useful version.
+* If fewer than 2 usable primary ingredients remain after filtering, decline by returning an empty recipe response. Do not attempt to create a recipe with only 1 main ingredient or with no main ingredients, even if basic staples are available.
+* Basic staples may support a valid recipe, but they must not rescue an invalid ingredient list and they do not count toward the 2 usable primary ingredients.
+* Use the remaining provided ingredients as the primary ones.
+* Use ONLY ingredients from the filtered provided list plus explicitly allowed basic staples when the user prompt says staples are available.
+* Every output ingredient must include a "source" field:
+  - "provided" for ingredients from the user's list.
+  - "staple" for explicitly allowed basic staples.
 * Macros numbers must be reasonable approximations based on the listed ingredients and their quantities, expressed as decimal values.
 * If some ingredient quantities are missing, make conservative assumptions and keep the estimate plausible.
 * Output must be suitable for home cooking and written clearly.
+* Make the dish name and description appealing but honest. Do not exaggerate, invent premium ingredients, or describe flavors and textures that are not supported by the used ingredients.
 
 * The recipe must be for ONE person (single serving).
 * Do NOT assume you must use all available ingredients. Use a reasonable subset to make one meal.
@@ -184,8 +196,13 @@ func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeB
 				Type:        genai.TypeString,
 				Description: "Ingredient quantity.",
 			},
+			"source": {
+				Type:        genai.TypeString,
+				Description: `Ingredient provenance.`,
+				Enum:        []string{"provided", "staple"},
+			},
 		},
-		Required: []string{"name", "quantity"},
+		Required: []string{"name", "quantity", "source"},
 	}
 
 	macrosSchema := &genai.Schema{
@@ -264,4 +281,11 @@ func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeB
 		return RecipeResponse{}, err
 	}
 	return resp, nil
+}
+
+func IsEmptyRecipeResponse(recipe RecipeResponse) bool {
+	return strings.TrimSpace(recipe.DishName) == "" &&
+		strings.TrimSpace(recipe.DishDescription) == "" &&
+		len(recipe.Ingredients) == 0 &&
+		len(recipe.Steps) == 0
 }

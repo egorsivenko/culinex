@@ -1052,6 +1052,12 @@ abstract class AppLocalizations {
   /// **'Recipe generation failed. Please try again.'**
   String get sessionErrorRecipeGenerationMessage;
 
+  /// No description provided for @sessionErrorInvalidIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create a recipe from those ingredients. Check the names and quantities, then try again.'**
+  String get sessionErrorInvalidIngredients;
+
   /// No description provided for @sessionErrorNetworkUnavailable.
   ///
   /// In en, this message translates to:

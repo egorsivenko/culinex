@@ -254,6 +254,7 @@
     }
   },
   "sessionErrorRecipeGenerationMessage": "Recipe generation failed. Please try again.",
+  "sessionErrorInvalidIngredients": "Could not create a recipe from those ingredients. Check the names and quantities, then try again.",
   "sessionErrorNetworkUnavailable": "Could not reach the server. Check the backend URL and network.",
   "sessionErrorRequestTimedOutScan": "Ingredient recognition took too long. Please try again.",
   "sessionErrorRequestTimedOutRecipe": "Recipe creation took too long. Please try again.",

@@ -231,7 +231,7 @@
   "sessionErrorRecipeGenerationTitle": "Не вдалося згенерувати рецепт",
   "sessionErrorActionStartOver": "Почати спочатку",
   "sessionErrorActionRetakePhoto": "Зробити фото ще раз",
-  "sessionErrorActionTryGeneratingAgain": "Спробувати згенерувати ще раз",
+  "sessionErrorActionTryGeneratingAgain": "Спробувати ще раз",
   "sessionErrorActionReturnHome": "Повернутися на головну",
   "sessionErrorActionBackToIngredients": "Назад до інгредієнтів",
   "sessionErrorActionHome": "Головна",
@@ -254,6 +254,7 @@
     }
   },
   "sessionErrorRecipeGenerationMessage": "Не вдалося згенерувати рецепт. Спробуйте ще раз.",
+  "sessionErrorInvalidIngredients": "Не вдалося створити рецепт із цих інгредієнтів. Перевірте назви й кількості та спробуйте ще раз.",
   "sessionErrorNetworkUnavailable": "Не вдалося з'єднатися із сервером. Перевірте адресу бекенда та мережу.",
   "sessionErrorRequestTimedOutScan": "Розпізнавання інгредієнтів триває надто довго. Спробуйте ще раз.",
   "sessionErrorRequestTimedOutRecipe": "Створення рецепта триває надто довго. Спробуйте ще раз.",

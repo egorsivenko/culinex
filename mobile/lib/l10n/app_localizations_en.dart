@@ -541,6 +541,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Recipe generation failed. Please try again.';
 
   @override
+  String get sessionErrorInvalidIngredients =>
+      'Could not create a recipe from those ingredients. Check the names and quantities, then try again.';
+
+  @override
   String get sessionErrorNetworkUnavailable =>
       'Could not reach the server. Check the backend URL and network.';
 

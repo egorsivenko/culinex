@@ -108,6 +108,32 @@ void main() {
     controller.dispose();
   });
 
+  test('generateRecipe maps invalid ingredients errors', () async {
+    final FakeRepository repository = FakeRepository(
+      extractedIngredients: const [
+        ExtractedIngredient(name: 'adadsa', quantity: 'adadad'),
+        ExtractedIngredient(name: 'qweqwe', quantity: 'zxczxc'),
+      ],
+      generateRecipeError: const CulinexApiException(
+        CulinexApiErrorCode.invalidIngredients,
+      ),
+    );
+
+    final CookSessionController controller = CookSessionController(
+      repository: repository,
+    );
+
+    await controller.extractIngredientsFromPhoto('/tmp/test-photo.jpg');
+    await controller.generateRecipe();
+
+    expect(controller.stage, SessionStage.error);
+    expect(controller.lastOperation, SessionOperation.generateRecipe);
+    expect(controller.errorState.code, SessionErrorCode.invalidIngredients);
+    expect(controller.recipe, isNull);
+
+    controller.dispose();
+  });
+
   test(
     'ingredient scan errors offer retake photo and home actions without reusing the same image',
     () async {
@@ -839,6 +865,7 @@ class FakeRepository implements CulinexRepository {
     this.extractedIngredients = const [],
     this.recipeSummaries = const [],
     GeneratedRecipe? generatedRecipe,
+    this.generateRecipeError,
     GeneratedRecipe? savedRecipe,
     this.setFavoriteError,
     this.deleteAllRecipesError,
@@ -868,6 +895,7 @@ class FakeRepository implements CulinexRepository {
   final List<RecipeSummary> recipeSummaries;
   final GeneratedRecipe _generatedRecipe;
   final GeneratedRecipe? _savedRecipe;
+  final Object? generateRecipeError;
   final Object? setFavoriteError;
   final Object? deleteAllRecipesError;
   final Completer<void>? deleteRecipeCompleter;
@@ -904,6 +932,10 @@ class FakeRepository implements CulinexRepository {
     lastRecipeIngredients = request.ingredients;
     lastAssumeBasicStaples = request.assumeBasicStaples;
     lastGenerateLocale = locale;
+    final Object? error = generateRecipeError;
+    if (error != null) {
+      throw error;
+    }
     return _generatedRecipe;
   }
 

@@ -306,6 +306,12 @@ class CulinexApiClient implements CulinexRepository {
     if (response.statusCode == HttpStatus.unauthorized) {
       throw const CulinexApiException(CulinexApiErrorCode.unauthorized);
     }
+    if (response.statusCode == HttpStatus.unprocessableEntity) {
+      final String? errorCode = _decodeErrorCode(response.body);
+      if (errorCode == 'invalid_ingredients') {
+        throw const CulinexApiException(CulinexApiErrorCode.invalidIngredients);
+      }
+    }
     throw const CulinexApiException(CulinexApiErrorCode.serverFailure);
   }
 
@@ -336,10 +342,29 @@ class CulinexApiClient implements CulinexRepository {
     }
     return decoded;
   }
+
+  String? _decodeErrorCode(String source) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(source);
+    } on FormatException {
+      return null;
+    }
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final Object? error = decoded['error'];
+    if (error is! Map<String, dynamic>) {
+      return null;
+    }
+    return error['code'] as String?;
+  }
 }
 
 enum CulinexApiErrorCode {
   invalidImageFile,
+  invalidIngredients,
   requestTimedOut,
   networkUnavailable,
   unauthorized,
