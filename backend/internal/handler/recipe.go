@@ -63,8 +63,8 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
-	if len(req.Ingredients) == 0 {
-		http.Error(w, "Ingredients list is empty", http.StatusBadRequest)
+	if len(req.Ingredients) < ai.MinRecipeIngredientCount {
+		writeError(w, http.StatusUnprocessableEntity, "invalid_ingredients", "Not enough ingredients were provided")
 		return
 	}
 

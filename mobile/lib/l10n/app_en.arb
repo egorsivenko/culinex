@@ -114,6 +114,14 @@
     }
   },
   "editedBadge": "Edited",
+  "addMoreIngredientsToGenerate": "{count, plural, =1{Add 1 more ingredient to continue.} other{Add at least {count} more ingredients to continue.}}",
+  "@addMoreIngredientsToGenerate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addAtLeastIngredientsToContinue": "Add at least {count} ingredients to continue.",
   "@addAtLeastIngredientsToContinue": {
     "placeholders": {

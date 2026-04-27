@@ -662,6 +662,12 @@ abstract class AppLocalizations {
   /// **'Edited'**
   String get editedBadge;
 
+  /// No description provided for @addMoreIngredientsToGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Add 1 more ingredient to continue.} other{Add at least {count} more ingredients to continue.}}'**
+  String addMoreIngredientsToGenerate(int count);
+
   /// No description provided for @addAtLeastIngredientsToContinue.
   ///
   /// In en, this message translates to:

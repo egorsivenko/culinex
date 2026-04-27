@@ -33,6 +33,11 @@ void main() {
                 quantity: '1 bunch',
                 confidence: IngredientConfidence.medium,
               ),
+              ExtractedIngredient(
+                name: 'mozzarella',
+                quantity: '80 g',
+                confidence: IngredientConfidence.low,
+              ),
             ],
             assumeBasicStaples: true,
             onBack: () {},
@@ -154,7 +159,7 @@ void main() {
 
       expect(submittedIngredients, isNotNull);
       expect(submittedAssumeBasicStaples, isFalse);
-      expect(submittedIngredients, hasLength(2));
+      expect(submittedIngredients, hasLength(3));
       expect(submittedIngredients!.first.name, 'Cherry tomatoes');
       expect(submittedIngredients!.first.quantity, '200 g');
       expect(submittedIngredients!.first.confidence, IngredientConfidence.high);
@@ -191,7 +196,7 @@ void main() {
       expect(find.text('Add your ingredients'), findsOneWidget);
       expect(find.text('No ingredients added yet'), findsOneWidget);
       expect(
-        find.text('Add at least 2 ingredients to continue.'),
+        find.text('Add at least 3 ingredients to continue.'),
         findsOneWidget,
       );
       expect(find.text('View original photo'), findsNothing);
@@ -219,6 +224,10 @@ void main() {
       expect(find.text('Eggs'), findsOneWidget);
       expect(find.text('No ingredients added yet'), findsNothing);
       expect(find.text('Edited'), findsNothing);
+      expect(
+        find.text('Add at least 2 more to generate a recipe'),
+        findsOneWidget,
+      );
 
       await tester.ensureVisible(find.byTooltip('Edit Eggs'));
       await tester.tap(find.byTooltip('Edit Eggs'));
@@ -247,6 +256,23 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
       await tester.pumpAndSettle();
 
+      expect(find.text('Add 1 more to generate a recipe'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ingredient name'),
+        'cheese',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '30 g',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add 1 more to generate a recipe'), findsNothing);
       expect(
         tester
             .widget<FilledButton>(find.widgetWithText(FilledButton, 'Proceed'))
@@ -258,11 +284,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(submittedIngredients, isNotNull);
-      expect(submittedIngredients, hasLength(2));
+      expect(submittedIngredients, hasLength(3));
       expect(submittedIngredients!.first.name, 'Eggs');
       expect(submittedIngredients!.first.quantity, '3 pieces');
       expect(submittedIngredients!.first.isEdited, isFalse);
-      expect(submittedIngredients!.last.name, 'Milk');
+      expect(submittedIngredients![1].name, 'Milk');
+      expect(submittedIngredients!.last.name, 'Cheese');
       expect(submittedAssumeBasicStaples, isTrue);
     },
   );
@@ -287,6 +314,11 @@ void main() {
                 name: 'milk',
                 quantity: '100 ml',
                 confidence: IngredientConfidence.medium,
+              ),
+              ExtractedIngredient(
+                name: 'cheese',
+                quantity: '30 g',
+                confidence: IngredientConfidence.high,
               ),
             ],
             assumeBasicStaples: true,
@@ -735,6 +767,11 @@ void main() {
                 quantity: '100 ml',
                 confidence: IngredientConfidence.high,
               ),
+              ExtractedIngredient(
+                name: 'cheese',
+                quantity: '30 g',
+                confidence: IngredientConfidence.high,
+              ),
             ],
             assumeBasicStaples: true,
             onBack: () {},
@@ -753,7 +790,7 @@ void main() {
 
       expect(find.text('Eggs'), findsOneWidget);
       expect(
-        find.text('Keep at least 2 ingredients before generating a recipe.'),
+        find.text('Keep at least 3 ingredients before generating a recipe.'),
         findsOneWidget,
       );
     },

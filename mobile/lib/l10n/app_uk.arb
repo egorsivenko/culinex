@@ -114,6 +114,14 @@
     }
   },
   "editedBadge": "Змінено",
+  "addMoreIngredientsToGenerate": "{count, plural, =1{Додайте ще 1 інгредієнт, щоб продовжити.} other{Додайте ще {count} інгредієнти, щоб продовжити.}}",
+  "@addMoreIngredientsToGenerate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addAtLeastIngredientsToContinue": "Додайте щонайменше {count} інгредієнти, щоб продовжити.",
   "@addAtLeastIngredientsToContinue": {
     "placeholders": {

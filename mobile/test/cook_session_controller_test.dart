@@ -69,6 +69,11 @@ void main() {
           quantity: '10 g',
           confidence: IngredientConfidence.high,
         ),
+        ExtractedIngredient(
+          name: 'Bread',
+          quantity: '1 slice',
+          confidence: IngredientConfidence.high,
+        ),
       ],
       generatedRecipe: GeneratedRecipe(
         dishName: 'Soft Egg Scramble',
@@ -101,7 +106,7 @@ void main() {
 
     expect(controller.stage, SessionStage.recipe);
     expect(controller.recipe?.dishName, 'Soft Egg Scramble');
-    expect(repository.lastRecipeIngredients, hasLength(2));
+    expect(repository.lastRecipeIngredients, hasLength(3));
     expect(repository.lastAssumeBasicStaples, isTrue);
     expect(repository.lastGenerateLocale, const Locale('en'));
 
@@ -113,6 +118,7 @@ void main() {
       extractedIngredients: const [
         ExtractedIngredient(name: 'adadsa', quantity: 'adadad'),
         ExtractedIngredient(name: 'qweqwe', quantity: 'zxczxc'),
+        ExtractedIngredient(name: 'ghjghj', quantity: 'bnmbnm'),
       ],
       generateRecipeError: const CulinexApiException(
         CulinexApiErrorCode.invalidIngredients,
@@ -235,6 +241,7 @@ void main() {
       extractedIngredients: const [
         ExtractedIngredient(name: 'Яйця', quantity: '2 шт'),
         ExtractedIngredient(name: 'Масло', quantity: '10 г'),
+        ExtractedIngredient(name: 'Хліб', quantity: '1 скибка'),
       ],
     );
     final CookSessionController controller = CookSessionController(
@@ -291,6 +298,11 @@ void main() {
             quantity: '10 g',
             confidence: IngredientConfidence.high,
           ),
+          ExtractedIngredient(
+            name: 'Bread',
+            quantity: '1 slice',
+            confidence: IngredientConfidence.high,
+          ),
         ],
         generatedRecipe: GeneratedRecipe(
           dishName: 'Soft Egg Scramble',
@@ -319,7 +331,7 @@ void main() {
       controller.showIngredients();
 
       expect(controller.stage, SessionStage.ingredients);
-      expect(controller.ingredients, hasLength(2));
+      expect(controller.ingredients, hasLength(3));
       expect(controller.recipe?.dishName, 'Soft Egg Scramble');
 
       controller.dispose();
@@ -337,6 +349,11 @@ void main() {
         ExtractedIngredient(
           name: 'Butter',
           quantity: '10 g',
+          confidence: IngredientConfidence.high,
+        ),
+        ExtractedIngredient(
+          name: 'Bread',
+          quantity: '1 slice',
           confidence: IngredientConfidence.high,
         ),
       ],

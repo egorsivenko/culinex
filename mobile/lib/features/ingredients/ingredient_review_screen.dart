@@ -551,7 +551,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     }
 
     if (_ingredientRows.length < minRecipeIngredientCount) {
-      return l10n.addAtLeastIngredientsToContinue(minRecipeIngredientCount);
+      return l10n.addMoreIngredientsToGenerate(
+        minRecipeIngredientCount - _ingredientRows.length,
+      );
     }
 
     if (_ingredientRows.length > maxRecipeIngredientCount) {

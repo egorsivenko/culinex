@@ -1,4 +1,4 @@
-const int minRecipeIngredientCount = 2;
+const int minRecipeIngredientCount = 3;
 const int maxRecipeIngredientCount = 20;
 
 enum IngredientConfidence {

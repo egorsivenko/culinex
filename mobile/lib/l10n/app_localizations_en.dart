@@ -315,6 +315,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editedBadge => 'Edited';
 
   @override
+  String addMoreIngredientsToGenerate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add at least $count more ingredients to continue.',
+      one: 'Add 1 more ingredient to continue.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String addAtLeastIngredientsToContinue(int count) {
     return 'Add at least $count ingredients to continue.';
   }

@@ -316,6 +316,17 @@ class AppLocalizationsUk extends AppLocalizations {
   String get editedBadge => 'Змінено';
 
   @override
+  String addMoreIngredientsToGenerate(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Додайте ще $count інгредієнти, щоб продовжити.',
+      one: 'Додайте ще 1 інгредієнт, щоб продовжити.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String addAtLeastIngredientsToContinue(int count) {
     return 'Додайте щонайменше $count інгредієнти, щоб продовжити.';
   }

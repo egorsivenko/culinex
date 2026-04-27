@@ -58,6 +58,8 @@ const (
 	model            = "gemini-3-flash-preview"
 	responseMIMEType = "application/json"
 
+	MinRecipeIngredientCount = 3
+
 	ingredientPrompt         = "Identify only the clear food products and cooking ingredients displayed in the image."
 	recipePrompt             = "Validate and filter the provided ingredient list, then generate a dish recipe only if enough usable ingredients remain:"
 	assumeBasicStaplesPrompt = `Basic staples are available as optional supporting ingredients only - water, common dried spices and seasonings, butter, and a neutral cooking oil or olive oil.
@@ -85,8 +87,8 @@ Rules:
 * Ignore entries that are clearly irrelevant, non-food, duplicated, contradictory, unsafe, inedible, joke text, or unusable for a practical recipe.
 * If an entry looks nonsensical, random, too vague to cook with, or has a gibberish name or quantity, filter it out silently.
 * If the list contains near-duplicates or repeated items, consolidate them internally and use the clearest useful version.
-* If fewer than 2 usable primary ingredients remain after filtering, decline by returning an empty recipe response. Do not attempt to create a recipe with only 1 main ingredient or with no main ingredients, even if basic staples are available.
-* Basic staples may support a valid recipe, but they must not rescue an invalid ingredient list and they do not count toward the 2 usable primary ingredients.
+* If fewer than %d usable primary ingredients remain after filtering, decline by returning an empty recipe response. Do not attempt to create a recipe with fewer than %d main ingredients, even if basic staples are available.
+* Basic staples may support a valid recipe, but they must not rescue an invalid ingredient list and they do not count toward the required usable primary ingredients.
 * Use the remaining provided ingredients as the primary ones.
 * Use ONLY ingredients from the filtered provided list plus explicitly allowed basic staples when the user prompt says staples are available.
 * Every output ingredient must include a "source" field:
@@ -263,7 +265,15 @@ func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeB
 	}
 
 	config := &genai.GenerateContentConfig{
-		SystemInstruction: genai.NewContentFromText(fmt.Sprintf(recipeSystemInstruction, language), genai.RoleUser),
+		SystemInstruction: genai.NewContentFromText(
+			fmt.Sprintf(
+				recipeSystemInstruction,
+				language,
+				MinRecipeIngredientCount,
+				MinRecipeIngredientCount,
+			),
+			genai.RoleUser,
+		),
 		ThinkingConfig: &genai.ThinkingConfig{
 			ThinkingLevel: genai.ThinkingLevelMedium,
 		},
