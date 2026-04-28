@@ -222,6 +222,22 @@
   "ingredientsHeading": "Інгредієнти",
   "ingredientsChecklistHint": "Відмічайте пункти під час готування.",
   "stepsHeading": "Кроки",
+  "startCooking": "Почати готувати",
+  "cookingModeStepProgress": "Крок {current} з {total}",
+  "@cookingModeStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cookingModeBack": "Назад",
+  "cookingModeNext": "Далі",
+  "cookingModeFinish": "Завершити",
+  "closeCookingModeTooltip": "Закрити режим готування",
   "cookAnother": "Приготувати ще",
   "backToIngredientsTooltip": "Назад до інгредієнтів",
   "backToRecipesTooltip": "Назад до рецептів",

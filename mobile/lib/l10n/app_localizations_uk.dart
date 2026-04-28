@@ -465,6 +465,26 @@ class AppLocalizationsUk extends AppLocalizations {
   String get stepsHeading => 'Кроки';
 
   @override
+  String get startCooking => 'Почати готувати';
+
+  @override
+  String cookingModeStepProgress(int current, int total) {
+    return 'Крок $current з $total';
+  }
+
+  @override
+  String get cookingModeBack => 'Назад';
+
+  @override
+  String get cookingModeNext => 'Далі';
+
+  @override
+  String get cookingModeFinish => 'Завершити';
+
+  @override
+  String get closeCookingModeTooltip => 'Закрити режим готування';
+
+  @override
   String get cookAnother => 'Приготувати ще';
 
   @override

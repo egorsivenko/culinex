@@ -222,6 +222,22 @@
   "ingredientsHeading": "Ingredients",
   "ingredientsChecklistHint": "Check items off as you cook.",
   "stepsHeading": "Steps",
+  "startCooking": "Start cooking",
+  "cookingModeStepProgress": "Step {current} of {total}",
+  "@cookingModeStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cookingModeBack": "Back",
+  "cookingModeNext": "Next",
+  "cookingModeFinish": "Finish",
+  "closeCookingModeTooltip": "Close cooking mode",
   "cookAnother": "Cook another",
   "backToIngredientsTooltip": "Back to ingredients",
   "backToRecipesTooltip": "Back to recipes",

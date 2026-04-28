@@ -464,6 +464,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepsHeading => 'Steps';
 
   @override
+  String get startCooking => 'Start cooking';
+
+  @override
+  String cookingModeStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get cookingModeBack => 'Back';
+
+  @override
+  String get cookingModeNext => 'Next';
+
+  @override
+  String get cookingModeFinish => 'Finish';
+
+  @override
+  String get closeCookingModeTooltip => 'Close cooking mode';
+
+  @override
   String get cookAnother => 'Cook another';
 
   @override

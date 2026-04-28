@@ -225,7 +225,7 @@ void main() {
       expect(find.text('No ingredients added yet'), findsNothing);
       expect(find.text('Edited'), findsNothing);
       expect(
-        find.text('Add at least 2 more to generate a recipe'),
+        find.text('Add at least 2 more ingredients to continue.'),
         findsOneWidget,
       );
 
@@ -256,7 +256,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add 1 more to generate a recipe'), findsOneWidget);
+      expect(find.text('Add 1 more ingredient to continue.'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Add ingredient'));
       await tester.pumpAndSettle();
@@ -272,7 +272,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Add ingredient'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add 1 more to generate a recipe'), findsNothing);
+      expect(find.text('Add 1 more ingredient to continue.'), findsNothing);
       expect(
         tester
             .widget<FilledButton>(find.widgetWithText(FilledButton, 'Proceed'))

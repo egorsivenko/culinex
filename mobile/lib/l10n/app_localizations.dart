@@ -902,6 +902,42 @@ abstract class AppLocalizations {
   /// **'Steps'**
   String get stepsHeading;
 
+  /// No description provided for @startCooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start cooking'**
+  String get startCooking;
+
+  /// No description provided for @cookingModeStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String cookingModeStepProgress(int current, int total);
+
+  /// No description provided for @cookingModeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get cookingModeBack;
+
+  /// No description provided for @cookingModeNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get cookingModeNext;
+
+  /// No description provided for @cookingModeFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get cookingModeFinish;
+
+  /// No description provided for @closeCookingModeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Close cooking mode'**
+  String get closeCookingModeTooltip;
+
   /// No description provided for @cookAnother.
   ///
   /// In en, this message translates to:

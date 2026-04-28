@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/theme/culinex_theme.dart';
 import '../../core/widgets/glass_panel.dart';
@@ -7,6 +10,8 @@ import '../../l10n/l10n.dart';
 import '../session/culinex_models.dart';
 import '../session/session_localizations.dart';
 
+typedef CookingModeWakeLockSetter = Future<void> Function(bool enable);
+
 class RecipeScreen extends StatefulWidget {
   const RecipeScreen({
     required this.recipe,
@@ -14,12 +19,14 @@ class RecipeScreen extends StatefulWidget {
     required this.onBack,
     required this.onCookAnother,
     super.key,
+    this.cookingModeWakeLockSetter,
   });
 
   final GeneratedRecipe recipe;
   final String backTooltip;
   final VoidCallback onBack;
   final VoidCallback onCookAnother;
+  final CookingModeWakeLockSetter? cookingModeWakeLockSetter;
 
   @override
   State<RecipeScreen> createState() => _RecipeScreenState();
@@ -30,9 +37,35 @@ class _RecipeScreenState extends State<RecipeScreen> {
     widget.recipe.ingredients.length,
     false,
   );
+  late final PageController _cookingPageController = PageController();
+  bool _isCookingMode = false;
+  int _currentCookingStep = 0;
+
+  @override
+  void dispose() {
+    if (_isCookingMode) {
+      _setCookingModeWakeLock(false);
+    }
+    _cookingPageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_isCookingMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isCookingMode) {
+          _exitCookingMode();
+        }
+      },
+      child: _isCookingMode
+          ? _buildCookingMode(context)
+          : _buildRecipe(context),
+    );
+  }
+
+  Widget _buildRecipe(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final CulinexPalette colors = CulinexColors.of(context);
     final GeneratedRecipe recipe = widget.recipe;
@@ -104,8 +137,6 @@ class _RecipeScreenState extends State<RecipeScreen> {
               ),
               const SizedBox(height: 24),
               Text(l10n.ingredientsHeading, style: textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(l10n.ingredientsChecklistHint, style: textTheme.bodyMedium),
               const SizedBox(height: 12),
               GlassPanel(
                 child: Column(
@@ -173,6 +204,12 @@ class _RecipeScreenState extends State<RecipeScreen> {
               }),
               const SizedBox(height: 24),
               PrimaryActionButton(
+                label: l10n.startCooking,
+                icon: Icons.restaurant_rounded,
+                onPressed: recipe.steps.isEmpty ? null : _startCookingMode,
+              ),
+              const SizedBox(height: 12),
+              PrimaryActionButton(
                 label: l10n.cookAnother,
                 icon: Icons.camera_alt_rounded,
                 onPressed: widget.onCookAnother,
@@ -180,6 +217,278 @@ class _RecipeScreenState extends State<RecipeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCookingMode(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
+    final l10n = context.l10n;
+    final List<String> steps = widget.recipe.steps;
+    final int stepCount = steps.length;
+    final int displayStep = _currentCookingStep + 1;
+    final bool isFirstStep = _currentCookingStep == 0;
+    final bool isLastStep = _currentCookingStep == stepCount - 1;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            LinearProgressIndicator(
+              value: stepCount == 0 ? 0 : displayStep / stepCount,
+              minHeight: 6,
+              backgroundColor: colors.elevatedSurface,
+              color: isLastStep ? CulinexColors.confidenceHigh : colors.accent,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.cookingModeStepProgress(
+                              displayStep,
+                              stepCount,
+                            ),
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colors.mutedInk,
+                            ),
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.elevatedSurface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: IconButton(
+                            tooltip: l10n.closeCookingModeTooltip,
+                            onPressed: _exitCookingMode,
+                            icon: Icon(Icons.close_rounded, color: colors.ink),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _cookingPageController,
+                        itemCount: stepCount,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentCookingStep = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          return _CookingStepPage(
+                            controller: _cookingPageController,
+                            pageIndex: index,
+                            child: _CookingStepCard(
+                              stepNumber: index + 1,
+                              stepText: steps[index],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isFirstStep ? null : _goToPreviousStep,
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            label: Text(l10n.cookingModeBack),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _goToNextStepOrFinish,
+                            icon: Icon(
+                              isLastStep
+                                  ? Icons.check_rounded
+                                  : Icons.arrow_forward_rounded,
+                            ),
+                            label: Text(
+                              isLastStep
+                                  ? l10n.cookingModeFinish
+                                  : l10n.cookingModeNext,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _startCookingMode() {
+    if (widget.recipe.steps.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isCookingMode = true;
+      _currentCookingStep = 0;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isCookingMode && _cookingPageController.hasClients) {
+        _cookingPageController.jumpToPage(0);
+      }
+    });
+    _setCookingModeWakeLock(true);
+  }
+
+  void _exitCookingMode() {
+    if (!_isCookingMode) {
+      return;
+    }
+
+    setState(() {
+      _isCookingMode = false;
+    });
+    _setCookingModeWakeLock(false);
+  }
+
+  void _goToPreviousStep() {
+    if (_currentCookingStep == 0) {
+      return;
+    }
+
+    _goToCookingStep(_currentCookingStep - 1);
+  }
+
+  void _goToNextStepOrFinish() {
+    if (_currentCookingStep == widget.recipe.steps.length - 1) {
+      _exitCookingMode();
+      return;
+    }
+
+    _goToCookingStep(_currentCookingStep + 1);
+  }
+
+  void _goToCookingStep(int index) {
+    _cookingPageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _setCookingModeWakeLock(bool enable) {
+    unawaited(_applyCookingModeWakeLock(enable));
+  }
+
+  Future<void> _applyCookingModeWakeLock(bool enable) async {
+    try {
+      final CookingModeWakeLockSetter? setter =
+          widget.cookingModeWakeLockSetter;
+      if (setter != null) {
+        await setter(enable);
+        return;
+      }
+
+      await WakelockPlus.toggle(enable: enable);
+    } on Object catch (error) {
+      debugPrint('Cooking mode wake lock update failed: $error');
+    }
+  }
+}
+
+class _CookingStepPage extends StatelessWidget {
+  const _CookingStepPage({
+    required this.controller,
+    required this.pageIndex,
+    required this.child,
+  });
+
+  final PageController controller;
+  final int pageIndex;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      child: child,
+      builder: (context, child) {
+        final double currentPage =
+            controller.hasClients && controller.position.haveDimensions
+            ? controller.page ?? controller.initialPage.toDouble()
+            : controller.initialPage.toDouble();
+        final double distance = (currentPage - pageIndex).clamp(-1.0, 1.0);
+        final double lean = distance * -0.025;
+        final double scale = 1 - distance.abs() * 0.025;
+
+        return ClipRect(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Transform.rotate(
+              angle: lean,
+              child: Transform.scale(scale: scale, child: child),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CookingStepCard extends StatelessWidget {
+  const _CookingStepCard({required this.stepNumber, required this.stepText});
+
+  final int stepNumber;
+  final String stepText;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final CulinexPalette colors = CulinexColors.of(context);
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(24),
+      borderRadius: BorderRadius.circular(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 52,
+            width: 52,
+            decoration: BoxDecoration(
+              color: colors.elevatedSurface,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(
+              child: Text(
+                '$stepNumber',
+                style: textTheme.titleLarge?.copyWith(color: colors.ink),
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Text(
+                stepText,
+                style: textTheme.headlineMedium?.copyWith(
+                  color: colors.ink,
+                  height: 1.22,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
