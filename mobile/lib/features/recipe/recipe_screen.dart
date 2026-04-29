@@ -617,6 +617,7 @@ class _CookingStepCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: textTheme.headlineMedium?.copyWith(
                     color: colors.ink,
+                    fontSize: 24,
                     height: 1.22,
                   ),
                 ),
