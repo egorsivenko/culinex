@@ -208,12 +208,6 @@ class _RecipeScreenState extends State<RecipeScreen> {
                 icon: Icons.restaurant_rounded,
                 onPressed: recipe.steps.isEmpty ? null : _startCookingMode,
               ),
-              const SizedBox(height: 12),
-              PrimaryActionButton(
-                label: l10n.cookAnother,
-                icon: Icons.camera_alt_rounded,
-                onPressed: widget.onCookAnother,
-              ),
             ],
           ),
         ),
@@ -459,31 +453,36 @@ class _CookingStepCard extends StatelessWidget {
     return GlassPanel(
       padding: const EdgeInsets.all(24),
       borderRadius: BorderRadius.circular(28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Container(
-            height: 52,
-            width: 52,
-            decoration: BoxDecoration(
-              color: colors.elevatedSurface,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Center(
-              child: Text(
-                '$stepNumber',
-                style: textTheme.titleLarge?.copyWith(color: colors.ink),
+          Center(
+            child: SingleChildScrollView(
+              child: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  stepText,
+                  textAlign: TextAlign.center,
+                  style: textTheme.headlineMedium?.copyWith(
+                    color: colors.ink,
+                    height: 1.22,
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 22),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Text(
-                stepText,
-                style: textTheme.headlineMedium?.copyWith(
-                  color: colors.ink,
-                  height: 1.22,
+          Align(
+            alignment: Alignment.topLeft,
+            child: Container(
+              height: 52,
+              width: 52,
+              decoration: BoxDecoration(
+                color: colors.elevatedSurface,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Center(
+                child: Text(
+                  '$stepNumber',
+                  style: textTheme.titleLarge?.copyWith(color: colors.ink),
                 ),
               ),
             ),
