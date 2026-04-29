@@ -824,6 +824,18 @@ abstract class AppLocalizations {
   /// **'Recipe ready'**
   String get recipeReadyBadge;
 
+  /// No description provided for @recipeImagesDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Images are for illustrative purposes only.'**
+  String get recipeImagesDisclaimer;
+
+  /// No description provided for @photosProvidedByPexels.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos provided by Pexels'**
+  String get photosProvidedByPexels;
+
   /// No description provided for @quickMetrics.
   ///
   /// In en, this message translates to:

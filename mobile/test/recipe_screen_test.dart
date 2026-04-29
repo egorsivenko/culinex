@@ -166,6 +166,31 @@ void main() {
     expect(find.text('Start cooking'), findsOneWidget);
     expect(find.text('Step 1 of 3'), findsNothing);
   });
+
+  testWidgets('recipe screen shows Pexels image carousel and attribution', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildLocalizedApp(
+        home: RecipeScreen(
+          recipe: _sampleRecipeWithImages,
+          backTooltip: 'Back to ingredients',
+          onBack: () {},
+          onCookAnother: () {},
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(
+      find.text('Images are for illustrative purposes only.'),
+      findsOneWidget,
+    );
+    expect(find.text('Photos provided by Pexels'), findsOneWidget);
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+  });
 }
 
 const GeneratedRecipe _sampleRecipe = GeneratedRecipe(
@@ -189,4 +214,38 @@ const GeneratedRecipe _sampleRecipe = GeneratedRecipe(
     carbsG: 2.5,
     fatG: 19.6,
   ),
+);
+
+const GeneratedRecipe _sampleRecipeWithImages = GeneratedRecipe(
+  dishName: 'Soft Egg Scramble',
+  dishDescription:
+      'Creamy eggs finished gently for a quick one-person breakfast.',
+  difficulty: RecipeDifficulty.easy,
+  cookingTimeMinutes: 10,
+  ingredients: [
+    RecipeIngredient(name: 'eggs', quantity: '2 pieces'),
+    RecipeIngredient(name: 'butter', quantity: '10 g'),
+  ],
+  steps: [
+    'Crack the eggs and whisk them gently.',
+    'Cook slowly in butter until softly set.',
+  ],
+  macros: NutritionMacros(
+    caloriesKcal: 240,
+    proteinG: 14.4,
+    carbsG: 2.5,
+    fatG: 19.6,
+  ),
+  images: [
+    RecipeImage(
+      id: '123',
+      imageUrl: 'https://images.pexels.com/photos/123/egg-large.jpg',
+      thumbnailUrl: 'https://images.pexels.com/photos/123/egg-thumb.jpg',
+      pexelsUrl: 'https://www.pexels.com/photo/egg-123/',
+      photographer: 'Jane Doe',
+      photographerUrl: 'https://www.pexels.com/@jane',
+      alt: 'Egg scramble in a pan',
+      avgColor: '#c0ffee',
+    ),
+  ],
 );

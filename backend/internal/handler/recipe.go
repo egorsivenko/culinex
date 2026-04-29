@@ -9,6 +9,7 @@ import (
 
 	"github.com/egorsivenko/culinex/internal/ai"
 	"github.com/egorsivenko/culinex/internal/auth"
+	"github.com/egorsivenko/culinex/internal/pexels"
 	"github.com/egorsivenko/culinex/internal/recipes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -29,6 +30,7 @@ type recipeResponse struct {
 	Ingredients        []ai.RecipeIngredient `json:"ingredients"`
 	Steps              []string              `json:"steps"`
 	Macros             ai.Macros             `json:"macros"`
+	Images             []recipes.RecipeImage `json:"images"`
 	IsFavorite         bool                  `json:"is_favorite"`
 	CreatedAt          string                `json:"created_at"`
 }
@@ -91,7 +93,13 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	savedRecipe, err := recipes.SaveGenerated(r.Context(), claims.UserID, resp)
+	images, err := pexels.SearchDishImages(r.Context(), resp.DishName, tag)
+	if err != nil {
+		log.Printf("[%s] Error fetching recipe images from Pexels: %v", requestID, err)
+		images = nil
+	}
+
+	savedRecipe, err := recipes.SaveGenerated(r.Context(), claims.UserID, resp, images)
 	if err != nil {
 		log.Printf("[%s] Error saving generated recipe: %v", requestID, err)
 		http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
@@ -236,6 +244,11 @@ func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
+	images := recipe.Images
+	if images == nil {
+		images = []recipes.RecipeImage{}
+	}
+
 	return recipeResponse{
 		ID:                 recipe.ID.String(),
 		DishName:           recipe.DishName,
@@ -245,6 +258,7 @@ func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 		Ingredients:        recipe.Ingredients,
 		Steps:              recipe.Steps,
 		Macros:             recipe.Macros,
+		Images:             images,
 		IsFavorite:         recipe.IsFavorite,
 		CreatedAt:          formatRecipeTime(recipe.CreatedAt),
 	}

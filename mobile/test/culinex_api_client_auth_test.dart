@@ -54,6 +54,18 @@ void main() {
                 'carbs_g': 54,
                 'fat_g': 8,
               },
+              'images': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'id': '123',
+                  'image_url': 'https://images.pexels.com/pasta-large.jpg',
+                  'thumbnail_url': 'https://images.pexels.com/pasta-thumb.jpg',
+                  'pexels_url': 'https://www.pexels.com/photo/pasta-123/',
+                  'photographer': 'Jane Doe',
+                  'photographer_url': 'https://www.pexels.com/@jane',
+                  'alt': 'Tomato pasta',
+                  'avg_color': '#abcdef',
+                },
+              ],
             }),
             200,
             headers: <String, String>{'content-type': 'application/json'},
@@ -72,6 +84,8 @@ void main() {
       );
 
       expect(recipe.dishName, 'Tomato Pasta');
+      expect(recipe.images, hasLength(1));
+      expect(recipe.images.single.photographer, 'Jane Doe');
       expect(requestCount, 2);
       expect(authSessionCoordinator.refreshCalls, 1);
       client.close();
@@ -255,6 +269,18 @@ void main() {
               'carbs_g': 54,
               'fat_g': 8,
             },
+            'images': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': '123',
+                'image_url': 'https://images.pexels.com/pasta-large.jpg',
+                'thumbnail_url': 'https://images.pexels.com/pasta-thumb.jpg',
+                'pexels_url': 'https://www.pexels.com/photo/pasta-123/',
+                'photographer': 'Jane Doe',
+                'photographer_url': 'https://www.pexels.com/@jane',
+                'alt': 'Tomato pasta',
+                'avg_color': '#abcdef',
+              },
+            ],
             'created_at': '2026-04-21T12:00:00Z',
           }),
           200,
@@ -268,6 +294,7 @@ void main() {
     expect(recipe.id, 'recipe-1');
     expect(recipe.dishName, 'Tomato Pasta');
     expect(recipe.isFavorite, isTrue);
+    expect(recipe.images.single.imageUrl, contains('pasta-large'));
     expect(recipe.createdAt, DateTime.utc(2026, 4, 21, 12));
     client.close();
   });

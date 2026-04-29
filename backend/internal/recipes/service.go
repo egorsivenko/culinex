@@ -25,8 +25,20 @@ type SavedRecipe struct {
 	Ingredients        []ai.RecipeIngredient
 	Steps              []string
 	Macros             ai.Macros
+	Images             []RecipeImage
 	IsFavorite         bool
 	CreatedAt          time.Time
+}
+
+type RecipeImage struct {
+	ID              string `json:"id"`
+	ImageURL        string `json:"image_url"`
+	ThumbnailURL    string `json:"thumbnail_url"`
+	PexelsURL       string `json:"pexels_url"`
+	Photographer    string `json:"photographer"`
+	PhotographerURL string `json:"photographer_url"`
+	Alt             string `json:"alt"`
+	AvgColor        string `json:"avg_color"`
 }
 
 type RecipeSummary struct {
@@ -39,7 +51,11 @@ type RecipeSummary struct {
 	CreatedAt          time.Time
 }
 
-func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeResponse) (SavedRecipe, error) {
+func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeResponse, images []RecipeImage) (SavedRecipe, error) {
+	if images == nil {
+		images = []RecipeImage{}
+	}
+
 	ingredientsJSON, err := json.Marshal(recipe.Ingredients)
 	if err != nil {
 		return SavedRecipe{}, fmt.Errorf("marshal recipe ingredients: %w", err)
@@ -55,6 +71,11 @@ func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeRespon
 		return SavedRecipe{}, fmt.Errorf("marshal recipe macros: %w", err)
 	}
 
+	imagesJSON, err := json.Marshal(images)
+	if err != nil {
+		return SavedRecipe{}, fmt.Errorf("marshal recipe images: %w", err)
+	}
+
 	const query = `
 		INSERT INTO recipes (
 			user_id,
@@ -64,11 +85,12 @@ func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeRespon
 			cooking_time_minutes,
 			ingredients,
 			steps,
-			macros
+			macros,
+			images
 		)
-		VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb)
+		VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb)
 		RETURNING id, user_id, dish_name, dish_description, difficulty,
-			cooking_time_minutes, ingredients, steps, macros, is_favorite, created_at
+			cooking_time_minutes, ingredients, steps, macros, images, is_favorite, created_at
 	`
 
 	return scanSavedRecipe(db.Pool.QueryRow(
@@ -82,6 +104,7 @@ func SaveGenerated(ctx context.Context, userID uuid.UUID, recipe ai.RecipeRespon
 		string(ingredientsJSON),
 		string(stepsJSON),
 		string(macrosJSON),
+		string(imagesJSON),
 	))
 }
 
@@ -126,7 +149,7 @@ func ListByUser(ctx context.Context, userID uuid.UUID) ([]RecipeSummary, error) 
 func GetByID(ctx context.Context, userID, recipeID uuid.UUID) (SavedRecipe, error) {
 	const query = `
 		SELECT id, user_id, dish_name, dish_description, difficulty,
-			cooking_time_minutes, ingredients, steps, macros, is_favorite, created_at
+			cooking_time_minutes, ingredients, steps, macros, images, is_favorite, created_at
 		FROM recipes
 		WHERE id = $1 AND user_id = $2
 	`
@@ -196,6 +219,7 @@ func scanSavedRecipe(row recipeRow) (SavedRecipe, error) {
 	var ingredientsJSON []byte
 	var stepsJSON []byte
 	var macrosJSON []byte
+	var imagesJSON []byte
 
 	if err := row.Scan(
 		&recipe.ID,
@@ -207,6 +231,7 @@ func scanSavedRecipe(row recipeRow) (SavedRecipe, error) {
 		&ingredientsJSON,
 		&stepsJSON,
 		&macrosJSON,
+		&imagesJSON,
 		&recipe.IsFavorite,
 		&recipe.CreatedAt,
 	); err != nil {
@@ -221,6 +246,11 @@ func scanSavedRecipe(row recipeRow) (SavedRecipe, error) {
 	}
 	if err := json.Unmarshal(macrosJSON, &recipe.Macros); err != nil {
 		return SavedRecipe{}, fmt.Errorf("decode recipe macros: %w", err)
+	}
+	if len(imagesJSON) == 0 {
+		recipe.Images = []RecipeImage{}
+	} else if err := json.Unmarshal(imagesJSON, &recipe.Images); err != nil {
+		return SavedRecipe{}, fmt.Errorf("decode recipe images: %w", err)
 	}
 
 	return recipe, nil

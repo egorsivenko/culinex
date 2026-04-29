@@ -420,6 +420,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get recipeReadyBadge => 'Рецепт готовий';
 
   @override
+  String get recipeImagesDisclaimer =>
+      'Зображення наведені лише для ілюстрації.';
+
+  @override
+  String get photosProvidedByPexels => 'Фото надані Pexels';
+
+  @override
   String get quickMetrics => 'Коротко про рецепт';
 
   @override

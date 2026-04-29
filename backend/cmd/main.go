@@ -14,6 +14,7 @@ import (
 	"github.com/egorsivenko/culinex/internal/auth"
 	"github.com/egorsivenko/culinex/internal/db"
 	"github.com/egorsivenko/culinex/internal/handler"
+	"github.com/egorsivenko/culinex/internal/pexels"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/joho/godotenv/autoload"
@@ -30,6 +31,7 @@ func main() {
 	auth.LoadConfig()
 
 	ai.InitGeminiClient(ctx)
+	pexels.InitClient()
 
 	r := chi.NewRouter()
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/theme/culinex_theme.dart';
@@ -37,8 +38,10 @@ class _RecipeScreenState extends State<RecipeScreen> {
     widget.recipe.ingredients.length,
     false,
   );
+  late final PageController _imagePageController = PageController();
   late final PageController _cookingPageController = PageController();
   bool _isCookingMode = false;
+  int _currentImageIndex = 0;
   int _currentCookingStep = 0;
 
   @override
@@ -46,6 +49,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
     if (_isCookingMode) {
       _setCookingModeWakeLock(false);
     }
+    _imagePageController.dispose();
     _cookingPageController.dispose();
     super.dispose();
   }
@@ -84,6 +88,20 @@ class _RecipeScreenState extends State<RecipeScreen> {
                 onBack: widget.onBack,
                 onCookAnother: widget.onCookAnother,
               ),
+              if (recipe.images.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _RecipeImageCarousel(
+                  controller: _imagePageController,
+                  images: recipe.images,
+                  currentIndex: _currentImageIndex,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  },
+                  onOpenUrl: _launchExternalUrl,
+                ),
+              ],
               const SizedBox(height: 20),
               Text(l10n.quickMetrics, style: textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -397,6 +415,141 @@ class _RecipeScreenState extends State<RecipeScreen> {
     } on Object catch (error) {
       debugPrint('Cooking mode wake lock update failed: $error');
     }
+  }
+
+  Future<void> _launchExternalUrl(String url) async {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) {
+      return;
+    }
+
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Object catch (error) {
+      debugPrint('Recipe image link could not be opened: $error');
+    }
+  }
+}
+
+class _RecipeImageCarousel extends StatelessWidget {
+  const _RecipeImageCarousel({
+    required this.controller,
+    required this.images,
+    required this.currentIndex,
+    required this.onPageChanged,
+    required this.onOpenUrl,
+  });
+
+  final PageController controller;
+  final List<RecipeImage> images;
+  final int currentIndex;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<String> onOpenUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: PageView.builder(
+              controller: controller,
+              itemCount: images.length,
+              onPageChanged: onPageChanged,
+              itemBuilder: (context, index) {
+                final RecipeImage image = images[index];
+                return ColoredBox(
+                  color: colors.elevatedSurface,
+                  child: Image.network(
+                    image.imageUrl,
+                    fit: BoxFit.cover,
+                    semanticLabel: image.alt.isEmpty ? null : image.alt,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          color: colors.mutedInk,
+                          size: 40,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        if (images.length > 1) ...[
+          const SizedBox(height: 10),
+          Center(
+            child: Wrap(
+              spacing: 6,
+              children: [
+                for (int index = 0; index < images.length; index++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 7,
+                    width: currentIndex == index ? 18 : 7,
+                    decoration: BoxDecoration(
+                      color: currentIndex == index
+                          ? colors.accent
+                          : colors.border,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Text(
+          l10n.recipeImagesDisclaimer,
+          style: textTheme.bodySmall?.copyWith(color: colors.mutedInk),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 2,
+          children: [
+            _RecipeImageLink(
+              label: l10n.photosProvidedByPexels,
+              onPressed: () => onOpenUrl('https://www.pexels.com'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RecipeImageLink extends StatelessWidget {
+  const _RecipeImageLink({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final CulinexPalette colors = CulinexColors.of(context);
+
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: colors.accent,
+        textStyle: Theme.of(context).textTheme.labelLarge,
+      ),
+      child: Text(label),
+    );
   }
 }
 

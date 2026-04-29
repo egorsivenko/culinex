@@ -133,6 +133,41 @@ class NutritionMacros {
   }
 }
 
+class RecipeImage {
+  const RecipeImage({
+    required this.id,
+    required this.imageUrl,
+    required this.thumbnailUrl,
+    required this.pexelsUrl,
+    required this.photographer,
+    required this.photographerUrl,
+    required this.alt,
+    required this.avgColor,
+  });
+
+  final String id;
+  final String imageUrl;
+  final String thumbnailUrl;
+  final String pexelsUrl;
+  final String photographer;
+  final String photographerUrl;
+  final String alt;
+  final String avgColor;
+
+  factory RecipeImage.fromJson(Map<String, dynamic> json) {
+    return RecipeImage(
+      id: json['id'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
+      thumbnailUrl: json['thumbnail_url'] as String? ?? '',
+      pexelsUrl: json['pexels_url'] as String? ?? '',
+      photographer: json['photographer'] as String? ?? '',
+      photographerUrl: json['photographer_url'] as String? ?? '',
+      alt: json['alt'] as String? ?? '',
+      avgColor: json['avg_color'] as String? ?? '',
+    );
+  }
+}
+
 class GeneratedRecipe {
   const GeneratedRecipe({
     this.id,
@@ -143,6 +178,7 @@ class GeneratedRecipe {
     required this.ingredients,
     required this.steps,
     required this.macros,
+    this.images = const [],
     this.isFavorite = false,
     this.createdAt,
   });
@@ -155,6 +191,7 @@ class GeneratedRecipe {
   final List<RecipeIngredient> ingredients;
   final List<String> steps;
   final NutritionMacros macros;
+  final List<RecipeImage> images;
   final bool isFavorite;
   final DateTime? createdAt;
 
@@ -178,6 +215,9 @@ class GeneratedRecipe {
       macros: NutritionMacros.fromJson(
         json['macros'] as Map<String, dynamic>? ?? const {},
       ),
+      images: ((json['images'] as List<dynamic>?) ?? [])
+          .map((item) => RecipeImage.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
       isFavorite: json['is_favorite'] as bool? ?? false,
       createdAt: _parseDateTime(json['created_at']),
     );
@@ -193,6 +233,7 @@ class GeneratedRecipe {
       ingredients: ingredients,
       steps: steps,
       macros: macros,
+      images: images,
       isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt,
     );

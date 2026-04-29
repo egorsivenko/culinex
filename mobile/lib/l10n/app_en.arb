@@ -188,6 +188,8 @@
   "recipeDifficultyMedium": "Medium",
   "recipeDifficultyHard": "Hard",
   "recipeReadyBadge": "Recipe ready",
+  "recipeImagesDisclaimer": "Images are for illustrative purposes only.",
+  "photosProvidedByPexels": "Photos provided by Pexels",
   "quickMetrics": "Quick metrics",
   "difficultyLabel": "Difficulty",
   "cookingTimeLabel": "Cooking time",

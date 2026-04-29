@@ -419,6 +419,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recipeReadyBadge => 'Recipe ready';
 
   @override
+  String get recipeImagesDisclaimer =>
+      'Images are for illustrative purposes only.';
+
+  @override
+  String get photosProvidedByPexels => 'Photos provided by Pexels';
+
+  @override
   String get quickMetrics => 'Quick metrics';
 
   @override
