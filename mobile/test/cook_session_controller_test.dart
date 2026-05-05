@@ -108,6 +108,7 @@ void main() {
     expect(controller.recipe?.dishName, 'Soft Egg Scramble');
     expect(repository.lastRecipeIngredients, hasLength(3));
     expect(repository.lastAssumeBasicStaples, isTrue);
+    expect(repository.lastRecipeStyle, RecipeStyle.everyday);
     expect(repository.lastGenerateLocale, const Locale('en'));
 
     controller.dispose();
@@ -200,16 +201,21 @@ void main() {
         repository: repository,
       );
 
-      await controller.generateRecipeFromIngredients(const [
-        ExtractedIngredient(name: 'Tomatoes', quantity: '150 g'),
-        ExtractedIngredient(name: 'Bread', quantity: '2 slices'),
-        ExtractedIngredient(name: 'Basil', quantity: '4 leaves'),
-      ], false);
+      await controller.generateRecipeFromIngredients(
+        const [
+          ExtractedIngredient(name: 'Tomatoes', quantity: '150 g'),
+          ExtractedIngredient(name: 'Bread', quantity: '2 slices'),
+          ExtractedIngredient(name: 'Basil', quantity: '4 leaves'),
+        ],
+        false,
+        RecipeStyle.professional,
+      );
 
       expect(controller.stage, SessionStage.recipe);
       expect(controller.ingredients, hasLength(3));
       expect(repository.lastRecipeIngredients, hasLength(3));
       expect(repository.lastAssumeBasicStaples, isFalse);
+      expect(repository.lastRecipeStyle, RecipeStyle.professional);
       expect(repository.lastRecipeIngredients?.first.name, 'Tomatoes');
       expect(repository.lastRecipeIngredients?.last.quantity, '4 leaves');
 
@@ -224,9 +230,11 @@ void main() {
       repository: repository,
     );
 
-    await controller.generateRecipeFromIngredients(const [
-      ExtractedIngredient(name: 'Eggs', quantity: '2 pieces'),
-    ], true);
+    await controller.generateRecipeFromIngredients(
+      const [ExtractedIngredient(name: 'Eggs', quantity: '2 pieces')],
+      true,
+      RecipeStyle.everyday,
+    );
 
     expect(controller.stage, SessionStage.error);
     expect(controller.errorState.code, SessionErrorCode.tooFewIngredients);
@@ -928,6 +936,7 @@ class FakeRepository implements CulinexRepository {
   Locale? lastExtractLocale;
   List<RecipeIngredient>? lastRecipeIngredients;
   bool? lastAssumeBasicStaples;
+  RecipeStyle? lastRecipeStyle;
   Locale? lastGenerateLocale;
 
   @override
@@ -948,6 +957,7 @@ class FakeRepository implements CulinexRepository {
   }) async {
     lastRecipeIngredients = request.ingredients;
     lastAssumeBasicStaples = request.assumeBasicStaples;
+    lastRecipeStyle = request.recipeStyle;
     lastGenerateLocale = locale;
     final Object? error = generateRecipeError;
     if (error != null) {

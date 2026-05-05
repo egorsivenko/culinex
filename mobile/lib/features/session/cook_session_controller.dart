@@ -57,6 +57,7 @@ class CookSessionController extends ChangeNotifier {
   String? _capturedImagePath;
   List<ExtractedIngredient> _ingredients = const [];
   bool _assumeBasicStaples = true;
+  RecipeStyle _recipeStyle = RecipeStyle.everyday;
   GeneratedRecipe? _recipe;
   List<RecipeSummary> _recipeSummaries = const [];
   RecipeHistoryStatus _recipeHistoryStatus = RecipeHistoryStatus.initial;
@@ -75,6 +76,7 @@ class CookSessionController extends ChangeNotifier {
   String? get capturedImagePath => _capturedImagePath;
   List<ExtractedIngredient> get ingredients => _ingredients;
   bool get assumeBasicStaples => _assumeBasicStaples;
+  RecipeStyle get recipeStyle => _recipeStyle;
   bool get isManualIngredientEntry =>
       _ingredientEntryMethod == IngredientEntryMethod.manual;
   GeneratedRecipe? get recipe => _recipe;
@@ -112,6 +114,7 @@ class CookSessionController extends ChangeNotifier {
     _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
+    _recipeStyle = RecipeStyle.everyday;
     _recipe = null;
     _errorState = null;
     _lastOperation = SessionOperation.none;
@@ -154,6 +157,7 @@ class CookSessionController extends ChangeNotifier {
     _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
+    _recipeStyle = RecipeStyle.everyday;
     _recipe = null;
     _recipeOpenedFromHistory = false;
     _selectedRecipeActionId = null;
@@ -171,6 +175,7 @@ class CookSessionController extends ChangeNotifier {
     _capturedImagePath = null;
     _ingredients = const [];
     _assumeBasicStaples = true;
+    _recipeStyle = RecipeStyle.everyday;
     _recipe = null;
     _recipeOpenedFromHistory = false;
     _errorState = null;
@@ -220,6 +225,7 @@ class CookSessionController extends ChangeNotifier {
     _capturedImagePath = imagePath;
     _ingredients = const [];
     _assumeBasicStaples = true;
+    _recipeStyle = RecipeStyle.everyday;
     _recipe = null;
     _errorState = null;
     _lastOperation = SessionOperation.extractIngredients;
@@ -304,6 +310,7 @@ class CookSessionController extends ChangeNotifier {
               .map((item) => item.toRecipeIngredient())
               .toList(),
           assumeBasicStaples: _assumeBasicStaples,
+          recipeStyle: _recipeStyle,
         ),
         locale: _locale,
       );
@@ -596,12 +603,14 @@ class CookSessionController extends ChangeNotifier {
   Future<void> generateRecipeFromIngredients(
     List<ExtractedIngredient> ingredients,
     bool assumeBasicStaples,
+    RecipeStyle recipeStyle,
   ) async {
     _lastOperation = SessionOperation.generateRecipe;
 
     try {
       _ingredients = _prepareIngredients(ingredients);
       _assumeBasicStaples = assumeBasicStaples;
+      _recipeStyle = recipeStyle;
       _recipe = null;
       await generateRecipe();
     } catch (error) {

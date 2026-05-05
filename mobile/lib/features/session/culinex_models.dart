@@ -83,15 +83,36 @@ class RecipeGenerationRequest {
   const RecipeGenerationRequest({
     required this.ingredients,
     required this.assumeBasicStaples,
+    required this.recipeStyle,
   });
 
   final List<RecipeIngredient> ingredients;
   final bool assumeBasicStaples;
+  final RecipeStyle recipeStyle;
 
   Map<String, dynamic> toJson() {
     return {
       'ingredients': ingredients.map((item) => item.toJson()).toList(),
       'assume_basic_staples': assumeBasicStaples,
+      'recipe_style': recipeStyle.apiValue,
+    };
+  }
+}
+
+enum RecipeStyle {
+  everyday('everyday'),
+  professional('professional'),
+  creative('creative');
+
+  const RecipeStyle(this.apiValue);
+
+  final String apiValue;
+
+  factory RecipeStyle.fromJson(String rawValue) {
+    return switch (rawValue.trim().toLowerCase()) {
+      'professional' => RecipeStyle.professional,
+      'creative' => RecipeStyle.creative,
+      _ => RecipeStyle.everyday,
     };
   }
 }

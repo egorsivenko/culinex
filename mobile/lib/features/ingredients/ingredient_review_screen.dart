@@ -46,17 +46,20 @@ class IngredientReviewScreen extends StatefulWidget {
     required this.onProceed,
     this.onOpenRecipe,
     this.entryMode = IngredientReviewEntryMode.scanned,
+    this.recipeStyle = RecipeStyle.everyday,
     super.key,
   });
 
   final String? imagePath;
   final List<ExtractedIngredient> ingredients;
   final bool assumeBasicStaples;
+  final RecipeStyle recipeStyle;
   final IngredientReviewEntryMode entryMode;
   final VoidCallback onBack;
   final Future<void> Function(
     List<ExtractedIngredient> ingredients,
     bool assumeBasicStaples,
+    RecipeStyle recipeStyle,
   )
   onProceed;
   final VoidCallback? onOpenRecipe;
@@ -74,7 +77,9 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   bool _isBasicStaplesInfoVisible = false;
   bool _showBasicStaplesTooltipBelow = false;
   bool _assumeBasicStaples = true;
+  RecipeStyle _recipeStyle = RecipeStyle.everyday;
   int _nextIngredientIdSeed = 0;
+  BuildContext? _recipeSettingsPanelContext;
   BuildContext? _basicStaplesSectionContext;
   final LayerLink _basicStaplesSectionLink = LayerLink();
   final Object _basicStaplesTapRegionId = Object();
@@ -83,7 +88,8 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
 
   bool get _hasUnsavedChanges =>
       !_ingredientsMatch(_currentIngredients, widget.ingredients) ||
-      _assumeBasicStaples != widget.assumeBasicStaples;
+      _assumeBasicStaples != widget.assumeBasicStaples ||
+      _recipeStyle != widget.recipeStyle;
 
   bool get _canProceed =>
       !_isSubmitting &&
@@ -99,6 +105,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   void initState() {
     super.initState();
     _assumeBasicStaples = widget.assumeBasicStaples;
+    _recipeStyle = widget.recipeStyle;
     _resetIngredients(widget.ingredients);
   }
 
@@ -115,6 +122,10 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     if (oldWidget.assumeBasicStaples != widget.assumeBasicStaples) {
       _assumeBasicStaples = widget.assumeBasicStaples;
     }
+
+    if (oldWidget.recipeStyle != widget.recipeStyle) {
+      _recipeStyle = widget.recipeStyle;
+    }
   }
 
   @override
@@ -126,7 +137,22 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     final String? footerMessage = _footerMessage(l10n);
     final RenderBox? basicStaplesSectionBox =
         _basicStaplesSectionContext?.findRenderObject() as RenderBox?;
-    final double? basicStaplesSectionWidth = basicStaplesSectionBox?.size.width;
+    final RenderBox? recipeSettingsPanelBox =
+        _recipeSettingsPanelContext?.findRenderObject() as RenderBox?;
+    final double? recipeSettingsPanelWidth = recipeSettingsPanelBox?.size.width;
+    final double tooltipHorizontalOffset =
+        basicStaplesSectionBox != null && recipeSettingsPanelBox != null
+        ? recipeSettingsPanelBox.localToGlobal(Offset.zero).dx -
+              basicStaplesSectionBox.localToGlobal(Offset.zero).dx
+        : 0;
+    final double tooltipBelowVerticalOffset =
+        basicStaplesSectionBox != null && recipeSettingsPanelBox != null
+        ? recipeSettingsPanelBox.localToGlobal(Offset.zero).dy +
+              recipeSettingsPanelBox.size.height -
+              (basicStaplesSectionBox.localToGlobal(Offset.zero).dy +
+                  basicStaplesSectionBox.size.height) +
+              _basicStaplesTooltipGap
+        : _basicStaplesTooltipGap;
 
     return Scaffold(
       bottomNavigationBar: _isPreviewVisible
@@ -252,49 +278,83 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                           groupId: _basicStaplesTapRegionId,
                           onTapOutside: (_) => _hideBasicStaplesInfo(),
                           child: Builder(
-                            builder: (sectionContext) {
-                              _basicStaplesSectionContext = sectionContext;
-                              return CompositedTransformTarget(
-                                link: _basicStaplesSectionLink,
-                                child: Container(
-                                  key: const ValueKey<String>(
-                                    'basic-staples-section-panel',
-                                  ),
-                                  child: GlassPanel(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 6,
+                            builder: (panelContext) {
+                              _recipeSettingsPanelContext = panelContext;
+                              return GlassPanel(
+                                key: const ValueKey<String>(
+                                  'recipe-settings-panel',
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                child: Column(
+                                  children: [
+                                    _RecipeStyleDropdown(
+                                      value: _recipeStyle,
+                                      enabled: !_isSubmitting,
+                                      onChanged: (RecipeStyle nextStyle) {
+                                        AppSounds.click();
+                                        AppHaptics.selection();
+                                        setState(() {
+                                          _recipeStyle = nextStyle;
+                                        });
+                                      },
                                     ),
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: SwitchListTile.adaptive(
-                                      contentPadding: EdgeInsets.zero,
-                                      value: _assumeBasicStaples,
-                                      onChanged: _isSubmitting
-                                          ? null
-                                          : (value) {
-                                              AppSounds.click();
-                                              AppHaptics.selection();
-                                              setState(() {
-                                                _assumeBasicStaples = value;
-                                              });
-                                            },
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              l10n.assumeBasicStaplesTitle,
-                                              style: textTheme.titleMedium,
-                                            ),
-                                          ),
-                                          _BasicStaplesInfoToggleButton(
-                                            isVisible:
-                                                _isBasicStaplesInfoVisible,
-                                            onPressed: _toggleBasicStaplesInfo,
-                                          ),
-                                        ],
+                                    Divider(
+                                      height: 1,
+                                      thickness: 1,
+                                      color: colors.border.withValues(
+                                        alpha: 0.7,
                                       ),
                                     ),
-                                  ),
+                                    Builder(
+                                      builder: (sectionContext) {
+                                        _basicStaplesSectionContext =
+                                            sectionContext;
+                                        return CompositedTransformTarget(
+                                          link: _basicStaplesSectionLink,
+                                          child: Container(
+                                            key: const ValueKey<String>(
+                                              'basic-staples-section-panel',
+                                            ),
+                                            child: SwitchListTile.adaptive(
+                                              contentPadding: EdgeInsets.zero,
+                                              value: _assumeBasicStaples,
+                                              onChanged: _isSubmitting
+                                                  ? null
+                                                  : (value) {
+                                                      AppSounds.click();
+                                                      AppHaptics.selection();
+                                                      setState(() {
+                                                        _assumeBasicStaples =
+                                                            value;
+                                                      });
+                                                    },
+                                              title: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      l10n.assumeBasicStaplesTitle,
+                                                      style:
+                                                          textTheme.titleMedium,
+                                                    ),
+                                                  ),
+                                                  _BasicStaplesInfoToggleButton(
+                                                    isVisible:
+                                                        _isBasicStaplesInfoVisible,
+                                                    onPressed:
+                                                        _toggleBasicStaplesInfo,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               );
                             },
@@ -510,7 +570,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
               ),
             ),
           ),
-          if (_isBasicStaplesInfoVisible && basicStaplesSectionWidth != null)
+          if (_isBasicStaplesInfoVisible && recipeSettingsPanelWidth != null)
             TapRegion(
               groupId: _basicStaplesTapRegionId,
               child: CompositedTransformFollower(
@@ -523,13 +583,13 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                     ? Alignment.topLeft
                     : Alignment.bottomLeft,
                 offset: Offset(
-                  0,
+                  tooltipHorizontalOffset,
                   _showBasicStaplesTooltipBelow
-                      ? _basicStaplesTooltipGap
+                      ? tooltipBelowVerticalOffset
                       : -_basicStaplesTooltipGap,
                 ),
                 child: SizedBox(
-                  width: basicStaplesSectionWidth,
+                  width: recipeSettingsPanelWidth,
                   child: const _BasicStaplesTooltipPanel(),
                 ),
               ),
@@ -575,7 +635,11 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
     });
 
     try {
-      await widget.onProceed(_currentIngredients, _assumeBasicStaples);
+      await widget.onProceed(
+        _currentIngredients,
+        _assumeBasicStaples,
+        _recipeStyle,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -992,6 +1056,82 @@ class _ManualIngredientEmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RecipeStyleDropdown extends StatelessWidget {
+  const _RecipeStyleDropdown({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final RecipeStyle value;
+  final bool enabled;
+  final ValueChanged<RecipeStyle> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final CulinexPalette colors = CulinexColors.of(context);
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(l10n.recipeStyleTitle, style: textTheme.titleMedium),
+        ),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: 172,
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<RecipeStyle>(
+              key: const ValueKey<String>('recipe-style-dropdown'),
+              value: value,
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(20),
+              dropdownColor: colors.surface,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              style: textTheme.labelLarge?.copyWith(
+                color: colors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+              items: RecipeStyle.values
+                  .map(
+                    (style) => DropdownMenuItem<RecipeStyle>(
+                      value: style,
+                      child: Text(style.label(l10n)),
+                    ),
+                  )
+                  .toList(growable: false),
+              selectedItemBuilder: (context) => RecipeStyle.values
+                  .map(
+                    (style) => Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Text(
+                          style.label(l10n),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: enabled
+                  ? (RecipeStyle? nextStyle) {
+                      if (nextStyle == null || nextStyle == value) {
+                        return;
+                      }
+                      onChanged(nextStyle);
+                    }
+                  : null,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

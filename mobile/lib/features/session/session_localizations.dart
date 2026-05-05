@@ -18,6 +18,14 @@ extension RecipeDifficultyLocalization on RecipeDifficulty {
   };
 }
 
+extension RecipeStyleLocalization on RecipeStyle {
+  String label(AppLocalizations l10n) => switch (this) {
+    RecipeStyle.everyday => l10n.recipeStyleEveryday,
+    RecipeStyle.professional => l10n.recipeStyleProfessional,
+    RecipeStyle.creative => l10n.recipeStyleCreative,
+  };
+}
+
 String localizeSessionErrorTitle(
   AppLocalizations l10n,
   SessionOperation operation,

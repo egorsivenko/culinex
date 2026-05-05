@@ -88,6 +88,10 @@
   "returnToRecipe": "Return to recipe",
   "generateAgainHint": "Generate again to refresh the recipe after editing this list.",
   "viewOriginalPhoto": "View original photo",
+  "recipeStyleTitle": "Recipe style",
+  "recipeStyleEveryday": "Everyday",
+  "recipeStyleProfessional": "Professional",
+  "recipeStyleCreative": "Creative",
   "assumeBasicStaplesTitle": "Assume basic staples are available",
   "ingredientCountStatus": "{current} / {max} ingredients",
   "@ingredientCountStatus": {

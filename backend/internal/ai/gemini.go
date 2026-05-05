@@ -54,6 +54,20 @@ type Macros struct {
 	FatG         float64 `json:"fat_g"`
 }
 
+var recipeStylePrompts = map[string]string{
+	"everyday": `Recipe style: everyday.
+Make a practical weeknight-style home recipe. Prefer familiar flavor combinations, common techniques, short active prep, and a clear prep-to-plate flow when possible.
+Avoid chef-like plating language, complicated sub-recipes, and unusual formats unless the provided ingredients strongly require them.`,
+	"professional": `Recipe style: professional.
+Create a more refined home-cookable recipe with precise technique and polished presentation.
+Include useful doneness cues, timing cues, texture goals, and one elevated detail such as searing, emulsifying, reducing, layering, resting, garnishing, or plating when appropriate.
+Keep the equipment and ingredients realistic for a home kitchen.`,
+	"creative": `Recipe style: creative.
+Create a noticeably more original recipe by changing the dish format, flavor direction, texture contrast, or serving idea.
+Use playful but practical combinations, and make the result feel distinct from a default everyday meal.
+Do not add unavailable specialty ingredients, unsafe techniques, or complexity that would make the recipe impractical.`,
+}
+
 const (
 	model            = "gemini-3-flash-preview"
 	responseMIMEType = "application/json"
@@ -170,21 +184,11 @@ func ExtractIngredients(ctx context.Context, data []byte, mimeType string, langu
 	return resp, nil
 }
 
-func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeBasicStaples bool, language string) (RecipeResponse, error) {
-	var b strings.Builder
-	b.WriteString(recipePrompt)
-	for _, it := range ingredients {
-		name := strings.TrimSpace(it.Name)
-		quantity := strings.TrimSpace(it.Quantity)
-		fmt.Fprintf(&b, "\n- %s: %s", name, quantity)
-	}
-	if assumeBasicStaples {
-		b.WriteString("\n\n")
-		b.WriteString(assumeBasicStaplesPrompt)
-	}
+func GenerateRecipe(ctx context.Context, ingredients []RecipeIngredient, assumeBasicStaples bool, recipeStyle string, language string) (RecipeResponse, error) {
+	prompt := buildRecipePrompt(ingredients, assumeBasicStaples, recipeStyle)
 
 	contents := []*genai.Content{
-		genai.NewContentFromText(b.String(), genai.RoleUser),
+		genai.NewContentFromText(prompt, genai.RoleUser),
 	}
 
 	recipeIngredientSchema := &genai.Schema{
@@ -298,4 +302,26 @@ func IsEmptyRecipeResponse(recipe RecipeResponse) bool {
 		strings.TrimSpace(recipe.DishDescription) == "" &&
 		len(recipe.Ingredients) == 0 &&
 		len(recipe.Steps) == 0
+}
+
+func IsValidRecipeStyle(rawValue string) bool {
+	_, ok := recipeStylePrompts[rawValue]
+	return ok
+}
+
+func buildRecipePrompt(ingredients []RecipeIngredient, assumeBasicStaples bool, recipeStyle string) string {
+	var b strings.Builder
+	b.WriteString(recipePrompt)
+	for _, it := range ingredients {
+		name := strings.TrimSpace(it.Name)
+		quantity := strings.TrimSpace(it.Quantity)
+		fmt.Fprintf(&b, "\n- %s: %s", name, quantity)
+	}
+	b.WriteString("\n\n")
+	b.WriteString(recipeStylePrompts[recipeStyle])
+	if assumeBasicStaples {
+		b.WriteString("\n\n")
+		b.WriteString(assumeBasicStaplesPrompt)
+	}
+	return b.String()
 }

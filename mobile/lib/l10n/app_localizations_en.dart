@@ -291,6 +291,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewOriginalPhoto => 'View original photo';
 
   @override
+  String get recipeStyleTitle => 'Recipe style';
+
+  @override
+  String get recipeStyleEveryday => 'Everyday';
+
+  @override
+  String get recipeStyleProfessional => 'Professional';
+
+  @override
+  String get recipeStyleCreative => 'Creative';
+
+  @override
   String get assumeBasicStaplesTitle => 'Assume basic staples are available';
 
   @override

@@ -626,6 +626,30 @@ abstract class AppLocalizations {
   /// **'View original photo'**
   String get viewOriginalPhoto;
 
+  /// No description provided for @recipeStyleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe style'**
+  String get recipeStyleTitle;
+
+  /// No description provided for @recipeStyleEveryday.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyday'**
+  String get recipeStyleEveryday;
+
+  /// No description provided for @recipeStyleProfessional.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get recipeStyleProfessional;
+
+  /// No description provided for @recipeStyleCreative.
+  ///
+  /// In en, this message translates to:
+  /// **'Creative'**
+  String get recipeStyleCreative;
+
   /// No description provided for @assumeBasicStaplesTitle.
   ///
   /// In en, this message translates to:

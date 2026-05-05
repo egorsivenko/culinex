@@ -365,6 +365,7 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                 imagePath: widget.controller.capturedImagePath,
                 ingredients: widget.controller.ingredients,
                 assumeBasicStaples: widget.controller.assumeBasicStaples,
+                recipeStyle: widget.controller.recipeStyle,
                 entryMode: widget.controller.isManualIngredientEntry
                     ? IngredientReviewEntryMode.manual
                     : IngredientReviewEntryMode.scanned,

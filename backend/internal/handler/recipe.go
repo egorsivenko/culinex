@@ -19,6 +19,7 @@ import (
 type generateRecipeRequest struct {
 	Ingredients        []ai.RecipeIngredient `json:"ingredients"`
 	AssumeBasicStaples bool                  `json:"assume_basic_staples"`
+	RecipeStyle        string                `json:"recipe_style"`
 }
 
 type recipeResponse struct {
@@ -69,19 +70,24 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "invalid_ingredients", "Not enough ingredients were provided")
 		return
 	}
+	if !ai.IsValidRecipeStyle(req.RecipeStyle) {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe style is invalid")
+		return
+	}
 
 	requestID := middleware.GetReqID(r.Context())
 	if b, err := json.Marshal(req.Ingredients); err == nil {
-		log.Printf("[%s] Generating recipe from %d ingredients (assume_basic_staples=%t): %s",
+		log.Printf("[%s] Generating recipe from %d ingredients (assume_basic_staples=%t, recipe_style=%s): %s",
 			requestID,
 			len(req.Ingredients),
 			req.AssumeBasicStaples,
+			req.RecipeStyle,
 			string(b),
 		)
 	}
 
 	tag, lang := resolveLanguage(r)
-	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples, lang)
+	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples, req.RecipeStyle, lang)
 	if err != nil {
 		log.Printf("[%s] Error generating recipe: %v", requestID, err)
 		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)

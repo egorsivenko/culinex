@@ -88,6 +88,10 @@
   "returnToRecipe": "Повернутися до рецепта",
   "generateAgainHint": "Згенеруйте рецепт ще раз, щоб оновити його після редагування списку.",
   "viewOriginalPhoto": "Переглянути оригінальне фото",
+  "recipeStyleTitle": "Стиль рецепта",
+  "recipeStyleEveryday": "На кожен день",
+  "recipeStyleProfessional": "Професійний",
+  "recipeStyleCreative": "Креативний",
   "assumeBasicStaplesTitle": "Вважати базові продукти доступними",
   "ingredientCountStatus": "{current} / {max} інгредієнтів",
   "@ingredientCountStatus": {

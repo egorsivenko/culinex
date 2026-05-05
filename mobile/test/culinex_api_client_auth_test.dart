@@ -38,6 +38,10 @@ void main() {
           }
 
           expect(request.headers['Authorization'], 'Bearer fresh-access-token');
+          final Map<String, dynamic> requestPayload =
+              jsonDecode(request.body) as Map<String, dynamic>;
+          expect(requestPayload['assume_basic_staples'], isTrue);
+          expect(requestPayload['recipe_style'], 'professional');
           return http.Response(
             jsonEncode(<String, dynamic>{
               'dish_name': 'Tomato Pasta',
@@ -79,6 +83,7 @@ void main() {
             RecipeIngredient(name: 'Tomatoes', quantity: '2'),
           ],
           assumeBasicStaples: true,
+          recipeStyle: RecipeStyle.professional,
         ),
         locale: const Locale('en'),
       );
@@ -129,6 +134,7 @@ void main() {
             RecipeIngredient(name: 'qweqwe', quantity: 'zxczxc'),
           ],
           assumeBasicStaples: true,
+          recipeStyle: RecipeStyle.everyday,
         ),
         locale: const Locale('en'),
       ),

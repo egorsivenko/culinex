@@ -292,6 +292,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get viewOriginalPhoto => 'Переглянути оригінальне фото';
 
   @override
+  String get recipeStyleTitle => 'Стиль рецепта';
+
+  @override
+  String get recipeStyleEveryday => 'На кожен день';
+
+  @override
+  String get recipeStyleProfessional => 'Професійний';
+
+  @override
+  String get recipeStyleCreative => 'Креативний';
+
+  @override
   String get assumeBasicStaplesTitle => 'Вважати базові продукти доступними';
 
   @override

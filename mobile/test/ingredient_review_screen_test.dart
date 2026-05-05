@@ -17,6 +17,7 @@ void main() {
       _setTallSurface(tester);
       List<ExtractedIngredient>? submittedIngredients;
       bool? submittedAssumeBasicStaples;
+      RecipeStyle? submittedRecipeStyle;
 
       await tester.pumpWidget(
         buildLocalizedApp(
@@ -41,9 +42,10 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (ingredients, assumeBasicStaples) async {
+            onProceed: (ingredients, assumeBasicStaples, recipeStyle) async {
               submittedIngredients = ingredients;
               submittedAssumeBasicStaples = assumeBasicStaples;
+              submittedRecipeStyle = recipeStyle;
             },
           ),
         ),
@@ -55,6 +57,8 @@ void main() {
       expect(find.text('Tomatoes'), findsOneWidget);
       expect(find.text('3 pieces'), findsOneWidget);
       expect(find.text('High confidence'), findsOneWidget);
+      expect(find.text('Recipe style'), findsOneWidget);
+      expect(find.text('Everyday'), findsOneWidget);
       expect(find.byType(Image), findsNothing);
       expect(
         tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
@@ -154,11 +158,19 @@ void main() {
         isFalse,
       );
 
+      await tester.tap(
+        find.byKey(const ValueKey<String>('recipe-style-dropdown')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Creative').last);
+      await tester.pumpAndSettle();
+
       await tester.tap(find.widgetWithText(FilledButton, 'Proceed'));
       await tester.pumpAndSettle();
 
       expect(submittedIngredients, isNotNull);
       expect(submittedAssumeBasicStaples, isFalse);
+      expect(submittedRecipeStyle, RecipeStyle.creative);
       expect(submittedIngredients, hasLength(3));
       expect(submittedIngredients!.first.name, 'Cherry tomatoes');
       expect(submittedIngredients!.first.quantity, '200 g');
@@ -182,7 +194,7 @@ void main() {
             assumeBasicStaples: true,
             entryMode: IngredientReviewEntryMode.manual,
             onBack: () {},
-            onProceed: (ingredients, assumeBasicStaples) async {
+            onProceed: (ingredients, assumeBasicStaples, _) async {
               submittedIngredients = ingredients;
               submittedAssumeBasicStaples = assumeBasicStaples;
             },
@@ -323,7 +335,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (ingredients, _) async {
+            onProceed: (ingredients, _, _) async {
               submittedIngredients = ingredients;
             },
           ),
@@ -392,7 +404,7 @@ void main() {
             assumeBasicStaples: true,
             entryMode: IngredientReviewEntryMode.manual,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
             onOpenRecipe: () {},
           ),
         ),
@@ -437,7 +449,7 @@ void main() {
           ],
           assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_, _) async {},
+          onProceed: (_, _, _) async {},
         ),
       ),
     );
@@ -454,17 +466,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final Finder sectionFinder = find.byKey(
-      const ValueKey<String>('basic-staples-section-panel'),
+    final Finder settingsPanelFinder = find.byKey(
+      const ValueKey<String>('recipe-settings-panel'),
     );
     final Finder tooltipFinder = find.byKey(
       const ValueKey<String>('basic-staples-tooltip-panel'),
     );
-    final Size staplesSectionSize = tester.getSize(sectionFinder);
+    final Rect settingsPanelRect = tester.getRect(settingsPanelFinder);
     final Size tooltipSize = tester.getSize(tooltipFinder);
+    final Rect tooltipRect = tester.getRect(tooltipFinder);
 
     expect(find.text(_basicStaplesTooltipMessage), findsOneWidget);
-    expect(tooltipSize.width, staplesSectionSize.width);
+    expect(tooltipSize.width, settingsPanelRect.width);
+    expect(tooltipRect.left, settingsPanelRect.left);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('basic-staples-info-button')),
@@ -509,7 +523,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
           ),
         ),
       );
@@ -522,12 +536,16 @@ void main() {
       final Finder sectionFinder = find.byKey(
         const ValueKey<String>('basic-staples-section-panel'),
       );
+      final Finder settingsPanelFinder = find.byKey(
+        const ValueKey<String>('recipe-settings-panel'),
+      );
       final Finder tooltipButtonFinder = find.byKey(
         const ValueKey<String>('basic-staples-info-button'),
       );
 
       final Rect sectionRect = tester.getRect(sectionFinder);
-      expect(sectionRect.top, lessThanOrEqualTo(32));
+      final Rect settingsPanelRect = tester.getRect(settingsPanelFinder);
+      expect(sectionRect.top, lessThanOrEqualTo(64));
 
       await tester.tap(tooltipButtonFinder);
       await tester.pumpAndSettle();
@@ -535,8 +553,9 @@ void main() {
       final Rect tooltipRect = tester.getRect(
         find.byKey(const ValueKey<String>('basic-staples-tooltip-panel')),
       );
-      expect(tooltipRect.left, sectionRect.left);
-      expect(tooltipRect.top, greaterThan(sectionRect.bottom));
+      expect(tooltipRect.left, settingsPanelRect.left);
+      expect(tooltipRect.width, settingsPanelRect.width);
+      expect(tooltipRect.top, greaterThan(settingsPanelRect.bottom));
     },
   );
 
@@ -562,7 +581,7 @@ void main() {
           ],
           assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_, _) async {},
+          onProceed: (_, _, _) async {},
         ),
       ),
     );
@@ -621,7 +640,7 @@ void main() {
           ],
           assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_, _) async {},
+          onProceed: (_, _, _) async {},
         ),
       ),
     );
@@ -662,7 +681,7 @@ void main() {
           ],
           assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_, _) async {},
+          onProceed: (_, _, _) async {},
         ),
       ),
     );
@@ -706,7 +725,7 @@ void main() {
           ],
           assumeBasicStaples: true,
           onBack: () {},
-          onProceed: (_, _) async {},
+          onProceed: (_, _, _) async {},
         ),
       ),
     );
@@ -775,7 +794,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
           ),
         ),
       );
@@ -819,7 +838,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
             onOpenRecipe: () {},
           ),
         ),
@@ -869,7 +888,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
             onOpenRecipe: () {
               openedRecipe = true;
             },
@@ -933,7 +952,7 @@ void main() {
             ],
             assumeBasicStaples: true,
             onBack: () {},
-            onProceed: (_, _) async {},
+            onProceed: (_, _, _) async {},
             onOpenRecipe: () {},
           ),
         ),
