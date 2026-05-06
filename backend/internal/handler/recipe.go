@@ -24,6 +24,7 @@ type generateRecipeRequest struct {
 
 type recipeResponse struct {
 	ID                 string                `json:"id"`
+	CollectionID       *string               `json:"collection_id"`
 	DishName           string                `json:"dish_name"`
 	DishDescription    string                `json:"dish_description"`
 	Difficulty         string                `json:"difficulty"`
@@ -37,21 +38,41 @@ type recipeResponse struct {
 }
 
 type recipeSummaryResponse struct {
-	ID                 string `json:"id"`
-	DishName           string `json:"dish_name"`
-	DishDescription    string `json:"dish_description"`
-	Difficulty         string `json:"difficulty"`
-	CookingTimeMinutes int    `json:"cooking_time_minutes"`
-	IsFavorite         bool   `json:"is_favorite"`
-	CreatedAt          string `json:"created_at"`
+	ID                 string  `json:"id"`
+	CollectionID       *string `json:"collection_id"`
+	DishName           string  `json:"dish_name"`
+	DishDescription    string  `json:"dish_description"`
+	Difficulty         string  `json:"difficulty"`
+	CookingTimeMinutes int     `json:"cooking_time_minutes"`
+	IsFavorite         bool    `json:"is_favorite"`
+	CreatedAt          string  `json:"created_at"`
 }
 
 type recipeListResponse struct {
 	Recipes []recipeSummaryResponse `json:"recipes"`
 }
 
+type recipeCollectionResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type recipeCollectionListResponse struct {
+	Collections []recipeCollectionResponse `json:"collections"`
+}
+
 type setRecipeFavoriteRequest struct {
 	IsFavorite *bool `json:"is_favorite"`
+}
+
+type saveRecipeCollectionRequest struct {
+	Name string `json:"name"`
+}
+
+type setRecipeCollectionRequest struct {
+	CollectionID *string `json:"collection_id"`
 }
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
@@ -134,6 +155,7 @@ func ListRecipes(w http.ResponseWriter, r *http.Request) {
 	for _, summary := range summaries {
 		items = append(items, recipeSummaryResponse{
 			ID:                 summary.ID.String(),
+			CollectionID:       formatOptionalUUID(summary.CollectionID),
 			DishName:           summary.DishName,
 			DishDescription:    summary.DishDescription,
 			Difficulty:         summary.Difficulty,
@@ -144,6 +166,99 @@ func ListRecipes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, recipeListResponse{Recipes: items})
+}
+
+func ListRecipeCollections(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	collections, err := recipes.ListCollectionsByUser(r.Context(), claims.UserID)
+	if err != nil {
+		log.Printf("[%s] Error listing recipe collections: %v", middleware.GetReqID(r.Context()), err)
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		return
+	}
+
+	items := make([]recipeCollectionResponse, 0, len(collections))
+	for _, collection := range collections {
+		items = append(items, buildRecipeCollectionResponse(collection))
+	}
+
+	writeJSON(w, http.StatusOK, recipeCollectionListResponse{Collections: items})
+}
+
+func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	var req saveRecipeCollectionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	collection, err := recipes.CreateCollection(r.Context(), claims.UserID, req.Name)
+	if err != nil {
+		writeRecipeCollectionError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, buildRecipeCollectionResponse(collection))
+}
+
+func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	collectionID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+		return
+	}
+
+	var req saveRecipeCollectionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	collection, err := recipes.RenameCollection(r.Context(), claims.UserID, collectionID, req.Name)
+	if err != nil {
+		writeRecipeCollectionError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, buildRecipeCollectionResponse(collection))
+}
+
+func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	collectionID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+		return
+	}
+
+	if err := recipes.DeleteCollection(r.Context(), claims.UserID, collectionID); err != nil {
+		writeRecipeCollectionError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func GetRecipe(w http.ResponseWriter, r *http.Request) {
@@ -249,6 +364,50 @@ func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func SetRecipeCollection(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		return
+	}
+
+	var req setRecipeCollectionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		return
+	}
+
+	var collectionID *uuid.UUID
+	if req.CollectionID != nil {
+		parsedCollectionID, err := uuid.Parse(*req.CollectionID)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+			return
+		}
+		collectionID = &parsedCollectionID
+	}
+
+	if err := recipes.SetCollection(r.Context(), claims.UserID, recipeID, collectionID); errors.Is(err, recipes.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		return
+	} else if errors.Is(err, recipes.ErrCollectionNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "Recipe collection not found")
+		return
+	} else if err != nil {
+		log.Printf("[%s] Error updating recipe collection: %v", middleware.GetReqID(r.Context()), err)
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 	images := recipe.Images
 	if images == nil {
@@ -257,6 +416,7 @@ func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 
 	return recipeResponse{
 		ID:                 recipe.ID.String(),
+		CollectionID:       formatOptionalUUID(recipe.CollectionID),
 		DishName:           recipe.DishName,
 		DishDescription:    recipe.DishDescription,
 		Difficulty:         recipe.Difficulty,
@@ -270,6 +430,36 @@ func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
 	}
 }
 
+func buildRecipeCollectionResponse(collection recipes.RecipeCollection) recipeCollectionResponse {
+	return recipeCollectionResponse{
+		ID:        collection.ID.String(),
+		Name:      collection.Name,
+		CreatedAt: formatRecipeTime(collection.CreatedAt),
+		UpdatedAt: formatRecipeTime(collection.UpdatedAt),
+	}
+}
+
+func formatOptionalUUID(value *uuid.UUID) *string {
+	if value == nil {
+		return nil
+	}
+	formatted := value.String()
+	return &formatted
+}
+
 func formatRecipeTime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339)
+}
+
+func writeRecipeCollectionError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, recipes.ErrInvalidCollectionName):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection name is invalid")
+	case errors.Is(err, recipes.ErrDuplicateCollectionName):
+		writeError(w, http.StatusConflict, "collection_name_already_exists", "Recipe collection name already exists")
+	case errors.Is(err, recipes.ErrCollectionNotFound):
+		writeError(w, http.StatusNotFound, "not_found", "Recipe collection not found")
+	default:
+		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+	}
 }

@@ -350,6 +350,125 @@ void main() {
     },
   );
 
+  test('listRecipeCollections decodes user collections', () async {
+    final _FakeAuthSessionCoordinator authSessionCoordinator =
+        _FakeAuthSessionCoordinator(
+          accessToken: 'access-token',
+          refreshedAccessToken: 'fresh-access-token',
+        );
+    final CulinexApiClient client = CulinexApiClient(
+      authSessionCoordinator: authSessionCoordinator,
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        expect(request.method, 'GET');
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/recipe-collections',
+        );
+        expect(request.headers['Authorization'], 'Bearer access-token');
+
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'collections': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 'collection-1',
+                'name': 'Weeknights',
+                'created_at': '2026-04-21T12:00:00Z',
+                'updated_at': '2026-04-22T12:00:00Z',
+              },
+            ],
+          }),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final List<RecipeCollection> collections = await client
+        .listRecipeCollections();
+
+    expect(collections, hasLength(1));
+    expect(collections.single.id, 'collection-1');
+    expect(collections.single.name, 'Weeknights');
+    expect(collections.single.createdAt, DateTime.utc(2026, 4, 21, 12));
+    client.close();
+  });
+
+  test(
+    'createRecipeCollection sends authorized post and decodes response',
+    () async {
+      final _FakeAuthSessionCoordinator authSessionCoordinator =
+          _FakeAuthSessionCoordinator(
+            accessToken: 'access-token',
+            refreshedAccessToken: 'fresh-access-token',
+          );
+      final CulinexApiClient client = CulinexApiClient(
+        authSessionCoordinator: authSessionCoordinator,
+        apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+        client: MockClient((http.Request request) async {
+          expect(request.method, 'POST');
+          expect(
+            request.url.toString(),
+            'http://127.0.0.1:8080/api/recipe-collections',
+          );
+          expect(jsonDecode(request.body), <String, dynamic>{
+            'name': 'Weeknights',
+          });
+
+          return http.Response(
+            jsonEncode(<String, dynamic>{
+              'id': 'collection-1',
+              'name': 'Weeknights',
+              'created_at': '2026-04-21T12:00:00Z',
+              'updated_at': '2026-04-21T12:00:00Z',
+            }),
+            201,
+            headers: <String, String>{'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      final RecipeCollection collection = await client.createRecipeCollection(
+        'Weeknights',
+      );
+
+      expect(collection.id, 'collection-1');
+      expect(collection.name, 'Weeknights');
+      client.close();
+    },
+  );
+
+  test('setRecipeCollection sends nullable collection id', () async {
+    final _FakeAuthSessionCoordinator authSessionCoordinator =
+        _FakeAuthSessionCoordinator(
+          accessToken: 'access-token',
+          refreshedAccessToken: 'fresh-access-token',
+        );
+    int requestCount = 0;
+    final CulinexApiClient client = CulinexApiClient(
+      authSessionCoordinator: authSessionCoordinator,
+      apiBaseUri: Uri.parse('http://127.0.0.1:8080/api/'),
+      client: MockClient((http.Request request) async {
+        requestCount += 1;
+        expect(request.method, 'PATCH');
+        expect(
+          request.url.toString(),
+          'http://127.0.0.1:8080/api/recipes/recipe-1/collection',
+        );
+        expect(jsonDecode(request.body), <String, dynamic>{
+          'collection_id': requestCount == 1 ? 'collection-1' : null,
+        });
+        return http.Response('', 204);
+      }),
+    );
+
+    await client.setRecipeCollection('recipe-1', 'collection-1');
+    await client.setRecipeCollection('recipe-1', null);
+
+    expect(requestCount, 2);
+    client.close();
+  });
+
   test(
     'deleteAllRecipes sends authorized delete and refreshes once on 401',
     () async {

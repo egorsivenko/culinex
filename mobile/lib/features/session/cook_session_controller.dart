@@ -60,12 +60,15 @@ class CookSessionController extends ChangeNotifier {
   RecipeStyle _recipeStyle = RecipeStyle.everyday;
   GeneratedRecipe? _recipe;
   List<RecipeSummary> _recipeSummaries = const [];
+  List<RecipeCollection> _recipeCollections = const [];
   RecipeHistoryStatus _recipeHistoryStatus = RecipeHistoryStatus.initial;
   bool _isOpeningSavedRecipe = false;
   bool _recipeOpenedFromHistory = false;
   String? _selectedRecipeActionId;
   String? _deletingRecipeId;
   String? _favoritingRecipeId;
+  String? _movingRecipeId;
+  String? _deletingCollectionId;
   bool _isDeletingAllRecipes = false;
   SessionErrorState? _errorState;
   Locale _locale = AppLocale.english;
@@ -81,12 +84,15 @@ class CookSessionController extends ChangeNotifier {
       _ingredientEntryMethod == IngredientEntryMethod.manual;
   GeneratedRecipe? get recipe => _recipe;
   List<RecipeSummary> get recipeSummaries => _recipeSummaries;
+  List<RecipeCollection> get recipeCollections => _recipeCollections;
   RecipeHistoryStatus get recipeHistoryStatus => _recipeHistoryStatus;
   bool get isOpeningSavedRecipe => _isOpeningSavedRecipe;
   bool get recipeOpenedFromHistory => _recipeOpenedFromHistory;
   String? get selectedRecipeActionId => _selectedRecipeActionId;
   String? get deletingRecipeId => _deletingRecipeId;
   String? get favoritingRecipeId => _favoritingRecipeId;
+  String? get movingRecipeId => _movingRecipeId;
+  String? get deletingCollectionId => _deletingCollectionId;
   bool get isDeletingAllRecipes => _isDeletingAllRecipes;
   SessionErrorState get errorState =>
       _errorState ?? const SessionErrorState(SessionErrorCode.unknown);
@@ -163,6 +169,8 @@ class CookSessionController extends ChangeNotifier {
     _selectedRecipeActionId = null;
     _deletingRecipeId = null;
     _favoritingRecipeId = null;
+    _movingRecipeId = null;
+    _deletingCollectionId = null;
     _isDeletingAllRecipes = false;
     _errorState = null;
     _lastOperation = SessionOperation.none;
@@ -350,11 +358,14 @@ class CookSessionController extends ChangeNotifier {
 
     try {
       final List<RecipeSummary> summaries = await _repository.listRecipes();
+      final List<RecipeCollection> collections = await _repository
+          .listRecipeCollections();
       if (_isDisposed) {
         return;
       }
 
       _recipeSummaries = _sortRecipeSummaries(summaries);
+      _recipeCollections = _sortRecipeCollections(collections);
       if (!_recipeSummaries.any(
         (summary) => summary.id == _selectedRecipeActionId,
       )) {
@@ -405,7 +416,7 @@ class CookSessionController extends ChangeNotifier {
   }
 
   void selectRecipeActions(String id) {
-    if (_deletingRecipeId != null) {
+    if (_deletingRecipeId != null || _movingRecipeId != null) {
       return;
     }
 
@@ -416,7 +427,8 @@ class CookSessionController extends ChangeNotifier {
   void clearRecipeActions() {
     if (_selectedRecipeActionId == null ||
         _deletingRecipeId != null ||
-        _favoritingRecipeId != null) {
+        _favoritingRecipeId != null ||
+        _movingRecipeId != null) {
       return;
     }
 
@@ -425,7 +437,9 @@ class CookSessionController extends ChangeNotifier {
   }
 
   Future<bool> setRecipeFavorite(String id, bool isFavorite) async {
-    if (_favoritingRecipeId != null || _deletingRecipeId != null) {
+    if (_favoritingRecipeId != null ||
+        _deletingRecipeId != null ||
+        _movingRecipeId != null) {
       return false;
     }
 
@@ -480,9 +494,186 @@ class CookSessionController extends ChangeNotifier {
     }
   }
 
+  Future<bool> createRecipeCollection(String name) async {
+    if (_deletingCollectionId != null || _isDeletingAllRecipes) {
+      return false;
+    }
+
+    try {
+      final RecipeCollection collection = await _repository
+          .createRecipeCollection(name);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeCollections = _sortRecipeCollections(<RecipeCollection>[
+        collection,
+        ..._recipeCollections,
+      ]);
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return false;
+    }
+  }
+
+  Future<bool> renameRecipeCollection(String id, String name) async {
+    if (_deletingCollectionId != null || _isDeletingAllRecipes) {
+      return false;
+    }
+
+    try {
+      final RecipeCollection collection = await _repository
+          .renameRecipeCollection(id, name);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeCollections = _sortRecipeCollections(
+        _recipeCollections.map((item) => item.id == id ? collection : item),
+      );
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return false;
+    }
+  }
+
+  Future<bool> deleteRecipeCollection(String id) async {
+    if (_deletingCollectionId != null || _isDeletingAllRecipes) {
+      return false;
+    }
+
+    final List<RecipeCollection> previousCollections = _recipeCollections;
+    final List<RecipeSummary> previousSummaries = _recipeSummaries;
+    final GeneratedRecipe? previousRecipe = _recipe;
+
+    _deletingCollectionId = id;
+    _notifySafely();
+
+    try {
+      await _repository.deleteRecipeCollection(id);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeCollections = List<RecipeCollection>.unmodifiable(
+        _recipeCollections.where((collection) => collection.id != id),
+      );
+      _recipeSummaries = _sortRecipeSummaries(
+        _recipeSummaries.map((summary) {
+          if (summary.collectionId != id) {
+            return summary;
+          }
+          return summary.copyWith(clearCollectionId: true);
+        }),
+      );
+      if (_recipe?.collectionId == id) {
+        _recipe = _recipe?.copyWith(clearCollectionId: true);
+      }
+      _selectedRecipeActionId = null;
+      _deletingCollectionId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeCollections = previousCollections;
+      _recipeSummaries = previousSummaries;
+      _recipe = previousRecipe;
+      _deletingCollectionId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return false;
+    }
+  }
+
+  Future<bool> setRecipeCollection(String id, String? collectionId) async {
+    if (_favoritingRecipeId != null ||
+        _deletingRecipeId != null ||
+        _movingRecipeId != null ||
+        _isDeletingAllRecipes) {
+      return false;
+    }
+
+    final List<RecipeSummary> previousSummaries = _recipeSummaries;
+    final GeneratedRecipe? previousRecipe = _recipe;
+    final String? previousSelectedRecipeActionId = _selectedRecipeActionId;
+    final int summaryIndex = previousSummaries.indexWhere(
+      (summary) => summary.id == id,
+    );
+    if (summaryIndex == -1) {
+      return false;
+    }
+
+    _movingRecipeId = id;
+    _selectedRecipeActionId = null;
+    _recipeSummaries = _sortRecipeSummaries(
+      previousSummaries.map((summary) {
+        if (summary.id != id) {
+          return summary;
+        }
+        return summary.copyWith(
+          collectionId: collectionId,
+          clearCollectionId: collectionId == null,
+        );
+      }),
+    );
+    if (_recipe?.id == id) {
+      _recipe = _recipe?.copyWith(
+        collectionId: collectionId,
+        clearCollectionId: collectionId == null,
+      );
+    }
+    _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+    _notifySafely();
+
+    try {
+      await _repository.setRecipeCollection(id, collectionId);
+      if (_isDisposed) {
+        return false;
+      }
+
+      _movingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return true;
+    } catch (_) {
+      if (_isDisposed) {
+        return false;
+      }
+
+      _recipeSummaries = previousSummaries;
+      _recipe = previousRecipe;
+      _selectedRecipeActionId = previousSelectedRecipeActionId;
+      _movingRecipeId = null;
+      _recipeHistoryStatus = RecipeHistoryStatus.loaded;
+      _notifySafely();
+      return false;
+    }
+  }
+
   Future<bool> deleteRecipe(String id) async {
     if (_deletingRecipeId != null ||
         _favoritingRecipeId != null ||
+        _movingRecipeId != null ||
         _isDeletingAllRecipes) {
       return false;
     }
@@ -526,11 +717,13 @@ class CookSessionController extends ChangeNotifier {
   Future<bool> deleteAllRecipes() async {
     if (_deletingRecipeId != null ||
         _favoritingRecipeId != null ||
+        _movingRecipeId != null ||
         _isDeletingAllRecipes) {
       return false;
     }
 
     final List<RecipeSummary> previousSummaries = _recipeSummaries;
+    final List<RecipeCollection> previousCollections = _recipeCollections;
     final GeneratedRecipe? previousRecipe = _recipe;
     final bool previousRecipeOpenedFromHistory = _recipeOpenedFromHistory;
     final String? previousSelectedRecipeActionId = _selectedRecipeActionId;
@@ -548,6 +741,7 @@ class CookSessionController extends ChangeNotifier {
       }
 
       _recipeSummaries = const [];
+      _recipeCollections = const [];
       _selectedRecipeActionId = null;
       _recipeHistoryStatus = RecipeHistoryStatus.loaded;
       if (_recipe?.id != null) {
@@ -566,6 +760,7 @@ class CookSessionController extends ChangeNotifier {
       }
 
       _recipeSummaries = previousSummaries;
+      _recipeCollections = previousCollections;
       _recipe = previousRecipe;
       _recipeOpenedFromHistory = previousRecipeOpenedFromHistory;
       _selectedRecipeActionId = previousSelectedRecipeActionId;
@@ -598,6 +793,27 @@ class CookSessionController extends ChangeNotifier {
       return bCreatedAt.compareTo(aCreatedAt);
     });
     return List<RecipeSummary>.unmodifiable(sorted);
+  }
+
+  List<RecipeCollection> _sortRecipeCollections(
+    Iterable<RecipeCollection> collections,
+  ) {
+    final List<RecipeCollection> sorted = collections.toList(growable: false);
+    sorted.sort((RecipeCollection a, RecipeCollection b) {
+      final DateTime? aCreatedAt = a.createdAt;
+      final DateTime? bCreatedAt = b.createdAt;
+      if (aCreatedAt == null && bCreatedAt == null) {
+        return 0;
+      }
+      if (aCreatedAt == null) {
+        return 1;
+      }
+      if (bCreatedAt == null) {
+        return -1;
+      }
+      return bCreatedAt.compareTo(aCreatedAt);
+    });
+    return List<RecipeCollection>.unmodifiable(sorted);
   }
 
   Future<void> generateRecipeFromIngredients(

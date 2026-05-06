@@ -71,6 +71,90 @@ class AppLocalizationsUk extends AppLocalizations {
   String get myRecipesRetry => 'Спробувати ще';
 
   @override
+  String get recipeCollectionRecents => 'Нещодавні';
+
+  @override
+  String get createRecipeCollectionTooltip => 'Створити колекцію';
+
+  @override
+  String get createRecipeCollectionTitle => 'Нова колекція';
+
+  @override
+  String get renameRecipeCollectionTitle => 'Перейменувати колекцію';
+
+  @override
+  String get recipeCollectionNameLabel => 'Назва колекції';
+
+  @override
+  String get recipeCollectionNameRequired => 'Введіть назву колекції.';
+
+  @override
+  String get recipeCollectionNameDuplicate =>
+      'Колекція з такою назвою вже існує.';
+
+  @override
+  String get createRecipeCollectionAction => 'Створити';
+
+  @override
+  String get renameRecipeCollectionAction => 'Зберегти';
+
+  @override
+  String get recipeCollectionCreateFailed =>
+      'Не вдалося створити колекцію. Спробуйте ще раз.';
+
+  @override
+  String get recipeCollectionRenameFailed =>
+      'Не вдалося перейменувати колекцію. Спробуйте ще раз.';
+
+  @override
+  String get recipeCollectionDeleteFailed =>
+      'Не вдалося видалити колекцію. Спробуйте ще раз.';
+
+  @override
+  String get deleteRecipeCollection => 'Видалити колекцію';
+
+  @override
+  String get renameRecipeCollection => 'Перейменувати колекцію';
+
+  @override
+  String get deleteRecipeCollectionDialogTitle => 'Видалити колекцію?';
+
+  @override
+  String get deleteRecipeCollectionDialogMessage =>
+      'Рецепти з цієї колекції буде переміщено до Нещодавніх.';
+
+  @override
+  String get deleteRecipeCollectionDialogConfirm => 'Видалити колекцію';
+
+  @override
+  String recipeCollectionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count рецептів',
+      one: '1 рецепт',
+      zero: 'Немає рецептів',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get addRecipeToCollection => 'Додати до колекції';
+
+  @override
+  String get moveRecipe => 'Перемістити рецепт';
+
+  @override
+  String get moveRecipeToRecents => 'Перемістити до Нещодавніх';
+
+  @override
+  String get recipeCollectionMoveFailed =>
+      'Не вдалося перемістити рецепт. Спробуйте ще раз.';
+
+  @override
+  String get noRecipeCollectionsYet => 'Колекцій ще немає';
+
+  @override
   String get favoriteRecipe => 'Додати в обране';
 
   @override
@@ -118,21 +202,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsDarkOption => 'Темна';
 
   @override
-  String get deleteAllRecipes => 'Видалити всі рецепти';
+  String get deleteAllRecipes => 'Видалити всі дані';
 
   @override
-  String get deleteAllRecipesDialogTitle => 'Видалити всі рецепти?';
+  String get deleteAllRecipesDialogTitle => 'Видалити всі дані?';
 
   @override
   String get deleteAllRecipesDialogMessage =>
-      'Усі збережені рецепти буде видалено назавжди.';
+      'Усі збережені рецепти та колекції буде видалено назавжди.';
 
   @override
-  String get deleteAllRecipesDialogConfirm => 'Видалити всі рецепти';
+  String get deleteAllRecipesDialogConfirm => 'Видалити всі дані';
 
   @override
   String get deleteAllRecipesFailed =>
-      'Не вдалося видалити рецепти. Спробуйте ще раз.';
+      'Не вдалося видалити дані. Спробуйте ще раз.';
 
   @override
   String get deleteAccountDialogTitle => 'Видалити акаунт?';

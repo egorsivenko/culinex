@@ -192,6 +192,7 @@ class RecipeImage {
 class GeneratedRecipe {
   const GeneratedRecipe({
     this.id,
+    this.collectionId,
     required this.dishName,
     required this.dishDescription,
     required this.difficulty,
@@ -205,6 +206,7 @@ class GeneratedRecipe {
   });
 
   final String? id;
+  final String? collectionId;
   final String dishName;
   final String dishDescription;
   final RecipeDifficulty difficulty;
@@ -219,6 +221,7 @@ class GeneratedRecipe {
   factory GeneratedRecipe.fromJson(Map<String, dynamic> json) {
     return GeneratedRecipe(
       id: json['id'] as String?,
+      collectionId: json['collection_id'] as String?,
       dishName: json['dish_name'] as String? ?? '',
       dishDescription: json['dish_description'] as String? ?? '',
       difficulty: RecipeDifficulty.fromJson(
@@ -244,9 +247,16 @@ class GeneratedRecipe {
     );
   }
 
-  GeneratedRecipe copyWith({bool? isFavorite}) {
+  GeneratedRecipe copyWith({
+    bool? isFavorite,
+    String? collectionId,
+    bool clearCollectionId = false,
+  }) {
     return GeneratedRecipe(
       id: id,
+      collectionId: clearCollectionId
+          ? null
+          : collectionId ?? this.collectionId,
       dishName: dishName,
       dishDescription: dishDescription,
       difficulty: difficulty,
@@ -264,6 +274,7 @@ class GeneratedRecipe {
 class RecipeSummary {
   const RecipeSummary({
     required this.id,
+    this.collectionId,
     required this.dishName,
     required this.dishDescription,
     required this.difficulty,
@@ -273,6 +284,7 @@ class RecipeSummary {
   });
 
   final String id;
+  final String? collectionId;
   final String dishName;
   final String dishDescription;
   final RecipeDifficulty difficulty;
@@ -283,6 +295,7 @@ class RecipeSummary {
   factory RecipeSummary.fromJson(Map<String, dynamic> json) {
     return RecipeSummary(
       id: json['id'] as String? ?? '',
+      collectionId: json['collection_id'] as String?,
       dishName: json['dish_name'] as String? ?? '',
       dishDescription: json['dish_description'] as String? ?? '',
       difficulty: RecipeDifficulty.fromJson(
@@ -294,15 +307,45 @@ class RecipeSummary {
     );
   }
 
-  RecipeSummary copyWith({bool? isFavorite}) {
+  RecipeSummary copyWith({
+    bool? isFavorite,
+    String? collectionId,
+    bool clearCollectionId = false,
+  }) {
     return RecipeSummary(
       id: id,
+      collectionId: clearCollectionId
+          ? null
+          : collectionId ?? this.collectionId,
       dishName: dishName,
       dishDescription: dishDescription,
       difficulty: difficulty,
       cookingTimeMinutes: cookingTimeMinutes,
       isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt,
+    );
+  }
+}
+
+class RecipeCollection {
+  const RecipeCollection({
+    required this.id,
+    required this.name,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String name;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory RecipeCollection.fromJson(Map<String, dynamic> json) {
+    return RecipeCollection(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      createdAt: _parseDateTime(json['created_at']),
+      updatedAt: _parseDateTime(json['updated_at']),
     );
   }
 }

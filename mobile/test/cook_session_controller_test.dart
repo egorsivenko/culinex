@@ -596,6 +596,84 @@ void main() {
     controller.dispose();
   });
 
+  test(
+    'setRecipeCollection moves a recipe into and out of a collection',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+        ],
+        recipeCollections: const [
+          RecipeCollection(id: 'collection-1', name: 'Weeknights'),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      controller.selectRecipeActions('recipe-1');
+      final bool moved = await controller.setRecipeCollection(
+        'recipe-1',
+        'collection-1',
+      );
+      final bool removed = await controller.setRecipeCollection(
+        'recipe-1',
+        null,
+      );
+
+      expect(moved, isTrue);
+      expect(removed, isTrue);
+      expect(repository.collectionUpdates, <String, String?>{'recipe-1': null});
+      expect(controller.selectedRecipeActionId, isNull);
+      expect(controller.recipeSummaries.single.collectionId, isNull);
+
+      controller.dispose();
+    },
+  );
+
+  test(
+    'deleteRecipeCollection removes the collection and moves recipes to recents',
+    () async {
+      final FakeRepository repository = FakeRepository(
+        recipeSummaries: const [
+          RecipeSummary(
+            id: 'recipe-1',
+            collectionId: 'collection-1',
+            dishName: 'Tomato Pasta',
+            dishDescription: 'Simple dinner',
+            difficulty: RecipeDifficulty.easy,
+            cookingTimeMinutes: 20,
+          ),
+        ],
+        recipeCollections: const [
+          RecipeCollection(id: 'collection-1', name: 'Weeknights'),
+        ],
+      );
+      final CookSessionController controller = CookSessionController(
+        repository: repository,
+      );
+
+      await controller.loadRecipeHistory();
+      final bool deleted = await controller.deleteRecipeCollection(
+        'collection-1',
+      );
+
+      expect(deleted, isTrue);
+      expect(repository.deletedCollectionIds, <String>['collection-1']);
+      expect(controller.recipeCollections, isEmpty);
+      expect(controller.recipeSummaries.single.collectionId, isNull);
+
+      controller.dispose();
+    },
+  );
+
   test('deleteAllRecipes clears summaries and saved history detail', () async {
     final FakeRepository repository = FakeRepository(
       recipeSummaries: const [
@@ -889,6 +967,7 @@ class FakeRepository implements CulinexRepository {
   FakeRepository({
     this.extractedIngredients = const [],
     this.recipeSummaries = const [],
+    this.recipeCollections = const [],
     GeneratedRecipe? generatedRecipe,
     this.generateRecipeError,
     GeneratedRecipe? savedRecipe,
@@ -918,6 +997,7 @@ class FakeRepository implements CulinexRepository {
 
   final List<ExtractedIngredient> extractedIngredients;
   final List<RecipeSummary> recipeSummaries;
+  final List<RecipeCollection> recipeCollections;
   final GeneratedRecipe _generatedRecipe;
   final GeneratedRecipe? _savedRecipe;
   final Object? generateRecipeError;
@@ -928,9 +1008,12 @@ class FakeRepository implements CulinexRepository {
 
   int extractCallCount = 0;
   int listRecipesCallCount = 0;
+  int listRecipeCollectionsCallCount = 0;
   int deleteAllRecipesCallCount = 0;
   final Map<String, bool> favoriteUpdates = <String, bool>{};
+  final Map<String, String?> collectionUpdates = <String, String?>{};
   final List<String> deletedRecipeIds = <String>[];
+  final List<String> deletedCollectionIds = <String>[];
   String? lastOpenedRecipeId;
   File? lastExtractedFile;
   Locale? lastExtractLocale;
@@ -973,6 +1056,12 @@ class FakeRepository implements CulinexRepository {
   }
 
   @override
+  Future<List<RecipeCollection>> listRecipeCollections() async {
+    listRecipeCollectionsCallCount += 1;
+    return recipeCollections;
+  }
+
+  @override
   Future<GeneratedRecipe> getRecipe(String id) async {
     lastOpenedRecipeId = id;
     final GeneratedRecipe? savedRecipe = _savedRecipe;
@@ -989,6 +1078,29 @@ class FakeRepository implements CulinexRepository {
       throw error;
     }
     favoriteUpdates[id] = isFavorite;
+  }
+
+  @override
+  Future<RecipeCollection> createRecipeCollection(String name) async {
+    return RecipeCollection(id: 'collection-${name.length}', name: name);
+  }
+
+  @override
+  Future<RecipeCollection> renameRecipeCollection(
+    String id,
+    String name,
+  ) async {
+    return RecipeCollection(id: id, name: name);
+  }
+
+  @override
+  Future<void> deleteRecipeCollection(String id) async {
+    deletedCollectionIds.add(id);
+  }
+
+  @override
+  Future<void> setRecipeCollection(String id, String? collectionId) async {
+    collectionUpdates[id] = collectionId;
   }
 
   @override

@@ -291,11 +291,15 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                     MyRecipesScreen(
                       status: widget.controller.recipeHistoryStatus,
                       recipes: widget.controller.recipeSummaries,
+                      collections: widget.controller.recipeCollections,
                       isOpeningRecipe: widget.controller.isOpeningSavedRecipe,
                       selectedRecipeActionId:
                           widget.controller.selectedRecipeActionId,
                       deletingRecipeId: widget.controller.deletingRecipeId,
                       favoritingRecipeId: widget.controller.favoritingRecipeId,
+                      movingRecipeId: widget.controller.movingRecipeId,
+                      deletingCollectionId:
+                          widget.controller.deletingCollectionId,
                       onRetry: () {
                         unawaited(
                           widget.controller.loadRecipeHistory(force: true),
@@ -307,6 +311,14 @@ class _CulinexFlowShellState extends State<CulinexFlowShell> {
                       onClearRecipeActions:
                           widget.controller.clearRecipeActions,
                       onSetRecipeFavorite: widget.controller.setRecipeFavorite,
+                      onCreateRecipeCollection:
+                          widget.controller.createRecipeCollection,
+                      onRenameRecipeCollection:
+                          widget.controller.renameRecipeCollection,
+                      onDeleteRecipeCollection:
+                          widget.controller.deleteRecipeCollection,
+                      onSetRecipeCollection:
+                          widget.controller.setRecipeCollection,
                       onDeleteRecipe: widget.controller.deleteRecipe,
                     ),
                     SettingsScreen(

@@ -13,6 +13,7 @@ void main() {
       List<RecipeSummary> recipes = const <RecipeSummary>[
         RecipeSummary(
           id: 'recipe-1',
+          collectionId: 'collection-1',
           dishName: 'Tomato Pasta',
           dishDescription: 'Simple dinner',
           difficulty: RecipeDifficulty.easy,
@@ -37,10 +38,13 @@ void main() {
                 return MyRecipesScreen(
                   status: RecipeHistoryStatus.loaded,
                   recipes: recipes,
+                  collections: const <RecipeCollection>[],
                   isOpeningRecipe: false,
                   selectedRecipeActionId: selectedRecipeActionId,
                   deletingRecipeId: null,
                   favoritingRecipeId: null,
+                  movingRecipeId: null,
+                  deletingCollectionId: null,
                   onRetry: () {},
                   onOpenRecipe: (_) {},
                   onSelectRecipeActions: (String id) {
@@ -66,6 +70,10 @@ void main() {
                     });
                     return true;
                   },
+                  onCreateRecipeCollection: (_) async => true,
+                  onRenameRecipeCollection: (_, _) async => true,
+                  onDeleteRecipeCollection: (_) async => true,
+                  onSetRecipeCollection: (_, _) async => true,
                   onDeleteRecipe: (String id) async {
                     setState(() {
                       deletedRecipeId = id;
@@ -103,6 +111,7 @@ void main() {
       );
       expect(find.text('Delete'), findsOneWidget);
       expect(find.text('Favorite'), findsOneWidget);
+      expect(find.text('Add to collection'), findsOneWidget);
       final Finder actionBox = find.byKey(
         const ValueKey<String>('recipe-action-box'),
       );
@@ -121,7 +130,7 @@ void main() {
       );
       expect(
         find.descendant(of: actionBox, matching: find.byType(TextButton)),
-        findsNWidgets(2),
+        findsNWidgets(3),
       );
       expect(
         tester
@@ -165,6 +174,82 @@ void main() {
     },
   );
 
+  testWidgets('tapping outside recipe actions hides the action box', (
+    tester,
+  ) async {
+    String? selectedRecipeActionId;
+
+    await tester.pumpWidget(
+      buildLocalizedApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MyRecipesScreen(
+                status: RecipeHistoryStatus.loaded,
+                recipes: const <RecipeSummary>[
+                  RecipeSummary(
+                    id: 'recipe-1',
+                    collectionId: 'collection-1',
+                    dishName: 'Tomato Pasta',
+                    dishDescription: 'Simple dinner',
+                    difficulty: RecipeDifficulty.easy,
+                    cookingTimeMinutes: 20,
+                  ),
+                ],
+                collections: const <RecipeCollection>[],
+                isOpeningRecipe: false,
+                selectedRecipeActionId: selectedRecipeActionId,
+                deletingRecipeId: null,
+                favoritingRecipeId: null,
+                movingRecipeId: null,
+                deletingCollectionId: null,
+                onRetry: () {},
+                onOpenRecipe: (_) {},
+                onSelectRecipeActions: (String id) {
+                  setState(() {
+                    selectedRecipeActionId = id;
+                  });
+                },
+                onClearRecipeActions: () {
+                  setState(() {
+                    selectedRecipeActionId = null;
+                  });
+                },
+                onSetRecipeFavorite: (_, _) async => true,
+                onCreateRecipeCollection: (_) async => true,
+                onRenameRecipeCollection: (_, _) async => true,
+                onDeleteRecipeCollection: (_) async => true,
+                onSetRecipeCollection: (_, _) async => true,
+                onDeleteRecipe: (_) async => true,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder tomatoRow = find
+        .ancestor(of: find.text('Tomato Pasta'), matching: find.byType(InkWell))
+        .first;
+
+    await tester.longPress(tomatoRow);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('recipe-action-box')),
+      findsOneWidget,
+    );
+
+    await tester.tapAt(const Offset(16, 16));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('recipe-action-box')),
+      findsNothing,
+    );
+  });
+
   testWidgets('favorite action marks row and moves it to the top', (
     tester,
   ) async {
@@ -194,10 +279,13 @@ void main() {
               return MyRecipesScreen(
                 status: RecipeHistoryStatus.loaded,
                 recipes: recipes,
+                collections: const <RecipeCollection>[],
                 isOpeningRecipe: false,
                 selectedRecipeActionId: selectedRecipeActionId,
                 deletingRecipeId: null,
                 favoritingRecipeId: null,
+                movingRecipeId: null,
+                deletingCollectionId: null,
                 onRetry: () {},
                 onOpenRecipe: (_) {},
                 onSelectRecipeActions: (String id) {
@@ -230,6 +318,10 @@ void main() {
                   });
                   return true;
                 },
+                onCreateRecipeCollection: (_) async => true,
+                onRenameRecipeCollection: (_, _) async => true,
+                onDeleteRecipeCollection: (_) async => true,
+                onSetRecipeCollection: (_, _) async => true,
                 onDeleteRecipe: (_) async => true,
               );
             },
@@ -281,6 +373,129 @@ void main() {
     );
   });
 
+  testWidgets('collection picker moves recipes between folders and recents', (
+    tester,
+  ) async {
+    List<RecipeSummary> recipes = const <RecipeSummary>[
+      RecipeSummary(
+        id: 'recipe-2',
+        collectionId: 'collection-1',
+        dishName: 'Lentil Soup',
+        dishDescription: 'Cozy lunch',
+        difficulty: RecipeDifficulty.medium,
+        cookingTimeMinutes: 35,
+      ),
+    ];
+    const List<RecipeCollection> collections = <RecipeCollection>[
+      RecipeCollection(id: 'collection-1', name: 'Weeknights'),
+      RecipeCollection(id: 'collection-2', name: 'Lunches'),
+    ];
+    String? selectedRecipeActionId;
+    final Map<String, String?> moves = <String, String?>{};
+
+    await tester.pumpWidget(
+      buildLocalizedApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return MyRecipesScreen(
+                status: RecipeHistoryStatus.loaded,
+                recipes: recipes,
+                collections: collections,
+                isOpeningRecipe: false,
+                selectedRecipeActionId: selectedRecipeActionId,
+                deletingRecipeId: null,
+                favoritingRecipeId: null,
+                movingRecipeId: null,
+                deletingCollectionId: null,
+                onRetry: () {},
+                onOpenRecipe: (_) {},
+                onSelectRecipeActions: (String id) {
+                  setState(() {
+                    selectedRecipeActionId = id;
+                  });
+                },
+                onClearRecipeActions: () {
+                  setState(() {
+                    selectedRecipeActionId = null;
+                  });
+                },
+                onSetRecipeFavorite: (_, _) async => true,
+                onCreateRecipeCollection: (_) async => true,
+                onRenameRecipeCollection: (_, _) async => true,
+                onDeleteRecipeCollection: (_) async => true,
+                onSetRecipeCollection: (String id, String? collectionId) async {
+                  setState(() {
+                    moves[id] = collectionId;
+                    selectedRecipeActionId = null;
+                    recipes = recipes
+                        .map(
+                          (recipe) => recipe.id == id
+                              ? recipe.copyWith(
+                                  collectionId: collectionId,
+                                  clearCollectionId: collectionId == null,
+                                )
+                              : recipe,
+                        )
+                        .toList(growable: false);
+                  });
+                  return true;
+                },
+                onDeleteRecipe: (_) async => true,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weeknights'), findsOneWidget);
+    expect(find.text('Lunches'), findsOneWidget);
+
+    await tester.longPress(
+      find
+          .ancestor(
+            of: find.text('Lentil Soup'),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('recipe-add-to-collection-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('recipe-collection-option-collection-2'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(moves['recipe-2'], 'collection-2');
+
+    await tester.longPress(
+      find
+          .ancestor(
+            of: find.text('Lentil Soup'),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('recipe-add-to-collection-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('recipe-move-to-recents-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(moves['recipe-2'], isNull);
+  });
+
   testWidgets('recipe action block keeps Ukrainian labels and icons aligned', (
     tester,
   ) async {
@@ -303,10 +518,13 @@ void main() {
                     cookingTimeMinutes: 20,
                   ),
                 ],
+                collections: const <RecipeCollection>[],
                 isOpeningRecipe: false,
                 selectedRecipeActionId: selectedRecipeActionId,
                 deletingRecipeId: null,
                 favoritingRecipeId: null,
+                movingRecipeId: null,
+                deletingCollectionId: null,
                 onRetry: () {},
                 onOpenRecipe: (_) {},
                 onSelectRecipeActions: (String id) {
@@ -320,6 +538,10 @@ void main() {
                   });
                 },
                 onSetRecipeFavorite: (_, _) async => true,
+                onCreateRecipeCollection: (_) async => true,
+                onRenameRecipeCollection: (_, _) async => true,
+                onDeleteRecipeCollection: (_) async => true,
+                onSetRecipeCollection: (_, _) async => true,
                 onDeleteRecipe: (_) async => true,
               );
             },
@@ -340,6 +562,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Додати в обране'), findsOneWidget);
+    expect(find.text('Додати до колекції'), findsOneWidget);
     expect(find.text('Видалити'), findsOneWidget);
 
     final Finder favoriteIcon = find

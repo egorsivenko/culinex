@@ -218,6 +218,144 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get myRecipesRetry;
 
+  /// No description provided for @recipeCollectionRecents.
+  ///
+  /// In en, this message translates to:
+  /// **'Recents'**
+  String get recipeCollectionRecents;
+
+  /// No description provided for @createRecipeCollectionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Create collection'**
+  String get createRecipeCollectionTooltip;
+
+  /// No description provided for @createRecipeCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get createRecipeCollectionTitle;
+
+  /// No description provided for @renameRecipeCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename collection'**
+  String get renameRecipeCollectionTitle;
+
+  /// No description provided for @recipeCollectionNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection name'**
+  String get recipeCollectionNameLabel;
+
+  /// No description provided for @recipeCollectionNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a collection name.'**
+  String get recipeCollectionNameRequired;
+
+  /// No description provided for @recipeCollectionNameDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'A collection with this name already exists.'**
+  String get recipeCollectionNameDuplicate;
+
+  /// No description provided for @createRecipeCollectionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createRecipeCollectionAction;
+
+  /// No description provided for @renameRecipeCollectionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get renameRecipeCollectionAction;
+
+  /// No description provided for @recipeCollectionCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection could not be created. Try again.'**
+  String get recipeCollectionCreateFailed;
+
+  /// No description provided for @recipeCollectionRenameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection could not be renamed. Try again.'**
+  String get recipeCollectionRenameFailed;
+
+  /// No description provided for @recipeCollectionDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection could not be deleted. Try again.'**
+  String get recipeCollectionDeleteFailed;
+
+  /// No description provided for @deleteRecipeCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get deleteRecipeCollection;
+
+  /// No description provided for @renameRecipeCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename collection'**
+  String get renameRecipeCollection;
+
+  /// No description provided for @deleteRecipeCollectionDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection?'**
+  String get deleteRecipeCollectionDialogTitle;
+
+  /// No description provided for @deleteRecipeCollectionDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes in this collection will move to Recents.'**
+  String get deleteRecipeCollectionDialogMessage;
+
+  /// No description provided for @deleteRecipeCollectionDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get deleteRecipeCollectionDialogConfirm;
+
+  /// No description provided for @recipeCollectionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No recipes} =1{1 recipe} other{{count} recipes}}'**
+  String recipeCollectionCount(int count);
+
+  /// No description provided for @addRecipeToCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to collection'**
+  String get addRecipeToCollection;
+
+  /// No description provided for @moveRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Move recipe'**
+  String get moveRecipe;
+
+  /// No description provided for @moveRecipeToRecents.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Recents'**
+  String get moveRecipeToRecents;
+
+  /// No description provided for @recipeCollectionMoveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe could not be moved. Try again.'**
+  String get recipeCollectionMoveFailed;
+
+  /// No description provided for @noRecipeCollectionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get noRecipeCollectionsYet;
+
   /// No description provided for @favoriteRecipe.
   ///
   /// In en, this message translates to:
@@ -311,31 +449,31 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAllRecipes.
   ///
   /// In en, this message translates to:
-  /// **'Delete all recipes'**
+  /// **'Delete all data'**
   String get deleteAllRecipes;
 
   /// No description provided for @deleteAllRecipesDialogTitle.
   ///
   /// In en, this message translates to:
-  /// **'Delete all recipes?'**
+  /// **'Delete all data?'**
   String get deleteAllRecipesDialogTitle;
 
   /// No description provided for @deleteAllRecipesDialogMessage.
   ///
   /// In en, this message translates to:
-  /// **'All saved recipes will be permanently deleted.'**
+  /// **'All saved recipes and collections will be permanently deleted.'**
   String get deleteAllRecipesDialogMessage;
 
   /// No description provided for @deleteAllRecipesDialogConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Delete all recipes'**
+  /// **'Delete all data'**
   String get deleteAllRecipesDialogConfirm;
 
   /// No description provided for @deleteAllRecipesFailed.
   ///
   /// In en, this message translates to:
-  /// **'Recipes could not be deleted. Try again.'**
+  /// **'Data could not be deleted. Try again.'**
   String get deleteAllRecipesFailed;
 
   /// No description provided for @deleteAccountDialogTitle.

@@ -65,8 +65,16 @@ func main() {
 				r.Get("/", handler.ListRecipes)
 				r.Get("/{id}", handler.GetRecipe)
 				r.Patch("/{id}/favorite", handler.SetRecipeFavorite)
+				r.Patch("/{id}/collection", handler.SetRecipeCollection)
 				r.Delete("/", handler.DeleteAllRecipes)
 				r.Delete("/{id}", handler.DeleteRecipe)
+			})
+
+			r.Route("/recipe-collections", func(r chi.Router) {
+				r.Get("/", handler.ListRecipeCollections)
+				r.Post("/", handler.CreateRecipeCollection)
+				r.Patch("/{id}", handler.RenameRecipeCollection)
+				r.Delete("/{id}", handler.DeleteRecipeCollection)
 			})
 		})
 	})

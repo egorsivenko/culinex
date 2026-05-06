@@ -96,6 +96,19 @@ class CulinexApiClient implements CulinexRepository {
   }
 
   @override
+  Future<List<RecipeCollection>> listRecipeCollections() async {
+    final http.Response response = await _sendAuthorizedGet(
+      path: 'recipe-collections',
+    );
+    final Map<String, dynamic> payload = _decodeJson(response.body);
+    final List<dynamic> items = payload['collections'] as List<dynamic>? ?? [];
+
+    return items
+        .map((item) => RecipeCollection.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  @override
   Future<GeneratedRecipe> getRecipe(String id) async {
     final http.Response response = await _sendAuthorizedGet(
       path: 'recipes/$id',
@@ -105,10 +118,46 @@ class CulinexApiClient implements CulinexRepository {
   }
 
   @override
+  Future<RecipeCollection> createRecipeCollection(String name) async {
+    final http.Response response = await _sendAuthorizedPostJson(
+      path: 'recipe-collections',
+      payload: <String, dynamic>{'name': name},
+    );
+    final Map<String, dynamic> payload = _decodeJson(response.body);
+    return RecipeCollection.fromJson(payload);
+  }
+
+  @override
+  Future<RecipeCollection> renameRecipeCollection(
+    String id,
+    String name,
+  ) async {
+    final http.Response response = await _sendAuthorizedPatchJson(
+      path: 'recipe-collections/$id',
+      payload: <String, dynamic>{'name': name},
+    );
+    final Map<String, dynamic> payload = _decodeJson(response.body);
+    return RecipeCollection.fromJson(payload);
+  }
+
+  @override
+  Future<void> deleteRecipeCollection(String id) async {
+    await _sendAuthorizedDelete(path: 'recipe-collections/$id');
+  }
+
+  @override
   Future<void> setRecipeFavorite(String id, bool isFavorite) async {
     await _sendAuthorizedPatchJson(
       path: 'recipes/$id/favorite',
       payload: <String, dynamic>{'is_favorite': isFavorite},
+    );
+  }
+
+  @override
+  Future<void> setRecipeCollection(String id, String? collectionId) async {
+    await _sendAuthorizedPatchJson(
+      path: 'recipes/$id/collection',
+      payload: <String, dynamic>{'collection_id': collectionId},
     );
   }
 
@@ -145,6 +194,36 @@ class CulinexApiClient implements CulinexRepository {
                 headers: <String, String>{
                   'Content-Type': 'application/json',
                   'Accept-Language': locale.toLanguageTag(),
+                  'Authorization': 'Bearer $accessToken',
+                },
+                body: jsonEncode(payload),
+              )
+              .timeout(_requestTimeout);
+        } on TimeoutException {
+          throw const CulinexApiException(CulinexApiErrorCode.requestTimedOut);
+        } on SocketException {
+          throw const CulinexApiException(
+            CulinexApiErrorCode.networkUnavailable,
+          );
+        }
+      },
+    );
+  }
+
+  Future<http.Response> _sendAuthorizedPostJson({
+    required String path,
+    required Map<String, dynamic> payload,
+  }) {
+    return _sendAuthorized(
+      send: (String accessToken) async {
+        final Uri uri = _apiBaseUri.resolve(path);
+
+        try {
+          return await _client
+              .post(
+                uri,
+                headers: <String, String>{
+                  'Content-Type': 'application/json',
                   'Authorization': 'Bearer $accessToken',
                 },
                 body: jsonEncode(payload),

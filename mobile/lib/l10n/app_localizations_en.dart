@@ -71,6 +71,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myRecipesRetry => 'Retry';
 
   @override
+  String get recipeCollectionRecents => 'Recents';
+
+  @override
+  String get createRecipeCollectionTooltip => 'Create collection';
+
+  @override
+  String get createRecipeCollectionTitle => 'New collection';
+
+  @override
+  String get renameRecipeCollectionTitle => 'Rename collection';
+
+  @override
+  String get recipeCollectionNameLabel => 'Collection name';
+
+  @override
+  String get recipeCollectionNameRequired => 'Enter a collection name.';
+
+  @override
+  String get recipeCollectionNameDuplicate =>
+      'A collection with this name already exists.';
+
+  @override
+  String get createRecipeCollectionAction => 'Create';
+
+  @override
+  String get renameRecipeCollectionAction => 'Save';
+
+  @override
+  String get recipeCollectionCreateFailed =>
+      'Collection could not be created. Try again.';
+
+  @override
+  String get recipeCollectionRenameFailed =>
+      'Collection could not be renamed. Try again.';
+
+  @override
+  String get recipeCollectionDeleteFailed =>
+      'Collection could not be deleted. Try again.';
+
+  @override
+  String get deleteRecipeCollection => 'Delete collection';
+
+  @override
+  String get renameRecipeCollection => 'Rename collection';
+
+  @override
+  String get deleteRecipeCollectionDialogTitle => 'Delete collection?';
+
+  @override
+  String get deleteRecipeCollectionDialogMessage =>
+      'Recipes in this collection will move to Recents.';
+
+  @override
+  String get deleteRecipeCollectionDialogConfirm => 'Delete collection';
+
+  @override
+  String recipeCollectionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recipes',
+      one: '1 recipe',
+      zero: 'No recipes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get addRecipeToCollection => 'Add to collection';
+
+  @override
+  String get moveRecipe => 'Move recipe';
+
+  @override
+  String get moveRecipeToRecents => 'Move to Recents';
+
+  @override
+  String get recipeCollectionMoveFailed =>
+      'Recipe could not be moved. Try again.';
+
+  @override
+  String get noRecipeCollectionsYet => 'No collections yet';
+
+  @override
   String get favoriteRecipe => 'Favorite';
 
   @override
@@ -118,21 +202,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDarkOption => 'Dark';
 
   @override
-  String get deleteAllRecipes => 'Delete all recipes';
+  String get deleteAllRecipes => 'Delete all data';
 
   @override
-  String get deleteAllRecipesDialogTitle => 'Delete all recipes?';
+  String get deleteAllRecipesDialogTitle => 'Delete all data?';
 
   @override
   String get deleteAllRecipesDialogMessage =>
-      'All saved recipes will be permanently deleted.';
+      'All saved recipes and collections will be permanently deleted.';
 
   @override
-  String get deleteAllRecipesDialogConfirm => 'Delete all recipes';
+  String get deleteAllRecipesDialogConfirm => 'Delete all data';
 
   @override
-  String get deleteAllRecipesFailed =>
-      'Recipes could not be deleted. Try again.';
+  String get deleteAllRecipesFailed => 'Data could not be deleted. Try again.';
 
   @override
   String get deleteAccountDialogTitle => 'Delete account?';

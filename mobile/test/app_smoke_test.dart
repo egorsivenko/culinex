@@ -445,7 +445,7 @@ void main() {
     await tester.tap(deleteAllButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Delete all recipes?'), findsOneWidget);
+    expect(find.text('Delete all data?'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey<String>('delete-all-recipes-confirm-button')),
     );
@@ -493,7 +493,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Recipes could not be deleted. Try again.'),
+      find.text('Data could not be deleted. Try again.'),
       findsOneWidget,
     );
 
@@ -599,11 +599,14 @@ void main() {
 class _NoopRepository implements CulinexRepository {
   _NoopRepository({
     List<RecipeSummary> recipeSummaries = const [],
+    List<RecipeCollection> recipeCollections = const [],
     this.savedRecipe,
     this.deleteAllRecipesError,
-  }) : recipeSummaries = List<RecipeSummary>.of(recipeSummaries);
+  }) : recipeSummaries = List<RecipeSummary>.of(recipeSummaries),
+       recipeCollections = List<RecipeCollection>.of(recipeCollections);
 
   final List<RecipeSummary> recipeSummaries;
+  final List<RecipeCollection> recipeCollections;
   final GeneratedRecipe? savedRecipe;
   final List<String> deletedRecipeIds = <String>[];
   final Object? deleteAllRecipesError;
@@ -634,6 +637,11 @@ class _NoopRepository implements CulinexRepository {
   }
 
   @override
+  Future<List<RecipeCollection>> listRecipeCollections() async {
+    return recipeCollections;
+  }
+
+  @override
   Future<GeneratedRecipe> getRecipe(String id) async {
     final GeneratedRecipe? recipe = savedRecipe;
     if (recipe == null) {
@@ -644,6 +652,39 @@ class _NoopRepository implements CulinexRepository {
 
   @override
   Future<void> setRecipeFavorite(String id, bool isFavorite) async {}
+
+  @override
+  Future<RecipeCollection> createRecipeCollection(String name) async {
+    final RecipeCollection collection = RecipeCollection(
+      id: 'collection-${recipeCollections.length + 1}',
+      name: name,
+    );
+    recipeCollections.add(collection);
+    return collection;
+  }
+
+  @override
+  Future<RecipeCollection> renameRecipeCollection(
+    String id,
+    String name,
+  ) async {
+    final int index = recipeCollections.indexWhere(
+      (collection) => collection.id == id,
+    );
+    final RecipeCollection collection = RecipeCollection(id: id, name: name);
+    if (index != -1) {
+      recipeCollections[index] = collection;
+    }
+    return collection;
+  }
+
+  @override
+  Future<void> deleteRecipeCollection(String id) async {
+    recipeCollections.removeWhere((collection) => collection.id == id);
+  }
+
+  @override
+  Future<void> setRecipeCollection(String id, String? collectionId) async {}
 
   @override
   Future<void> deleteRecipe(String id) async {
@@ -658,6 +699,7 @@ class _NoopRepository implements CulinexRepository {
       throw error;
     }
     recipeSummaries.clear();
+    recipeCollections.clear();
   }
 }
 
