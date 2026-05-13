@@ -1,3 +1,16 @@
+DROP INDEX IF EXISTS idx_recipes_user_collection_created_at;
+DROP INDEX IF EXISTS idx_recipes_user_favorite_created_at;
+DROP INDEX IF EXISTS idx_recipes_user_created_at;
+
+DROP TABLE IF EXISTS recipes;
+
+DROP TRIGGER IF EXISTS trg_recipe_collections_updated_at ON recipe_collections;
+
+DROP INDEX IF EXISTS idx_recipe_collections_user_created_at;
+DROP INDEX IF EXISTS idx_recipe_collections_user_name;
+
+DROP TABLE IF EXISTS recipe_collections;
+
 DROP TRIGGER IF EXISTS trg_user_identities_updated_at ON user_identities;
 DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
 
