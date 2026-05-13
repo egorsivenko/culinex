@@ -14,7 +14,7 @@ import (
 
 type contextKey string
 
-const authClaimsKey contextKey = "auth_claims"
+const userIDKey contextKey = "user_id"
 
 func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -41,18 +41,28 @@ func Middleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			next.ServeHTTP(w, r.WithContext(WithTokenClaims(r.Context(), claims)))
+			next.ServeHTTP(w, r.WithContext(WithUserID(r.Context(), claims.UserID)))
 		})
 	}
 }
 
-func WithTokenClaims(ctx context.Context, claims TokenClaims) context.Context {
-	return context.WithValue(ctx, authClaimsKey, claims)
+func WithUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, userIDKey, userID)
 }
 
-func TokenClaimsFromContext(ctx context.Context) (TokenClaims, bool) {
-	claims, ok := ctx.Value(authClaimsKey).(TokenClaims)
-	return claims, ok
+func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(userIDKey).(uuid.UUID)
+	return userID, ok
+}
+
+func RequireUserID(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	userID, ok := UserIDFromContext(r.Context())
+	if !ok {
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		return uuid.Nil, false
+	}
+
+	return userID, true
 }
 
 func extractBearerToken(header string) (string, error) {

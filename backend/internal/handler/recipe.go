@@ -77,9 +77,8 @@ type setRecipeCollectionRequest struct {
 }
 
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -127,7 +126,7 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 		images = nil
 	}
 
-	savedRecipe, err := recipes.SaveGenerated(r.Context(), claims.UserID, resp, images)
+	savedRecipe, err := recipes.SaveGenerated(r.Context(), userID, resp, images)
 	if err != nil {
 		log.Printf("[%s] Error saving generated recipe: %v", requestID, err)
 		respond.Error(w, http.StatusInternalServerError, "server_error", "Failed to save recipe")
@@ -139,13 +138,12 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListRecipes(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
-	summaries, err := recipes.ListByUser(r.Context(), claims.UserID)
+	summaries, err := recipes.ListByUser(r.Context(), userID)
 	if err != nil {
 		log.Printf("[%s] Error listing recipes: %v", middleware.GetReqID(r.Context()), err)
 		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
@@ -170,13 +168,12 @@ func ListRecipes(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListRecipeCollections(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
-	collections, err := recipes.ListCollectionsByUser(r.Context(), claims.UserID)
+	collections, err := recipes.ListCollectionsByUser(r.Context(), userID)
 	if err != nil {
 		log.Printf("[%s] Error listing recipe collections: %v", middleware.GetReqID(r.Context()), err)
 		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
@@ -192,9 +189,8 @@ func ListRecipeCollections(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -204,7 +200,7 @@ func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	collection, err := recipes.CreateCollection(r.Context(), claims.UserID, req.Name)
+	collection, err := recipes.CreateCollection(r.Context(), userID, req.Name)
 	if err != nil {
 		writeRecipeCollectionError(w, err)
 		return
@@ -214,9 +210,8 @@ func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -232,7 +227,7 @@ func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	collection, err := recipes.RenameCollection(r.Context(), claims.UserID, collectionID, req.Name)
+	collection, err := recipes.RenameCollection(r.Context(), userID, collectionID, req.Name)
 	if err != nil {
 		writeRecipeCollectionError(w, err)
 		return
@@ -242,9 +237,8 @@ func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -254,7 +248,7 @@ func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := recipes.DeleteCollection(r.Context(), claims.UserID, collectionID); err != nil {
+	if err := recipes.DeleteCollection(r.Context(), userID, collectionID); err != nil {
 		writeRecipeCollectionError(w, err)
 		return
 	}
@@ -263,9 +257,8 @@ func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRecipe(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -275,7 +268,7 @@ func GetRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recipe, err := recipes.GetByID(r.Context(), claims.UserID, recipeID)
+	recipe, err := recipes.GetByID(r.Context(), userID, recipeID)
 	if errors.Is(err, recipes.ErrNotFound) {
 		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
@@ -290,9 +283,8 @@ func GetRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -302,7 +294,7 @@ func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := recipes.DeleteByID(r.Context(), claims.UserID, recipeID); errors.Is(err, recipes.ErrNotFound) {
+	if err := recipes.DeleteByID(r.Context(), userID, recipeID); errors.Is(err, recipes.ErrNotFound) {
 		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if err != nil {
@@ -315,13 +307,12 @@ func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteAllRecipes(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
-	if err := recipes.DeleteAllByUser(r.Context(), claims.UserID); err != nil {
+	if err := recipes.DeleteAllByUser(r.Context(), userID); err != nil {
 		log.Printf("[%s] Error deleting all recipes: %v", middleware.GetReqID(r.Context()), err)
 		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
@@ -331,9 +322,8 @@ func DeleteAllRecipes(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -353,7 +343,7 @@ func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := recipes.SetFavorite(r.Context(), claims.UserID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
+	if err := recipes.SetFavorite(r.Context(), userID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
 		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if err != nil {
@@ -366,9 +356,8 @@ func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRecipeCollection(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.TokenClaimsFromContext(r.Context())
+	userID, ok := auth.RequireUserID(w, r)
 	if !ok {
-		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -394,7 +383,7 @@ func SetRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		collectionID = &parsedCollectionID
 	}
 
-	if err := recipes.SetCollection(r.Context(), claims.UserID, recipeID, collectionID); errors.Is(err, recipes.ErrNotFound) {
+	if err := recipes.SetCollection(r.Context(), userID, recipeID, collectionID); errors.Is(err, recipes.ErrNotFound) {
 		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if errors.Is(err, recipes.ErrCollectionNotFound) {
