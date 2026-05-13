@@ -11,6 +11,7 @@ import (
 	"github.com/egorsivenko/culinex/internal/auth"
 	"github.com/egorsivenko/culinex/internal/pexels"
 	"github.com/egorsivenko/culinex/internal/recipes"
+	"github.com/egorsivenko/culinex/internal/respond"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
@@ -78,21 +79,21 @@ type setRecipeCollectionRequest struct {
 func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	var req generateRecipeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 	if len(req.Ingredients) < ai.MinRecipeIngredientCount {
-		writeError(w, http.StatusUnprocessableEntity, "invalid_ingredients", "Not enough ingredients were provided")
+		respond.Error(w, http.StatusUnprocessableEntity, "invalid_ingredients", "Not enough ingredients were provided")
 		return
 	}
 	if !ai.IsValidRecipeStyle(req.RecipeStyle) {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe style is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe style is invalid")
 		return
 	}
 
@@ -111,12 +112,12 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	resp, err := ai.GenerateRecipe(r.Context(), req.Ingredients, req.AssumeBasicStaples, req.RecipeStyle, lang)
 	if err != nil {
 		log.Printf("[%s] Error generating recipe: %v", requestID, err)
-		http.Error(w, "Failed to generate recipe", http.StatusInternalServerError)
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Failed to generate recipe")
 		return
 	}
 	if ai.IsEmptyRecipeResponse(resp) {
 		log.Printf("[%s] Recipe generation refused: no usable ingredients", requestID)
-		writeError(w, http.StatusUnprocessableEntity, "invalid_ingredients", "No usable ingredients were provided")
+		respond.Error(w, http.StatusUnprocessableEntity, "invalid_ingredients", "No usable ingredients were provided")
 		return
 	}
 
@@ -129,25 +130,25 @@ func GenerateRecipe(w http.ResponseWriter, r *http.Request) {
 	savedRecipe, err := recipes.SaveGenerated(r.Context(), claims.UserID, resp, images)
 	if err != nil {
 		log.Printf("[%s] Error saving generated recipe: %v", requestID, err)
-		http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Failed to save recipe")
 		return
 	}
 
 	w.Header().Set("Content-Language", tag)
-	writeJSON(w, http.StatusOK, buildRecipeResponse(savedRecipe))
+	respond.JSON(w, http.StatusOK, buildRecipeResponse(savedRecipe))
 }
 
 func ListRecipes(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	summaries, err := recipes.ListByUser(r.Context(), claims.UserID)
 	if err != nil {
 		log.Printf("[%s] Error listing recipes: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
@@ -165,20 +166,20 @@ func ListRecipes(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, http.StatusOK, recipeListResponse{Recipes: items})
+	respond.JSON(w, http.StatusOK, recipeListResponse{Recipes: items})
 }
 
 func ListRecipeCollections(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	collections, err := recipes.ListCollectionsByUser(r.Context(), claims.UserID)
 	if err != nil {
 		log.Printf("[%s] Error listing recipe collections: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
@@ -187,19 +188,19 @@ func ListRecipeCollections(w http.ResponseWriter, r *http.Request) {
 		items = append(items, buildRecipeCollectionResponse(collection))
 	}
 
-	writeJSON(w, http.StatusOK, recipeCollectionListResponse{Collections: items})
+	respond.JSON(w, http.StatusOK, recipeCollectionListResponse{Collections: items})
 }
 
 func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	var req saveRecipeCollectionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -209,25 +210,25 @@ func CreateRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, buildRecipeCollectionResponse(collection))
+	respond.JSON(w, http.StatusCreated, buildRecipeCollectionResponse(collection))
 }
 
 func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	collectionID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
 		return
 	}
 
 	var req saveRecipeCollectionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -237,19 +238,19 @@ func RenameRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, buildRecipeCollectionResponse(collection))
+	respond.JSON(w, http.StatusOK, buildRecipeCollectionResponse(collection))
 }
 
 func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	collectionID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
 		return
 	}
 
@@ -258,128 +259,128 @@ func DeleteRecipeCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func GetRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
 		return
 	}
 
 	recipe, err := recipes.GetByID(r.Context(), claims.UserID, recipeID)
 	if errors.Is(err, recipes.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	}
 	if err != nil {
 		log.Printf("[%s] Error retrieving recipe: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, buildRecipeResponse(recipe))
+	respond.JSON(w, http.StatusOK, buildRecipeResponse(recipe))
 }
 
 func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
 		return
 	}
 
 	if err := recipes.DeleteByID(r.Context(), claims.UserID, recipeID); errors.Is(err, recipes.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if err != nil {
 		log.Printf("[%s] Error deleting recipe: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func DeleteAllRecipes(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	if err := recipes.DeleteAllByUser(r.Context(), claims.UserID); err != nil {
 		log.Printf("[%s] Error deleting all recipes: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func SetRecipeFavorite(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
 		return
 	}
 
 	var req setRecipeFavoriteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 	if req.IsFavorite == nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "is_favorite is required")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "is_favorite is required")
 		return
 	}
 
 	if err := recipes.SetFavorite(r.Context(), claims.UserID, recipeID, *req.IsFavorite); errors.Is(err, recipes.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if err != nil {
 		log.Printf("[%s] Error updating recipe favorite: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func SetRecipeCollection(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
 	recipeID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe id is invalid")
 		return
 	}
 
 	var req setRecipeCollectionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -387,25 +388,25 @@ func SetRecipeCollection(w http.ResponseWriter, r *http.Request) {
 	if req.CollectionID != nil {
 		parsedCollectionID, err := uuid.Parse(*req.CollectionID)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
+			respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe collection id is invalid")
 			return
 		}
 		collectionID = &parsedCollectionID
 	}
 
 	if err := recipes.SetCollection(r.Context(), claims.UserID, recipeID, collectionID); errors.Is(err, recipes.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "Recipe not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe not found")
 		return
 	} else if errors.Is(err, recipes.ErrCollectionNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "Recipe collection not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe collection not found")
 		return
 	} else if err != nil {
 		log.Printf("[%s] Error updating recipe collection: %v", middleware.GetReqID(r.Context()), err)
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func buildRecipeResponse(recipe recipes.SavedRecipe) recipeResponse {
@@ -454,12 +455,12 @@ func formatRecipeTime(value time.Time) string {
 func writeRecipeCollectionError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, recipes.ErrInvalidCollectionName):
-		writeError(w, http.StatusBadRequest, "validation_failed", "Recipe collection name is invalid")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Recipe collection name is invalid")
 	case errors.Is(err, recipes.ErrDuplicateCollectionName):
-		writeError(w, http.StatusConflict, "collection_name_already_exists", "Recipe collection name already exists")
+		respond.Error(w, http.StatusConflict, "collection_name_already_exists", "Recipe collection name already exists")
 	case errors.Is(err, recipes.ErrCollectionNotFound):
-		writeError(w, http.StatusNotFound, "not_found", "Recipe collection not found")
+		respond.Error(w, http.StatusNotFound, "not_found", "Recipe collection not found")
 	default:
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 	}
 }

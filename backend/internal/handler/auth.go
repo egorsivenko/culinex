@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/egorsivenko/culinex/internal/auth"
+	"github.com/egorsivenko/culinex/internal/respond"
 )
 
 type authRequest struct {
@@ -32,19 +33,10 @@ type authResponse struct {
 	RefreshTokenExpiresAt string           `json:"refresh_token_expires_at"`
 }
 
-type errorResponse struct {
-	Error apiError `json:"error"`
-}
-
-type apiError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -58,13 +50,13 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, buildAuthResponse(result))
+	respond.JSON(w, http.StatusCreated, buildAuthResponse(result))
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -77,13 +69,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, buildAuthResponse(result))
+	respond.JSON(w, http.StatusOK, buildAuthResponse(result))
 }
 
 func CheckEmail(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -94,13 +86,13 @@ func CheckEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func Refresh(w http.ResponseWriter, r *http.Request) {
 	var req refreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -112,13 +104,13 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, buildAuthResponse(result))
+	respond.JSON(w, http.StatusOK, buildAuthResponse(result))
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	var req refreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Invalid JSON body")
 		return
 	}
 
@@ -129,13 +121,13 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.TokenClaimsFromContext(r.Context())
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
+		respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 		return
 	}
 
@@ -146,7 +138,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	respond.NoContent(w)
 }
 
 func buildAuthResponse(result auth.AuthResult) authResponse {
@@ -166,29 +158,14 @@ func buildAuthResponse(result auth.AuthResult) authResponse {
 func writeAuthServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, auth.ErrValidation):
-		writeError(w, http.StatusBadRequest, "validation_failed", err.Error())
+		respond.Error(w, http.StatusBadRequest, "validation_failed", err.Error())
 	case errors.Is(err, auth.ErrEmailAlreadyInUse):
-		writeError(w, http.StatusConflict, "email_already_in_use", "Email is already in use")
+		respond.Error(w, http.StatusConflict, "email_already_in_use", "Email is already in use")
 	case errors.Is(err, auth.ErrInvalidCredentials):
-		writeError(w, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
+		respond.Error(w, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
 	case errors.Is(err, auth.ErrSessionExpired):
-		writeError(w, http.StatusUnauthorized, "session_expired", "Session expired or invalid")
+		respond.Error(w, http.StatusUnauthorized, "session_expired", "Session expired or invalid")
 	default:
-		writeError(w, http.StatusInternalServerError, "server_error", "Internal server error")
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 	}
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, errorResponse{
-		Error: apiError{
-			Code:    code,
-			Message: message,
-		},
-	})
-}
-
-func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
 }

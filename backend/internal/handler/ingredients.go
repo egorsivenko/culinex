@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"mime"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/egorsivenko/culinex/internal/ai"
+	"github.com/egorsivenko/culinex/internal/respond"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
@@ -27,41 +27,41 @@ var supportedImageFormats = map[string]struct{}{
 
 func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
-		http.Error(w, "Error parsing request body", http.StatusBadRequest)
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Error parsing request body")
 		return
 	}
 
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		http.Error(w, "Error retrieving file from request", http.StatusBadRequest)
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Error retrieving file from request")
 		return
 	}
 	defer file.Close()
 
 	mimeType, _, err := mime.ParseMediaType(header.Header.Get("Content-Type"))
 	if err != nil {
-		http.Error(w, "Invalid Content-Type header", http.StatusUnsupportedMediaType)
+		respond.Error(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Invalid Content-Type header")
 		return
 	}
 
 	if _, ok := supportedImageFormats[mimeType]; !ok {
-		http.Error(w, "Unsupported image format", http.StatusUnsupportedMediaType)
+		respond.Error(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Unsupported image format")
 		return
 	}
 
 	fileSize := header.Size
 	if fileSize == 0 {
-		http.Error(w, "Uploaded file is empty", http.StatusBadRequest)
+		respond.Error(w, http.StatusBadRequest, "validation_failed", "Uploaded file is empty")
 		return
 	}
 	if fileSize >= maxImageSize {
-		http.Error(w, "Uploaded file is too large", http.StatusRequestEntityTooLarge)
+		respond.Error(w, http.StatusRequestEntityTooLarge, "payload_too_large", "Uploaded file is too large")
 		return
 	}
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		http.Error(w, "Failed to read uploaded file", http.StatusInternalServerError)
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Failed to read uploaded file")
 		return
 	}
 
@@ -77,14 +77,10 @@ func ExtractIngredients(w http.ResponseWriter, r *http.Request) {
 	resp, err := ai.ExtractIngredients(r.Context(), data, mimeType, lang)
 	if err != nil {
 		log.Printf("[%s] Error extracting ingredients: %v", requestID, err)
-		http.Error(w, "Failed to extract ingredients", http.StatusInternalServerError)
+		respond.Error(w, http.StatusInternalServerError, "server_error", "Failed to extract ingredients")
 		return
 	}
 
 	w.Header().Set("Content-Language", tag)
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	respond.JSON(w, http.StatusOK, resp)
 }

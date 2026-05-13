@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/egorsivenko/culinex/internal/db"
+	"github.com/egorsivenko/culinex/internal/respond"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -32,7 +33,7 @@ func Middleware() func(http.Handler) http.Handler {
 
 			ok, err := sessionExists(r.Context(), claims.SessionID, claims.UserID)
 			if err != nil {
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				respond.Error(w, http.StatusInternalServerError, "server_error", "Internal server error")
 				return
 			}
 			if !ok {
@@ -87,7 +88,5 @@ func sessionExists(ctx context.Context, sessionID, userID uuid.UUID) (bool, erro
 }
 
 func writeUnauthorized(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusUnauthorized)
-	_, _ = w.Write([]byte(`{"error":{"code":"unauthorized","message":"Unauthorized"}}`))
+	respond.Error(w, http.StatusUnauthorized, "unauthorized", "Unauthorized")
 }
