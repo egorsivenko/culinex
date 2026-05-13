@@ -1,0 +1,12 @@
+# Allowlist-based: exclude everything, then re-include only what the build needs.
+*
+
+# Go module files
+!go.mod
+!go.sum
+
+# Application source
+!cmd/
+!cmd/**
+!internal/
+!internal/**
